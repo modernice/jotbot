@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ESNext", "DOM"],
+    "allowJs": true,
+    "declaration": true,
+    "preserveSymlinks": true,
+    "pretty": true,
+    "baseUrl": "."
+  },
+  "include": ["package.json", "vite.config.ts", "./src/**/*", "./test/**/*"],
+  "exclude": ["**/node_modules/**"]
+}

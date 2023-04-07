@@ -15,9 +15,18 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "play": "pnpm tsx ./src/play.ts",
     "build": "vite build"
   },
   "keywords": [],
   "author": "Saman Hosseini <saman@modernice.ltd>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@modernice/openai": "^0.0.0",
+    "execa": "^7.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "tsx": "^3.12.6"
+  }
 }
