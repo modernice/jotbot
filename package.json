@@ -27,6 +27,8 @@
   },
   "devDependencies": {
     "@types/node": "^18.15.11",
-    "tsx": "^3.12.6"
+    "tsx": "^3.12.6",
+    "vite": "^4.2.1",
+    "vite-plugin-dts": "^2.2.0"
   }
 }
