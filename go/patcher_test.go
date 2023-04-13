@@ -1,13 +1,15 @@
 package opendocs_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/google/go-cmp/cmp"
 	opendocs "github.com/modernice/opendocs/go"
+	"github.com/modernice/opendocs/go/git"
 )
+
+var _ git.Patch = (*opendocs.Patcher)(nil)
 
 var tests = []struct {
 	name    string
@@ -42,16 +44,16 @@ func TestPatcher(t *testing.T) {
 			f2.Comment(tt.comment)
 			want := tt.input(f2)
 
-			p, err := opendocs.NewPatcher(strings.NewReader(input))
+			p, err := opendocs.NewPatcher([]byte(input))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if err := p.Update("Foo", tt.comment); err != nil {
+			if err := p.Comment("Foo", tt.comment); err != nil {
 				t.Fatal(err)
 			}
 
-			b, err := p.Result()
+			b, err := p.Bytes()
 			if err != nil {
 				t.Fatal(err)
 			}

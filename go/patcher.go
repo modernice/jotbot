@@ -17,7 +17,7 @@ type Patcher struct {
 	fset *token.FileSet
 }
 
-func NewPatcher(code io.Reader) (*Patcher, error) {
+func NewPatcher(code []byte) (*Patcher, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
@@ -26,7 +26,7 @@ func NewPatcher(code io.Reader) (*Patcher, error) {
 	return &Patcher{ast: f, fset: fset}, nil
 }
 
-func (p *Patcher) Update(identifier, comment string) error {
+func (p *Patcher) Comment(identifier, comment string) error {
 	if decl, ok := p.findFunction(identifier); ok {
 		return p.commentFunction(decl, comment)
 	}
@@ -95,20 +95,22 @@ func (p *Patcher) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment str
 	return nil
 }
 
-func (p *Patcher) Result() ([]byte, error) {
+func (p *Patcher) Apply(w io.Writer) error {
+	if err := format.Node(w, p.fset, p.ast); err != nil {
+		return fmt.Errorf("format code: %w", err)
+	}
+	return nil
+}
+
+func (p *Patcher) Bytes() ([]byte, error) {
 	var buf bytes.Buffer
-	if err := format.Node(&buf, p.fset, p.ast); err != nil {
-		return nil, fmt.Errorf("format code: %w", err)
+	if err := p.Apply(&buf); err != nil {
+		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
 func (p *Patcher) Patch(path string) error {
-	b, err := p.Result()
-	if err != nil {
-		return err
-	}
-
 	backup, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("create backup of %q: %w", path, err)
@@ -119,7 +121,7 @@ func (p *Patcher) Patch(path string) error {
 		return fmt.Errorf("create %q: %w", path, err)
 	}
 
-	if _, err := f.Write(b); err != nil {
+	if err := p.Apply(f); err != nil {
 		f.Close()
 		return p.restoreBackup(path, backup, err)
 	}
