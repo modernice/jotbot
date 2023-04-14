@@ -1,12 +1,14 @@
 package opendocs_test
 
 import (
+	"io/fs"
 	"testing"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/google/go-cmp/cmp"
 	opendocs "github.com/modernice/opendocs/go"
 	"github.com/modernice/opendocs/go/git"
+	"github.com/psanford/memfs"
 )
 
 var _ git.Patch = (*opendocs.Patcher)(nil)
@@ -32,9 +34,17 @@ var tests = []struct {
 			return f.GoString()
 		},
 	},
+	{
+		name:    "interface",
+		comment: `Foo is an interface that can be implemented.`,
+		input: func(f *jen.File) string {
+			f.Type().Id("Foo").Interface()
+			return f.GoString()
+		},
+	},
 }
 
-func TestPatcher(t *testing.T) {
+func TestPatcher_DryRun(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := jen.NewFile("foo")
@@ -44,28 +54,33 @@ func TestPatcher(t *testing.T) {
 			f2.Comment(tt.comment)
 			want := tt.input(f2)
 
-			p, err := opendocs.NewPatcher([]byte(input))
+			sourceFS := memfs.New()
+			if err := sourceFS.WriteFile("foo.go", []byte(input), fs.ModePerm); err != nil {
+				t.Fatal(err)
+			}
+
+			p, err := opendocs.NewPatcher(sourceFS)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if err := p.Comment("Foo", tt.comment); err != nil {
+			if err := p.Comment("foo.go", "Foo", tt.comment); err != nil {
 				t.Fatal(err)
 			}
 
-			b, err := p.Bytes()
+			result, err := p.DryRun()
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			result := string(b)
+			got := string(result["foo.go"])
 
 			t.Logf("Input:\n%s", input)
 			t.Logf("Want:\n%s", want)
-			t.Logf("Got:\n%s", result)
+			t.Logf("Got:\n%s", got)
 
-			if result != want {
-				t.Fatal(cmp.Diff(want, result))
+			if got != want {
+				t.Fatal(cmp.Diff(want, got))
 			}
 		})
 	}

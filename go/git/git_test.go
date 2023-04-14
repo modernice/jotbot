@@ -12,6 +12,7 @@ import (
 	opendocs "github.com/modernice/opendocs/go"
 	"github.com/modernice/opendocs/go/git"
 	"github.com/modernice/opendocs/go/internal"
+	"github.com/psanford/memfs"
 )
 
 var (
@@ -31,18 +32,27 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		p, err := opendocs.NewPatcher(code)
+		sourceFS := memfs.New()
+		if err := sourceFS.WriteFile("foo.go", code, fs.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+
+		p, err := opendocs.NewPatcher(sourceFS)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := p.Comment("Foo", `Foo is a function that returns a "foo" error.`); err != nil {
+		if err := p.Comment("foo.go", "Foo", `Foo is a function that returns a "foo" error.`); err != nil {
 			t.Fatal(err)
 		}
 
-		wantCode, err := p.Bytes()
+		dryRun, err := p.DryRun()
 		if err != nil {
 			t.Fatal(err)
+		}
+		wantCode, ok := dryRun["foo.go"]
+		if !ok {
+			t.Fatal("no code for foo.go in dry run result")
 		}
 
 		repo := git.Repo(repoRoot)

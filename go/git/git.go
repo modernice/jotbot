@@ -2,15 +2,12 @@ package git
 
 import (
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/modernice/opendocs/go/internal"
 )
 
 type Patch interface {
-	Apply(io.Writer) error
+	Apply(root string) error
 }
 
 type Repository struct {
@@ -30,19 +27,8 @@ func (r *Repository) Commit(identifier, path string, p Patch) error {
 		return fmt.Errorf("checkout branch: %w", err)
 	}
 
-	path = filepath.Join(r.root, path)
-	f, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("create %q: %w", path, err)
-	}
-	defer f.Close()
-
-	if err := p.Apply(f); err != nil {
+	if err := p.Apply(r.root); err != nil {
 		return fmt.Errorf("apply patch to %q: %w", path, err)
-	}
-
-	if err := f.Close(); err != nil {
-		return fmt.Errorf("close %q: %w", path, err)
 	}
 
 	if _, _, err := r.git.Cmd("add", path); err != nil {
