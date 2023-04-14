@@ -108,7 +108,7 @@ func AssertFindings(t *testing.T, want, got find.Findings) {
 	}
 }
 
-func AssertPatch(t *testing.T, want *patch.Patcher, got *patch.Patcher) {
+func AssertPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	t.Helper()
 
 	wantDryRun, err := want.DryRun()

@@ -14,21 +14,21 @@ import (
 	"strings"
 )
 
-type Patcher struct {
+type Patch struct {
 	repo   fs.FS
 	fset   *token.FileSet
 	parsed map[string]*ast.File
 }
 
-func New(repo fs.FS) *Patcher {
-	return &Patcher{
+func New(repo fs.FS) *Patch {
+	return &Patch{
 		repo:   repo,
 		fset:   token.NewFileSet(),
 		parsed: make(map[string]*ast.File),
 	}
 }
 
-func (p *Patcher) Comment(file, identifier, comment string) error {
+func (p *Patch) Comment(file, identifier, comment string) error {
 	{
 		decl, ok, err := p.findFunction(file, identifier)
 		if err != nil {
@@ -52,7 +52,7 @@ func (p *Patcher) Comment(file, identifier, comment string) error {
 	return fmt.Errorf("could not find %q in %q", identifier, file)
 }
 
-func (p *Patcher) parseFile(path string) (*ast.File, error) {
+func (p *Patch) parseFile(path string) (*ast.File, error) {
 	if node, ok := p.parsed[path]; ok {
 		return node, nil
 	}
@@ -77,7 +77,7 @@ func (p *Patcher) parseFile(path string) (*ast.File, error) {
 	return node, nil
 }
 
-func (p *Patcher) findFunction(file, identifier string) (*ast.FuncDecl, bool, error) {
+func (p *Patch) findFunction(file, identifier string) (*ast.FuncDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
 		return nil, false, err
@@ -90,7 +90,7 @@ func (p *Patcher) findFunction(file, identifier string) (*ast.FuncDecl, bool, er
 	return nil, false, nil
 }
 
-func (p *Patcher) commentFunction(decl *ast.FuncDecl, comment string) error {
+func (p *Patch) commentFunction(decl *ast.FuncDecl, comment string) error {
 	if decl.Doc != nil {
 		return fmt.Errorf("function %q already has documentation", decl.Name.Name)
 	}
@@ -105,7 +105,7 @@ func (p *Patcher) commentFunction(decl *ast.FuncDecl, comment string) error {
 	return nil
 }
 
-func (p *Patcher) findType(file, identifier string) (*ast.TypeSpec, *ast.GenDecl, bool, error) {
+func (p *Patch) findType(file, identifier string) (*ast.TypeSpec, *ast.GenDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
 		return nil, nil, false, err
@@ -123,7 +123,7 @@ func (p *Patcher) findType(file, identifier string) (*ast.TypeSpec, *ast.GenDecl
 	return nil, nil, false, nil
 }
 
-func (p *Patcher) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment string) error {
+func (p *Patch) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment string) error {
 	if decl.Doc != nil {
 		return fmt.Errorf("type %q already has documentation", spec.Name.Name)
 	}
@@ -143,7 +143,7 @@ func (p *Patcher) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment str
 	return nil
 }
 
-func (p *Patcher) Apply(repo string) error {
+func (p *Patch) Apply(repo string) error {
 	for path, node := range p.parsed {
 		var buf bytes.Buffer
 		if err := format.Node(&buf, p.fset, node); err != nil {
@@ -158,7 +158,7 @@ func (p *Patcher) Apply(repo string) error {
 	return nil
 }
 
-func (p *Patcher) patchFile(path string, buf *bytes.Buffer) error {
+func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("create %q: %w", path, err)
@@ -169,7 +169,7 @@ func (p *Patcher) patchFile(path string, buf *bytes.Buffer) error {
 	return err
 }
 
-func (p *Patcher) DryRun() (map[string][]byte, error) {
+func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 
 	for path, node := range p.parsed {

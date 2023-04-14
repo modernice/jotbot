@@ -8,3 +8,5 @@ require (
 )
 
 require github.com/psanford/memfs v0.0.0-20230130182539-4dbf7e3e865e
+
+require github.com/sashabaranov/go-openai v1.7.0 // indirect

@@ -11,7 +11,7 @@ import (
 	"github.com/psanford/memfs"
 )
 
-var _ git.Patch = (*patch.Patcher)(nil)
+var _ git.Patch = (*patch.Patch)(nil)
 
 var tests = []struct {
 	name    string
@@ -44,7 +44,7 @@ var tests = []struct {
 	},
 }
 
-func TestPatcher_DryRun(t *testing.T) {
+func TestPatch_DryRun(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := jen.NewFile("foo")

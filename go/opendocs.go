@@ -21,11 +21,11 @@ func (r *Repository) Root() string {
 	return r.root
 }
 
-func (repo *Repository) Patch() *patch.Patcher {
+func (repo *Repository) Patch() *patch.Patch {
 	return patch.New(os.DirFS(repo.root))
 }
 
-func (repo *Repository) Generate() (*patch.Patcher, error) {
+func (repo *Repository) Generate() (*patch.Patch, error) {
 	patch := repo.Patch()
 	return patch, git.Repo(repo.root).Commit(patch)
 }
