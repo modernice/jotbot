@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"strings"
 )
 
 type Finder struct {
@@ -34,9 +35,13 @@ func (f *Finder) Uncommented() (Findings, error) {
 		}
 
 		if d.IsDir() {
-			if d.Name() == ".git" {
+			if d.Name() != "." && strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+
+		if ext := filepath.Ext(d.Name()); ext != ".go" {
 			return nil
 		}
 

@@ -1,6 +1,7 @@
 package opendocs_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,29 +10,48 @@ import (
 	"github.com/modernice/opendocs/go/internal"
 )
 
-var (
-	repoRoot = filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "finder")
-	repoFS   = os.DirFS(repoRoot)
-)
+func TestFinder_Uncommented(t *testing.T) {
+	root := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "basic")
 
-func init() {
-	internal.InitRepo(repoRoot)
+	internal.WithRepo("basic", root, func(repoFS fs.FS) {
+		f := opendocs.NewFinder(repoFS)
+
+		result, err := f.Uncommented()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		internal.AssertFindings(t, opendocs.Findings{
+			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
+			"bar.go": {
+				{Path: "bar.go", Identifier: "Foo"},
+				{Path: "bar.go", Identifier: "Bar"},
+			},
+		}, result)
+	})
 }
 
-func TestFinder_Uncommented(t *testing.T) {
-	f := opendocs.NewFinder(repoFS)
+func TestFinder_Find_onlyGoFiles(t *testing.T) {
+	root := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "only-go-files")
 
-	result, err := f.Uncommented()
-	if err != nil {
-		t.Fatal(err)
-	}
+	internal.WithRepo("only-go-files", root, func(repoFS fs.FS) {
+		f := opendocs.NewFinder(repoFS)
 
-	for path, findings := range result {
-		t.Logf("%s: %d findings", path, len(findings))
-		for _, finding := range findings {
-			t.Logf("\t%s: %s", finding.Path, finding.Identifier)
+		result, err := f.Uncommented()
+		if err != nil {
+			t.Fatalf("find uncommented code: %v", err)
 		}
-	}
 
-	t.Error()
+		if _, ok := result["bar.ts"]; ok {
+			t.Fatalf("only Go files should be returned in findings; got 'bar.ts'")
+		}
+
+		if _, ok := result["foo.go"]; !ok {
+			t.Fatalf("Go files should be returned in findings; got no 'foo.go'")
+		}
+
+		internal.AssertFindings(t, opendocs.Findings{
+			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
+		}, result)
+	})
 }

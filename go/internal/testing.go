@@ -8,11 +8,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	opendocs "github.com/modernice/opendocs/go"
 )
 
 var (
-	//go:embed testdata/fixtures/repo
-	fixtures embed.FS
+	//go:embed testdata/fixtures/basic
+	basicFS embed.FS
+
+	//go:embed testdata/fixtures/only-go-files
+	onlyGoFilesFS embed.FS
+
+	fixtures = map[string]embed.FS{
+		"basic":         basicFS,
+		"only-go-files": onlyGoFilesFS,
+	}
 )
 
 func Must[T any](v T, err error) T {
@@ -22,7 +34,14 @@ func Must[T any](v T, err error) T {
 	return v
 }
 
-func InitRepo(root string) error {
+func WithRepo(name string, root string, fn func(fs.FS)) {
+	if err := InitRepo(name, root); err != nil {
+		panic(err)
+	}
+	fn(os.DirFS(root))
+}
+
+func InitRepo(name, root string) error {
 	if _, err := os.Stat(root); !os.IsNotExist(err) {
 		if err := os.RemoveAll(root); err != nil {
 			return fmt.Errorf("remove existing repository directory: %w", err)
@@ -35,7 +54,12 @@ func InitRepo(root string) error {
 
 	g := Git(root)
 
-	if err := fs.WalkDir(fixtures, ".", func(path string, entry fs.DirEntry, err error) error {
+	fixture, ok := fixtures[name]
+	if !ok {
+		panic(fmt.Errorf("unknown fixture %q", name))
+	}
+
+	if err := fs.WalkDir(fixture, ".", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -50,7 +74,7 @@ func InitRepo(root string) error {
 		}
 		defer copy.Close()
 
-		f, err := fixtures.Open(path)
+		f, err := fixture.Open(path)
 		if err != nil {
 			return err
 		}
@@ -88,4 +112,11 @@ func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 		return cmd, out, fmt.Errorf("git: %w", err)
 	}
 	return cmd, out, nil
+}
+
+func AssertFindings(t *testing.T, want, got opendocs.Findings) {
+	t.Helper()
+	if !cmp.Equal(want, got) {
+		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))
+	}
 }
