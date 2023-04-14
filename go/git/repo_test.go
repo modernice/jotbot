@@ -67,7 +67,7 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatalf("unexpected branch %q; want %q", branch, "main")
 		}
 
-		if err := repo.Commit("Foo", "foo.go", p); err != nil {
+		if err := repo.Commit(p); err != nil {
 			t.Fatal(err)
 		}
 
@@ -87,7 +87,7 @@ func TestRepo_Commit(t *testing.T) {
 		}
 		msg := strings.TrimSpace(string(output))
 
-		wantMsg := "opendocs: add `Foo` comment"
+		wantMsg := "docs: add missing documentation"
 		if msg != wantMsg {
 			t.Fatalf("unexpected commit message %q; want %q", msg, wantMsg)
 		}

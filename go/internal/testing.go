@@ -17,7 +17,6 @@ import (
 var (
 	//go:embed testdata/fixtures/basic
 	basicFS embed.FS
-
 	//go:embed testdata/fixtures/only-go-files
 	onlyGoFilesFS embed.FS
 
