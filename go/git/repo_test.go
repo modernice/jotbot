@@ -68,26 +68,10 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, output, err = g.Cmd("branch", "--show-current")
-		if err != nil {
-			t.Fatal(err)
-		}
-		branch = strings.TrimSpace(string(output))
-
-		if branch != "opendocs-patch" {
-			t.Fatalf("unexpected branch %q; want %q", branch, "opendocs-test")
-		}
-
-		_, output, err = g.Cmd("log", "-1", "--pretty=%B")
-		if err != nil {
-			t.Fatalf("get last commit message: %v", err)
-		}
-		msg := strings.TrimSpace(string(output))
+		g.AssertBranch(t, "opendocs-patch")
 
 		wantMsg := "docs: add missing documentation"
-		if msg != wantMsg {
-			t.Fatalf("unexpected commit message %q; want %q", msg, wantMsg)
-		}
+		g.AssertCommit(t, wantMsg)
 
 		gotCodeFile, err := repoFS.Open("foo.go")
 		if err != nil {

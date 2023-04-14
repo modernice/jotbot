@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -99,18 +98,6 @@ func InitRepo(name, root string) error {
 	}
 
 	return nil
-}
-
-type Git string
-
-func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
-	cmd := exec.Command("git", args...)
-	cmd.Dir = string(g)
-	out, err := cmd.Output()
-	if err != nil {
-		return cmd, out, fmt.Errorf("git: %w", err)
-	}
-	return cmd, out, nil
 }
 
 func AssertFindings(t *testing.T, want, got find.Findings) {

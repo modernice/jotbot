@@ -22,6 +22,10 @@ func Repo(root string) *Repository {
 	}
 }
 
+func (repo *Repository) Root() string {
+	return repo.root
+}
+
 func (r *Repository) Commit(p Patch) error {
 	if _, _, err := r.git.Cmd("checkout", "-b", "opendocs-patch"); err != nil {
 		return fmt.Errorf("checkout branch: %w", err)
