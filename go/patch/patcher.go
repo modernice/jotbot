@@ -1,4 +1,4 @@
-package opendocs
+package patch
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ type Patcher struct {
 	parsed map[string]*ast.File
 }
 
-func NewPatcher(repo fs.FS) (*Patcher, error) {
+func New(repo fs.FS) (*Patcher, error) {
 	return &Patcher{
 		repo:   repo,
 		fset:   token.NewFileSet(),

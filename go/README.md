@@ -6,11 +6,16 @@
 package example
 
 func example(root string) {
-	od := opendocs.New(root)
+	docs := opendocs.Repo(root)
 
-	patch, err := od.Generate() // generate patches
+	// generate, then commit
+	patch, err := docs.Patch() // generate patch
 	if err != nil {
 		panic(err)
 	}
+	err := git.Repo("/path/to/repo").Commit(patch)
+
+	// or both in one
+	patch, err := docs.Generate()
 }
 ```

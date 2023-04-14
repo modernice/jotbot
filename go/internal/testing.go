@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	opendocs "github.com/modernice/opendocs/go"
+	"github.com/modernice/opendocs/go/find"
 )
 
 var (
@@ -113,7 +113,7 @@ func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 	return cmd, out, nil
 }
 
-func AssertFindings(t *testing.T, want, got opendocs.Findings) {
+func AssertFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
 	if !cmp.Equal(want, got) {
 		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))

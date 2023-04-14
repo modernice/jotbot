@@ -1,4 +1,4 @@
-package opendocs
+package find
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ type Finding struct {
 
 type Findings map[string][]Finding
 
-func NewFinder(repo fs.FS) *Finder {
+func New(repo fs.FS) *Finder {
 	return &Finder{repo}
 }
 

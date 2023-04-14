@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	opendocs "github.com/modernice/opendocs/go"
 	"github.com/modernice/opendocs/go/git"
 	"github.com/modernice/opendocs/go/internal"
+	"github.com/modernice/opendocs/go/patch"
 	"github.com/psanford/memfs"
 )
 
@@ -37,7 +37,7 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		p, err := opendocs.NewPatcher(sourceFS)
+		p, err := patch.New(sourceFS)
 		if err != nil {
 			t.Fatal(err)
 		}
