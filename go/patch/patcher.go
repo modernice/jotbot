@@ -20,12 +20,12 @@ type Patcher struct {
 	parsed map[string]*ast.File
 }
 
-func New(repo fs.FS) (*Patcher, error) {
+func New(repo fs.FS) *Patcher {
 	return &Patcher{
 		repo:   repo,
 		fset:   token.NewFileSet(),
 		parsed: make(map[string]*ast.File),
-	}, nil
+	}
 }
 
 func (p *Patcher) Comment(file, identifier, comment string) error {

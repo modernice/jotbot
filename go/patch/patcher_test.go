@@ -59,10 +59,7 @@ func TestPatcher_DryRun(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			p, err := patch.New(sourceFS)
-			if err != nil {
-				t.Fatal(err)
-			}
+			p := patch.New(sourceFS)
 
 			if err := p.Comment("foo.go", "Foo", tt.comment); err != nil {
 				t.Fatal(err)

@@ -37,10 +37,7 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		p, err := patch.New(sourceFS)
-		if err != nil {
-			t.Fatal(err)
-		}
+		p := patch.New(sourceFS)
 
 		if err := p.Comment("foo.go", "Foo", `Foo is a function that returns a "foo" error.`); err != nil {
 			t.Fatal(err)
