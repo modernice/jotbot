@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/opendocs/go/find"
+	"github.com/modernice/opendocs/go/patch"
 )
 
 var (
@@ -104,5 +105,23 @@ func AssertFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
 	if !cmp.Equal(want, got) {
 		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))
+	}
+}
+
+func AssertPatch(t *testing.T, want *patch.Patcher, got *patch.Patcher) {
+	t.Helper()
+
+	wantDryRun, err := want.DryRun()
+	if err != nil {
+		t.Fatalf("dry run 'want': %v", err)
+	}
+
+	dryRun, err := got.DryRun()
+	if err != nil {
+		t.Fatalf("dry run 'got': %v", err)
+	}
+
+	if !cmp.Equal(wantDryRun, dryRun) {
+		t.Fatalf("dry run mismatch:\n%s", cmp.Diff(wantDryRun, dryRun))
 	}
 }

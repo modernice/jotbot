@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,7 +15,7 @@ import (
 )
 
 var (
-	repoRoot = filepath.Join(must(os.Getwd()), "testdata", "gen", "repo")
+	repoRoot = filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "repo")
 	g        = internal.Git(repoRoot)
 )
 
@@ -38,10 +37,20 @@ func TestRepo_Commit(t *testing.T) {
 		}
 
 		p := patch.New(sourceFS)
-
 		if err := p.Comment("foo.go", "Foo", `Foo is a function that returns a "foo" error.`); err != nil {
 			t.Fatal(err)
 		}
+
+		repo := git.Repo(repoRoot)
+
+		g.AssertBranch(t, "main")
+
+		if err := repo.Commit(p); err != nil {
+			t.Fatal(err)
+		}
+
+		g.AssertBranch(t, "opendocs-patch")
+		g.AssertCommit(t, "docs: add missing documentation")
 
 		dryRun, err := p.DryRun()
 		if err != nil {
@@ -52,32 +61,10 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal("no code for foo.go in dry run result")
 		}
 
-		repo := git.Repo(repoRoot)
-
-		_, output, err := g.Cmd("branch", "--show-current")
-		if err != nil {
-			t.Fatal(err)
-		}
-		branch := strings.TrimSpace(string(output))
-
-		if branch != "main" {
-			t.Fatalf("unexpected branch %q; want %q", branch, "main")
-		}
-
-		if err := repo.Commit(p); err != nil {
-			t.Fatal(err)
-		}
-
-		g.AssertBranch(t, "opendocs-patch")
-
-		wantMsg := "docs: add missing documentation"
-		g.AssertCommit(t, wantMsg)
-
 		gotCodeFile, err := repoFS.Open("foo.go")
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		gotCode, err := io.ReadAll(gotCodeFile)
 		if err != nil {
 			t.Fatal(err)
@@ -87,11 +74,4 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatalf("unexpected code\n%s", cmp.Diff(string(wantCode), string(gotCode)))
 		}
 	})
-}
-
-func must[T any](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return v
 }

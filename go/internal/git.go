@@ -14,12 +14,14 @@ func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 	cmd.Dir = string(g)
 	out, err := cmd.Output()
 	if err != nil {
-		return cmd, out, fmt.Errorf("git: %w", err)
+		return cmd, out, fmt.Errorf("git: %s (%w)", out, err)
 	}
 	return cmd, out, nil
 }
 
 func (g Git) AssertBranch(t *testing.T, branch string) {
+	t.Helper()
+
 	_, output, err := g.Cmd("branch", "--show-current")
 	if err != nil {
 		t.Fatal(err)
