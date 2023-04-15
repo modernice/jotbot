@@ -41,7 +41,7 @@ func (f *Finder) Uncommented() (Findings, error) {
 			return nil
 		}
 
-		if ext := filepath.Ext(d.Name()); ext != ".go" {
+		if !isGoFile(d) || isTestFile(d) {
 			return nil
 		}
 
@@ -112,4 +112,12 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 	}
 
 	return findings, nil
+}
+
+func isGoFile(d fs.DirEntry) bool {
+	return filepath.Ext(d.Name()) == ".go"
+}
+
+func isTestFile(d fs.DirEntry) bool {
+	return strings.HasSuffix(d.Name(), "_test.go")
 }
