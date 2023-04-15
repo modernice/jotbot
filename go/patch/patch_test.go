@@ -11,7 +11,10 @@ import (
 	"github.com/psanford/memfs"
 )
 
-var _ git.Patch = (*patch.Patch)(nil)
+var _ interface {
+	git.Patch
+	git.IdentifierProvider
+} = (*patch.Patch)(nil)
 
 var tests = []struct {
 	name    string

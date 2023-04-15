@@ -33,7 +33,7 @@ func (g Git) AssertBranch(t *testing.T, branch string) {
 	}
 }
 
-func (g Git) AssertCommit(t *testing.T, msg string) {
+func (g Git) AssertCommit(t *testing.T, msg, desc string) {
 	t.Helper()
 
 	cmd, out, err := g.Cmd("log", "-1", "--pretty=%B")
@@ -41,7 +41,12 @@ func (g Git) AssertCommit(t *testing.T, msg string) {
 		t.Fatalf("run command: %s", cmd)
 	}
 
-	if got := strings.TrimSpace(string(out)); got != msg {
-		t.Fatalf("expected commit message %q; got %q", msg, got)
+	want := msg
+	if desc != "" {
+		want = fmt.Sprintf("%s\n\n%s", msg, desc)
+	}
+
+	if got := strings.TrimSpace(string(out)); got != want {
+		t.Fatalf("expected commit message %q; got %q", want, got)
 	}
 }

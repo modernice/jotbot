@@ -15,20 +15,33 @@ import (
 )
 
 type Patch struct {
-	repo   fs.FS
-	fset   *token.FileSet
-	parsed map[string]*ast.File
+	repo        fs.FS
+	fset        *token.FileSet
+	files       map[string]*ast.File
+	identifiers map[string][]string
 }
 
 func New(repo fs.FS) *Patch {
 	return &Patch{
-		repo:   repo,
-		fset:   token.NewFileSet(),
-		parsed: make(map[string]*ast.File),
+		repo:        repo,
+		fset:        token.NewFileSet(),
+		files:       make(map[string]*ast.File),
+		identifiers: make(map[string][]string),
 	}
 }
 
-func (p *Patch) Comment(file, identifier, comment string) error {
+func (p *Patch) Identifiers() map[string][]string {
+	return p.identifiers
+}
+
+func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
+	defer func() {
+		if rerr == nil {
+			p.identifiers[file] = append(p.identifiers[file], identifier)
+		}
+	}()
+
+	p.identifiers[file] = append(p.identifiers[file], identifier)
 	{
 		decl, ok, err := p.findFunction(file, identifier)
 		if err != nil {
@@ -53,7 +66,7 @@ func (p *Patch) Comment(file, identifier, comment string) error {
 }
 
 func (p *Patch) parseFile(path string) (*ast.File, error) {
-	if node, ok := p.parsed[path]; ok {
+	if node, ok := p.files[path]; ok {
 		return node, nil
 	}
 
@@ -72,7 +85,7 @@ func (p *Patch) parseFile(path string) (*ast.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse %q: %w", path, err)
 	}
-	p.parsed[path] = node
+	p.files[path] = node
 
 	return node, nil
 }
@@ -144,7 +157,7 @@ func (p *Patch) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment strin
 }
 
 func (p *Patch) Apply(repo string) error {
-	for path, node := range p.parsed {
+	for path, node := range p.files {
 		var buf bytes.Buffer
 		if err := format.Node(&buf, p.fset, node); err != nil {
 			return fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)
@@ -172,7 +185,7 @@ func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
 func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 
-	for path, node := range p.parsed {
+	for path, node := range p.files {
 		var buf bytes.Buffer
 		if err := format.Node(&buf, p.fset, node); err != nil {
 			return nil, fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)

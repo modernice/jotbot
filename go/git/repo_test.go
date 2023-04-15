@@ -51,7 +51,7 @@ func TestRepo_Commit(t *testing.T) {
 		}
 
 		g.AssertBranch(t, "opendocs-patch")
-		g.AssertCommit(t, "docs: add missing documentation")
+		g.AssertCommit(t, "docs: add missing documentation", git.CommitDescription(p.Identifiers()))
 
 		dryRun, err := p.DryRun()
 		if err != nil {

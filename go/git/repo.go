@@ -10,6 +10,10 @@ type Patch interface {
 	Apply(root string) error
 }
 
+type IdentifierProvider interface {
+	Identifiers() map[string][]string
+}
+
 type Repository struct {
 	root string
 	git  git.Git
@@ -39,7 +43,18 @@ func (r *Repository) Commit(p Patch) error {
 		return fmt.Errorf("add changes: %w", err)
 	}
 
-	if _, _, err := r.git.Cmd("commit", "-m", "docs: add missing documentation"); err != nil {
+	msgs := []string{"docs: add missing documentation"}
+
+	if fp, ok := p.(IdentifierProvider); ok {
+		msgs = append(msgs, CommitDescription(fp.Identifiers()))
+	}
+
+	args := []string{"commit"}
+	for _, msg := range msgs {
+		args = append(args, "-m", msg)
+	}
+
+	if _, _, err := r.git.Cmd(args...); err != nil {
 		return fmt.Errorf("commit patch: %w", err)
 	}
 
