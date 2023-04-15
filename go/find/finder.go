@@ -38,6 +38,9 @@ func (f *Finder) Uncommented() (Findings, error) {
 			if d.Name() != "." && strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
+			if d.Name() == "testdata" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
