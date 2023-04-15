@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log"
 
 	"github.com/modernice/opendocs/go/find"
 	"github.com/modernice/opendocs/go/git"
@@ -52,7 +53,24 @@ func New(svc Service) *Generator {
 	}
 }
 
-func (g *Generator) Generate(ctx context.Context, repo fs.FS) (Result, error) {
+type Option func(*generation)
+
+func Limit(n int) Option {
+	return func(g *generation) {
+		g.limit = n
+	}
+}
+
+type generation struct {
+	limit int
+}
+
+func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (Result, error) {
+	var cfg generation
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	out := NewResult(repo)
 
 	result, err := find.New(repo).Uncommented()
@@ -60,7 +78,10 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS) (Result, error) {
 		return out, fmt.Errorf("find uncommented code: %w", err)
 	}
 
-	var generateCtx *genCtx
+	var (
+		generateCtx *genCtx
+		nGenerated  int
+	)
 
 	for _, findings := range result {
 		for _, finding := range findings {
@@ -82,6 +103,13 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS) (Result, error) {
 				Identifier: finding.Identifier,
 				Doc:        doc,
 			})
+
+			nGenerated++
+
+			if cfg.limit > 0 && nGenerated >= cfg.limit {
+				log.Printf("Limit of %d generations reached. Stopping.", cfg.limit)
+				return out, nil
+			}
 		}
 	}
 

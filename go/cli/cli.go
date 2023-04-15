@@ -8,6 +8,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	opendocs "github.com/modernice/opendocs/go"
+	"github.com/modernice/opendocs/go/generate"
 	"github.com/modernice/opendocs/go/git"
 	"github.com/modernice/opendocs/go/services/openai"
 )
@@ -16,6 +17,7 @@ type CLI struct {
 	Generate struct {
 		Root   string `arg:"" default:"." help:"Root directory of the repository."`
 		Branch string `default:"opendocs-patch" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
+		Limit  int    `default:"0" help:"Limit the number of documentations to generate."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -35,7 +37,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	svc := openai.New(cfg.APIKey)
 	repo := opendocs.Repo(cfg.Generate.Root)
 
-	result, err := repo.Generate(context.Background(), svc)
+	result, err := repo.Generate(context.Background(), svc, generate.Limit(cfg.Generate.Limit))
 	if err != nil {
 		return err
 	}
