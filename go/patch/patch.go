@@ -173,10 +173,13 @@ func (p *Patch) Apply(repo string) error {
 			return fmt.Errorf("patch %q: %w", path, err)
 		}
 	}
+
 	return nil
 }
 
 func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
+	log.Printf("Patching file %q ....", path)
+
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("create %q: %w", path, err)

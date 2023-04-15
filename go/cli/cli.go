@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -18,6 +19,7 @@ type CLI struct {
 		Root   string `arg:"" default:"." help:"Root directory of the repository."`
 		Branch string `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
 		Limit  int    `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
+		DryRun bool   `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -40,6 +42,16 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	result, err := repo.Generate(context.Background(), svc, generate.Limit(cfg.Generate.Limit))
 	if err != nil {
 		return err
+	}
+
+	if cfg.Generate.DryRun {
+		patch := result.Patch()
+		patchResult, err := patch.DryRun()
+		if err != nil {
+			return fmt.Errorf("dry run: %w", err)
+		}
+		log.Println(patchResult)
+		return nil
 	}
 
 	if cfg.Generate.Branch != "" {
