@@ -6,6 +6,7 @@ import (
 	"io/fs"
 
 	"github.com/modernice/opendocs/go/find"
+	"github.com/modernice/opendocs/go/git"
 	"github.com/modernice/opendocs/go/patch"
 )
 
@@ -92,4 +93,9 @@ func (r Result) Patch() *patch.Patch {
 		p.Comment(gen.Path, gen.Identifier, gen.Doc)
 	}
 	return p
+}
+
+func (r Result) Commit(root string) (*git.Repository, error) {
+	repo := git.Repo(root)
+	return repo, repo.Commit(r.Patch())
 }
