@@ -16,8 +16,8 @@ import (
 type CLI struct {
 	Generate struct {
 		Root   string `arg:"" default:"." help:"Root directory of the repository."`
-		Branch string `default:"opendocs-patch" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
-		Limit  int    `default:"0" help:"Limit the number of documentations to generate."`
+		Branch string `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
+		Limit  int    `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`

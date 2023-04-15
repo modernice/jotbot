@@ -1,9 +1,11 @@
 #!/bin/sh
 
-ROOT=$(git rev-parse --show-toplevel)
+ROOT=$(git rev-parse --show-toplevel)/go
 
 if [ -f "$ROOT/.env" ]; then
+	set -o allexport
 	source "$ROOT/.env"
+	set +o allexport
 fi
 
 if [ -z "$OPENAI_API_KEY" ]; then
@@ -11,10 +13,4 @@ if [ -z "$OPENAI_API_KEY" ]; then
 	exit 1
 fi
 
-LIMIT=0
-
-if [ -n "$OPENDOCS_LIMIT" ]; then
-	LIMIT=$OPENDOCS_LIMIT
-fi
-
-go run "$ROOT/cmd/opendocs/main.go" "$ROOT" --key $OPENAI_API_KEY --limit $OPENDOCS_LIMIT
+go run "$ROOT/cmd/opendocs/main.go" "$ROOT"
