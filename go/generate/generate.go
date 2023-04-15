@@ -19,7 +19,6 @@ type Context interface {
 	context.Context
 
 	Identifier() string
-
 	File() string
 	Files() []string
 	Read(file string) ([]byte, error)

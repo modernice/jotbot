@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -157,7 +158,11 @@ func (p *Patch) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment strin
 }
 
 func (p *Patch) Apply(repo string) error {
+	log.Printf("Applying patches to %d files ...", len(p.files))
+
 	for path, node := range p.files {
+		log.Printf("Applying patch %q to %q ...", node.Name.Name, path)
+
 		var buf bytes.Buffer
 		if err := format.Node(&buf, p.fset, node); err != nil {
 			return fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)
