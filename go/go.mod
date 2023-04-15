@@ -7,6 +7,9 @@ require (
 	github.com/google/go-cmp v0.5.9
 )
 
-require github.com/psanford/memfs v0.0.0-20230130182539-4dbf7e3e865e
+require (
+	github.com/psanford/memfs v0.0.0-20230130182539-4dbf7e3e865e
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+)
 
-require github.com/sashabaranov/go-openai v1.7.0 // indirect
+require github.com/sashabaranov/go-openai v1.7.0

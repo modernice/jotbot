@@ -19,10 +19,13 @@ var (
 	basicFS embed.FS
 	//go:embed testdata/fixtures/only-go-files
 	onlyGoFilesFS embed.FS
+	//go:embed testdata/fixtures/calculator
+	calculatorFS embed.FS
 
 	fixtures = map[string]embed.FS{
 		"basic":         basicFS,
 		"only-go-files": onlyGoFilesFS,
+		"calculator":    calculatorFS,
 	}
 )
 

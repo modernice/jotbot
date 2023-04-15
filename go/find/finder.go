@@ -84,10 +84,10 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		switch decl := decl.(type) {
 		case *ast.FuncDecl:
 			if decl.Doc == nil {
-				return append(findings, Finding{
+				findings = append(findings, Finding{
 					Path:       path,
 					Identifier: decl.Name.Name,
-				}), nil
+				})
 			}
 		case *ast.GenDecl:
 			for _, spec := range decl.Specs {
