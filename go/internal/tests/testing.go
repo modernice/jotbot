@@ -1,4 +1,4 @@
-package internal
+package tests
 
 import (
 	"embed"
@@ -11,7 +11,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/opendocs/go/find"
+	"github.com/modernice/opendocs/go/generate"
+	"github.com/modernice/opendocs/go/internal/git"
 	"github.com/modernice/opendocs/go/patch"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -54,7 +57,7 @@ func InitRepo(name, root string) error {
 		return fmt.Errorf("create repository directory: %w", err)
 	}
 
-	g := Git(root)
+	g := git.Git(root)
 
 	fixture, ok := fixtures[name]
 	if !ok {
@@ -104,14 +107,14 @@ func InitRepo(name, root string) error {
 	return nil
 }
 
-func AssertFindings(t *testing.T, want, got find.Findings) {
+func ExpectFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
 	if !cmp.Equal(want, got) {
 		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))
 	}
 }
 
-func AssertPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
+func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	t.Helper()
 
 	wantDryRun, err := want.DryRun()
@@ -126,5 +129,23 @@ func AssertPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 
 	if !cmp.Equal(wantDryRun, dryRun) {
 		t.Fatalf("dry run mismatch:\n%s", cmp.Diff(wantDryRun, dryRun))
+	}
+}
+
+func ExpectGenerationResult(t *testing.T, want, got generate.Result) {
+	t.Helper()
+
+	wgen := want.Generations()
+	ggen := got.Generations()
+
+	less := func(a, b generate.Generation) bool {
+		return fmt.Sprintf("%s@%s", a.Path, a.Identifier) <= fmt.Sprintf("%s@%s", b.Path, b.Identifier)
+	}
+
+	slices.SortFunc(wgen, less)
+	slices.SortFunc(ggen, less)
+
+	if !cmp.Equal(wgen, ggen) {
+		t.Fatalf("unexpected generations:\n%s", cmp.Diff(wgen, ggen))
 	}
 }

@@ -8,19 +8,20 @@
 package example
 
 func example(root string) {
-	repo := opendocs.Repo(root)
+	repo := opendocs.New(root)
 
-	// first generate the patch
-	patch, err := docs.Patch(context.TODO()) // generate patch
+	// first generate the docs
+	result, err := repo.Generate(context.TODO()) // generate docs
 	if err != nil {
 		panic(err)
 	}
 	
 	// then commit to the repo
-	err := git.Repo("/path/to/repo").Commit(patch)
+	err := result.Commit("/path/to/repo")
 
-	// or all in one
-	patch, err := docs.Generate(context.TODO())
+	// or without git
+	patch := result.Patch()
+	patch.Apply("/path/to/repo")
 }
 ```
 

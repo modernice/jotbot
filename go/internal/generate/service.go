@@ -18,6 +18,20 @@ func MockService() *Service {
 	}
 }
 
+func (svc *Service) Generations() []generate.Generation {
+	generations := make([]generate.Generation, 0, len(svc.docs))
+	for file, identifiers := range svc.docs {
+		for identifier, doc := range identifiers {
+			generations = append(generations, generate.Generation{
+				Path:       file,
+				Identifier: identifier,
+				Doc:        doc,
+			})
+		}
+	}
+	return generations
+}
+
 func (svc *Service) WithDoc(path, identifier, doc string) *Service {
 	if _, ok := svc.docs[path]; !ok {
 		svc.docs[path] = make(map[string]string)

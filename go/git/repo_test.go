@@ -9,18 +9,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/opendocs/go/git"
-	"github.com/modernice/opendocs/go/internal"
+	igit "github.com/modernice/opendocs/go/internal/git"
+	"github.com/modernice/opendocs/go/internal/tests"
 	"github.com/modernice/opendocs/go/patch"
 	"github.com/psanford/memfs"
 )
 
 var (
-	repoRoot = filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "repo")
-	g        = internal.Git(repoRoot)
+	repoRoot = filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "repo")
+	g        = igit.Git(repoRoot)
 )
 
 func TestRepo_Commit(t *testing.T) {
-	internal.WithRepo("basic", repoRoot, func(repoFS fs.FS) {
+	tests.WithRepo("basic", repoRoot, func(repoFS fs.FS) {
 		codeFile, err := repoFS.Open("foo.go")
 		if err != nil {
 			t.Fatal(err)

@@ -7,10 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/opendocs/go/generate"
-	"github.com/modernice/opendocs/go/internal"
 	igen "github.com/modernice/opendocs/go/internal/generate"
+	"github.com/modernice/opendocs/go/internal/tests"
 	"github.com/modernice/opendocs/go/patch"
 )
 
@@ -46,8 +45,8 @@ func mockService(repo fs.FS) (*igen.Service, generate.Result) {
 }
 
 func TestGenerator_Generate(t *testing.T) {
-	root := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "calculator")
-	internal.WithRepo("calculator", root, func(repoFS fs.FS) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "calculator")
+	tests.WithRepo("calculator", root, func(repoFS fs.FS) {
 		svc, want := mockService(repoFS)
 		g := generate.New(svc)
 
@@ -56,13 +55,13 @@ func TestGenerator_Generate(t *testing.T) {
 			t.Fatalf("Generate() should not return an error; got %q", err)
 		}
 
-		expectResult(t, want, result)
+		tests.ExpectGenerationResult(t, want, result)
 	})
 }
 
 func TestResult_Patch(t *testing.T) {
-	root := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "calculator")
-	internal.WithRepo("calculator", root, func(repoFS fs.FS) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "calculator")
+	tests.WithRepo("calculator", root, func(repoFS fs.FS) {
 		svc, mockResult := mockService(repoFS)
 		g := generate.New(svc)
 
@@ -78,14 +77,6 @@ func TestResult_Patch(t *testing.T) {
 			want.Comment(gen.Path, gen.Identifier, gen.Doc)
 		}
 
-		internal.AssertPatch(t, want, p)
+		tests.ExpectPatch(t, want, p)
 	})
-}
-
-func expectResult(t *testing.T, want, got generate.Result) {
-	wgen := want.Generations()
-	ggen := got.Generations()
-	if !cmp.Equal(wgen, ggen) {
-		t.Fatalf("unexpected generations:\n%s", cmp.Diff(wgen, ggen))
-	}
 }

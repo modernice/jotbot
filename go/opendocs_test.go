@@ -1,44 +1,36 @@
 package opendocs_test
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 
 	opendocs "github.com/modernice/opendocs/go"
-	"github.com/modernice/opendocs/go/internal"
-	"github.com/modernice/opendocs/go/patch"
+	"github.com/modernice/opendocs/go/generate"
+	igen "github.com/modernice/opendocs/go/internal/generate"
+	"github.com/modernice/opendocs/go/internal/tests"
 )
 
-func TestRepository_Patch(t *testing.T) {
-	root := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "opendocs-patch")
-	internal.WithRepo("basic", root, func(repoFS fs.FS) {
-		wantPatch := patch.New(repoFS)
+func TestRepository_Generate(t *testing.T) {
+	sourceRoot := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "opendocs-generate-source")
+	tests.InitRepo("basic", sourceRoot)
 
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "opendocs-generate")
+	tests.WithRepo("basic", root, func(repoFS fs.FS) {
 		repo := opendocs.Repo(root)
-		patch := repo.Patch()
 
-		internal.AssertPatch(t, wantPatch, patch)
+		svc := igen.MockService().
+			WithDoc("foo.go", "Foo", "Foo is a function that always returns an error.").
+			WithDoc("bar.go", "Foo", `Foo is always "foo".`).
+			WithDoc("bar.go", "Bar", "Bar is an empty struct.")
+
+		result, err := repo.Generate(context.Background(), svc)
+		if err != nil {
+			t.Fatalf("generate documentation: %v", err)
+		}
+
+		tests.ExpectGenerationResult(t, generate.NewResult(repoFS, svc.Generations()...), result)
 	})
 }
-
-// TODO: Implement documentation generation
-// func TestRepository_Generate(t *testing.T) {
-// 	sourceRoot := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "opendocs-generate-source")
-// 	internal.InitRepo("basic", sourceRoot)
-
-// 	expectedPatch := opendocs.Repo(sourceRoot).Patch()
-
-// 	root := filepath.Join(internal.Must(os.Getwd()), "testdata", "gen", "opendocs-generate")
-// 	internal.InitRepo("basic", root)
-
-// 	repo := opendocs.Repo(root)
-
-// 	patch, err := repo.Generate()
-// 	if err != nil {
-// 		t.Fatalf("generate documentation: %v", err)
-// 	}
-
-// 	internal.AssertPatch(t, expectedPatch, patch)
-// }

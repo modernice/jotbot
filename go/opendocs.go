@@ -1,10 +1,10 @@
 package opendocs
 
 import (
+	"context"
 	"os"
 
-	"github.com/modernice/opendocs/go/git"
-	"github.com/modernice/opendocs/go/patch"
+	"github.com/modernice/opendocs/go/generate"
 )
 
 type Repository struct {
@@ -21,11 +21,11 @@ func (r *Repository) Root() string {
 	return r.root
 }
 
-func (repo *Repository) Patch() *patch.Patch {
-	return patch.New(os.DirFS(repo.root))
-}
-
-func (repo *Repository) Generate() (*patch.Patch, error) {
-	patch := repo.Patch()
-	return patch, git.Repo(repo.root).Commit(patch)
+func (repo *Repository) Generate(ctx context.Context, svc generate.Service) (generate.Result, error) {
+	g := generate.New(svc)
+	result, err := g.Generate(ctx, os.DirFS(repo.root))
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }

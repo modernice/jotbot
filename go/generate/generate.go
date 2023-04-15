@@ -60,14 +60,19 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS) (Result, error) {
 		return out, fmt.Errorf("find uncommented code: %w", err)
 	}
 
+	var generateCtx *genCtx
+
 	for _, findings := range result {
 		for _, finding := range findings {
-			ctx, err := newCtx(ctx, repo, finding.Path, finding.Identifier)
-			if err != nil {
-				return out, fmt.Errorf("create generation context: %w", err)
+			if generateCtx == nil {
+				if generateCtx, err = newCtx(ctx, repo, finding.Path, finding.Identifier); err != nil {
+					return out, fmt.Errorf("create generation context: %w", err)
+				}
+			} else {
+				generateCtx = generateCtx.new(ctx, finding.Path, finding.Identifier)
 			}
 
-			doc, err := g.svc.GenerateDoc(ctx)
+			doc, err := g.svc.GenerateDoc(generateCtx)
 			if err != nil {
 				return out, fmt.Errorf("generate doc for %q in %q: %w", finding.Identifier, finding.Path, err)
 			}

@@ -3,7 +3,7 @@ package git
 import (
 	"fmt"
 
-	"github.com/modernice/opendocs/go/internal"
+	"github.com/modernice/opendocs/go/internal/git"
 )
 
 type Patch interface {
@@ -12,13 +12,13 @@ type Patch interface {
 
 type Repository struct {
 	root string
-	git  internal.Git
+	git  git.Git
 }
 
 func Repo(root string) *Repository {
 	return &Repository{
 		root: root,
-		git:  internal.Git(root),
+		git:  git.Git(root),
 	}
 }
 
