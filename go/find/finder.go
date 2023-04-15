@@ -114,6 +114,8 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		}
 	}
 
+	findings = filterFindings(findings)
+
 	return findings, nil
 }
 
@@ -123,4 +125,15 @@ func isGoFile(d fs.DirEntry) bool {
 
 func isTestFile(d fs.DirEntry) bool {
 	return strings.HasSuffix(d.Name(), "_test.go")
+}
+
+func filterFindings(findings []Finding) []Finding {
+	out := make([]Finding, 0, len(findings))
+	for _, finding := range findings {
+		if finding.Identifier == "_" {
+			continue
+		}
+		out = append(out, finding)
+	}
+	return out
 }
