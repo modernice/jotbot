@@ -30,8 +30,29 @@ func (repo *Repository) Root() string {
 	return repo.root
 }
 
-func (r *Repository) Commit(p Patch) error {
-	if _, _, err := r.git.Cmd("checkout", "-b", "opendocs-patch"); err != nil {
+type CommitOption func(*commit)
+
+func Branch(branch string) CommitOption {
+	return func(c *commit) {
+		c.branch = branch
+	}
+}
+
+type commit struct {
+	branch string
+}
+
+func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
+	var cfg commit
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	if cfg.branch == "" {
+		cfg.branch = "opendocs-patch"
+	}
+
+	if _, _, err := r.git.Cmd("checkout", "-b", cfg.branch); err != nil {
 		return fmt.Errorf("checkout branch: %w", err)
 	}
 

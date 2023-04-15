@@ -100,7 +100,7 @@ func (r Result) Patch() *patch.Patch {
 	return p
 }
 
-func (r Result) Commit(root string) (*git.Repository, error) {
+func (r Result) Commit(root string, opts ...git.CommitOption) (*git.Repository, error) {
 	repo := git.Repo(root)
-	return repo, repo.Commit(r.Patch())
+	return repo, repo.Commit(r.Patch(), opts...)
 }

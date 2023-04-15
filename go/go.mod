@@ -13,3 +13,5 @@ require (
 )
 
 require github.com/sashabaranov/go-openai v1.7.0
+
+require github.com/alecthomas/kong v0.7.1 // indirect

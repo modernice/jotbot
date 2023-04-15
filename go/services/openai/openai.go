@@ -14,13 +14,18 @@ var _ generate.Service = (*Service)(nil)
 var systemPrompt = `You are DocGPT, a code documentation writer.` +
 	`You are given a file list, a file name, the source code of that file, and an identifier. ` +
 	`Using these, you will write the documentation for the type or function identified by the identifier. ` +
-	`You will write the documentation in GoDoc format, without the orginal source code.`
+	`You will write the documentation in GoDoc format.`
 
 type Service struct {
 	client *openai.Client
 }
 
-func New(client *openai.Client) *Service {
+func New(apiKey string) *Service {
+	client := openai.NewClient(apiKey)
+	return NewWithClient(client)
+}
+
+func NewWithClient(client *openai.Client) *Service {
 	return &Service{
 		client: client,
 	}
