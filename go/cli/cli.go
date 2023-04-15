@@ -50,7 +50,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		if err != nil {
 			return fmt.Errorf("dry run: %w", err)
 		}
-		log.Println(patchResult)
+		printDryRun(patchResult)
 		return nil
 	}
 
@@ -75,4 +75,10 @@ func New() *kong.Context {
 
 	var cfg CLI
 	return kong.Parse(&cfg)
+}
+
+func printDryRun(result map[string][]byte) {
+	for path, content := range result {
+		log.Printf("%s:\n\n%s", path, content)
+	}
 }

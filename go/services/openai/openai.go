@@ -53,14 +53,11 @@ func (g *Service) createCompletion(ctx context.Context, files []string, file, id
 
 	filesPrompt := filesPrompt(files)
 
-	msg, err := prompt(file, identifier, code)
-	if err != nil {
-		return zero, fmt.Errorf("build prompt: %w", err)
-	}
+	msg := prompt(file, identifier, code)
 
 	resp, err := g.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
-		// Temperature:      0,
+		Model:       openai.GPT3Dot5Turbo,
+		Temperature: 0.01,
 		// TopP:            0,
 		MaxTokens: 512,
 		// PresencePenalty:  0,
@@ -113,7 +110,6 @@ func filesPrompt(files []string) string {
 	return sb.String()
 }
 
-func prompt(file, identifier string, code []byte) (string, error) {
-	return "Write the documentation for the \"" + identifier + "\" type or function in GoDoc format. " +
-		"This is the source code of the \"" + file + "\" file:\n\n" + string(code), nil
+func prompt(file, identifier string, code []byte) string {
+	return fmt.Sprintf("Write the documentation for the %q type in GoDoc format, with symbols wrappe within brackets. Capitalize all proper nouns. Only output the documentation, not the input code. Do not include examples. Begin with %q or %q. This is the source code of %q:", identifier, fmt.Sprintf("%s is ", identifier), fmt.Sprintf("%s represents ", identifier), string(code))
 }

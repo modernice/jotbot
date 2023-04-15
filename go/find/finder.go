@@ -9,6 +9,8 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 type Finder struct {
@@ -115,6 +117,12 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 	}
 
 	findings = filterFindings(findings)
+	slices.SortFunc(findings, func(a, b Finding) bool {
+		if a.Path <= b.Path {
+			return a.Path < b.Path || a.Identifier <= b.Identifier
+		}
+		return false
+	})
 
 	return findings, nil
 }
