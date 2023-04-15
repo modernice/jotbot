@@ -85,6 +85,8 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 
 	for _, findings := range result {
 		for _, finding := range findings {
+			log.Printf("Generating docs for %s@%s", finding.Path, finding.Identifier)
+
 			if generateCtx == nil {
 				if generateCtx, err = newCtx(ctx, repo, finding.Path, finding.Identifier); err != nil {
 					return out, fmt.Errorf("create generation context: %w", err)
@@ -105,6 +107,8 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 			})
 
 			nGenerated++
+
+			log.Printf("Generated docs for %s@%s", finding.Path, finding.Identifier)
 
 			if cfg.limit > 0 && nGenerated >= cfg.limit {
 				log.Printf("Limit of %d generations reached. Stopping.", cfg.limit)
