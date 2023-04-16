@@ -13,4 +13,13 @@ if [ -z "$OPENAI_API_KEY" ]; then
 	exit 1
 fi
 
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" != "main" ]; then
+	git checkout main
+fi
+
+if [ "$BRANCH" = "opendocs-patch" ]; then
+	git branch -D opendocs-patch
+fi
+
 go run "$ROOT/cmd/opendocs/main.go" "$ROOT"

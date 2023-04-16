@@ -45,6 +45,22 @@ var tests = []struct {
 			return f.GoString()
 		},
 	},
+	{
+		name:    "struct method",
+		comment: `Foo is a method of a struct.`,
+		input: func(f *jen.File) string {
+			f.Func().Parens(jen.Id("X")).Id("Foo").Params().Error()
+			return f.GoString()
+		},
+	},
+	{
+		name:    "pointer method",
+		comment: `Foo is a method of a struct pointer.`,
+		input: func(f *jen.File) string {
+			f.Func().Parens(jen.Id("*X")).Id("Foo").Params().Error()
+			return f.GoString()
+		},
+	},
 }
 
 func TestPatch_DryRun(t *testing.T) {
