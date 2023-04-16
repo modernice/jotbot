@@ -17,45 +17,51 @@ var _ interface {
 } = (*patch.Patch)(nil)
 
 var tests = []struct {
-	name    string
-	comment string
-	input   func(f *jen.File) string
+	name       string
+	comment    string
+	identifier string
+	input      func(f *jen.File) string
 }{
 	{
-		name:    "function",
-		comment: `Foo is a function that returns a "foo" error.`,
+		name:       "function",
+		comment:    `Foo is a function that returns a "foo" error.`,
+		identifier: "Foo",
 		input: func(f *jen.File) string {
 			f.Func().Id("Foo").Params().Error()
 			return f.GoString()
 		},
 	},
 	{
-		name:    "struct",
-		comment: `Foo is a struct that does things.`,
+		name:       "struct",
+		comment:    `Foo is a struct that does things.`,
+		identifier: "Foo",
 		input: func(f *jen.File) string {
 			f.Type().Id("Foo").Struct()
 			return f.GoString()
 		},
 	},
 	{
-		name:    "interface",
-		comment: `Foo is an interface that can be implemented.`,
+		name:       "interface",
+		comment:    `Foo is an interface that can be implemented.`,
+		identifier: "Foo",
 		input: func(f *jen.File) string {
 			f.Type().Id("Foo").Interface()
 			return f.GoString()
 		},
 	},
 	{
-		name:    "struct method",
-		comment: `Foo is a method of a struct.`,
+		name:       "struct method",
+		comment:    `Foo is a method of a struct.`,
+		identifier: "X.Foo",
 		input: func(f *jen.File) string {
 			f.Func().Parens(jen.Id("X")).Id("Foo").Params().Error()
 			return f.GoString()
 		},
 	},
 	{
-		name:    "pointer method",
-		comment: `Foo is a method of a struct pointer.`,
+		name:       "pointer method",
+		comment:    `Foo is a method of a struct pointer.`,
+		identifier: "*X.Foo",
 		input: func(f *jen.File) string {
 			f.Func().Parens(jen.Id("*X")).Id("Foo").Params().Error()
 			return f.GoString()
@@ -80,7 +86,7 @@ func TestPatch_DryRun(t *testing.T) {
 
 			p := patch.New(sourceFS)
 
-			if err := p.Comment("foo.go", "Foo", tt.comment); err != nil {
+			if err := p.Comment("foo.go", tt.identifier, tt.comment); err != nil {
 				t.Fatal(err)
 			}
 

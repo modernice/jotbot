@@ -42,7 +42,16 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 		}
 	}()
 
-	p.identifiers[file] = append(p.identifiers[file], identifier)
+	{
+		spec, decl, ok, err := p.findType(file, identifier)
+		if err != nil {
+			return fmt.Errorf("look for type %q in %q: %w", identifier, file, err)
+		}
+		if ok {
+			return p.commentType(decl, spec, comment)
+		}
+	}
+
 	{
 		decl, ok, err := p.findFunction(file, identifier)
 		if err != nil {
@@ -54,12 +63,12 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	}
 
 	{
-		spec, decl, ok, err := p.findType(file, identifier)
+		decl, ok, err := p.findMethod(file, identifier)
 		if err != nil {
-			return fmt.Errorf("look for type %q in %q: %w", identifier, file, err)
+			return fmt.Errorf("look for method %q in %q: %w", identifier, file, err)
 		}
 		if ok {
-			return p.commentType(decl, spec, comment)
+			return p.commentFunction(decl, comment)
 		}
 	}
 
@@ -117,6 +126,51 @@ func (p *Patch) commentFunction(decl *ast.FuncDecl, comment string) error {
 	}
 
 	return nil
+}
+
+func (p *Patch) findMethod(file, identifier string) (*ast.FuncDecl, bool, error) {
+	parts := strings.Split(identifier, ".")
+	if len(parts) != 2 {
+		return nil, false, nil
+	}
+
+	node, err := p.parseFile(file)
+	if err != nil {
+		return nil, false, nil
+	}
+
+	name, method := parts[0], parts[1]
+	name = strings.TrimPrefix(name, "*")
+
+	for _, decl := range node.Decls {
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+
+		if funcDecl.Recv == nil {
+			continue
+		}
+
+		if len(funcDecl.Recv.List) == 0 {
+			continue
+		}
+
+		if funcDecl.Name.Name != method {
+			continue
+		}
+
+		rcv := funcDecl.Recv.List[0].Type
+		if star, ok := rcv.(*ast.StarExpr); ok {
+			rcv = star.X
+		}
+
+		if ident, ok := rcv.(*ast.Ident); ok && ident.Name == name {
+			return funcDecl, true, nil
+		}
+	}
+
+	return nil, false, nil
 }
 
 func (p *Patch) findType(file, identifier string) (*ast.TypeSpec, *ast.GenDecl, bool, error) {
