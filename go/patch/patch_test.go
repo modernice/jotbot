@@ -2,11 +2,14 @@ package patch_test
 
 import (
 	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/dave/jennifer/jen"
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/opendocs/go/git"
+	"github.com/modernice/opendocs/go/internal/tests"
 	"github.com/modernice/opendocs/go/patch"
 	"github.com/psanford/memfs"
 )
@@ -16,7 +19,7 @@ var _ interface {
 	git.IdentifierProvider
 } = (*patch.Patch)(nil)
 
-var tests = []struct {
+var dryRunTests = []struct {
 	name       string
 	comment    string
 	identifier string
@@ -70,7 +73,7 @@ var tests = []struct {
 }
 
 func TestPatch_DryRun(t *testing.T) {
-	for _, tt := range tests {
+	for _, tt := range dryRunTests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := jen.NewFile("foo")
 			input := tt.input(f)
@@ -106,4 +109,36 @@ func TestPatch_DryRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPatch_DryRun_realFiles(t *testing.T) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "patch")
+	tests.WithRepo("basic", root, func(repoFS fs.FS) {
+		p := patch.New(repoFS)
+
+		if err := p.Comment("foo.go", "Foo", "Foo is a function that returns a \"foo\" error."); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := p.Comment("baz.go", "X.Foo", "Foo is a method of a struct."); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := p.Apply(root); err != nil {
+			t.Fatalf("apply patch: %v", err)
+		}
+
+		result, err := p.DryRun()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for path, content := range result {
+			t.Logf("%s:\n%s", path, content)
+		}
+
+		// TODO(bounoable): Implement tests.ExpectComment
+		// tests.ExpectComment(t, filepath.Join(root, "foo.go"), "Foo", "Foo is a function that returns a \"foo\" error.")
+		// tests.ExpectComment(t, filepath.Join(root, "baz.go"), "*X.Bar", "Bar is a method of a struct pointer.")
+	})
 }

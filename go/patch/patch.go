@@ -3,8 +3,6 @@ package patch
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	"go/format"
 	"go/parser"
 	"go/token"
 	"io"
@@ -13,12 +11,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 )
 
 type Patch struct {
 	repo        fs.FS
 	fset        *token.FileSet
-	files       map[string]*ast.File
+	files       map[string]*dst.File
 	identifiers map[string][]string
 }
 
@@ -26,7 +27,7 @@ func New(repo fs.FS) *Patch {
 	return &Patch{
 		repo:        repo,
 		fset:        token.NewFileSet(),
-		files:       make(map[string]*ast.File),
+		files:       make(map[string]*dst.File),
 		identifiers: make(map[string][]string),
 	}
 }
@@ -68,14 +69,14 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for method %q in %q: %w", identifier, file, err)
 		}
 		if ok {
-			return p.commentFunction(decl, comment)
+			return p.commentMethod(decl, comment)
 		}
 	}
 
 	return fmt.Errorf("could not find %q in %q", identifier, file)
 }
 
-func (p *Patch) parseFile(path string) (*ast.File, error) {
+func (p *Patch) parseFile(path string) (*dst.File, error) {
 	if node, ok := p.files[path]; ok {
 		return node, nil
 	}
@@ -91,7 +92,7 @@ func (p *Patch) parseFile(path string) (*ast.File, error) {
 		return nil, fmt.Errorf("read %q: %w", path, err)
 	}
 
-	node, err := parser.ParseFile(p.fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
+	node, err := decorator.ParseFile(p.fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
 		return nil, fmt.Errorf("parse %q: %w", path, err)
 	}
@@ -100,35 +101,30 @@ func (p *Patch) parseFile(path string) (*ast.File, error) {
 	return node, nil
 }
 
-func (p *Patch) findFunction(file, identifier string) (*ast.FuncDecl, bool, error) {
+func (p *Patch) findFunction(file, identifier string) (*dst.FuncDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
 		return nil, false, err
 	}
 	for _, astDecl := range node.Decls {
-		if fd, ok := astDecl.(*ast.FuncDecl); ok && fd.Name.Name == identifier {
+		if fd, ok := astDecl.(*dst.FuncDecl); ok && fd.Name.Name == identifier {
 			return fd, true, nil
 		}
 	}
 	return nil, false, nil
 }
 
-func (p *Patch) commentFunction(decl *ast.FuncDecl, comment string) error {
-	if decl.Doc != nil {
+func (p *Patch) commentFunction(decl *dst.FuncDecl, comment string) error {
+	if len(decl.Decs.Start.All()) > 0 {
 		return fmt.Errorf("function %q already has documentation", decl.Name.Name)
 	}
 
-	decl.Doc = &ast.CommentGroup{
-		List: []*ast.Comment{{
-			Text:  formatComment(comment),
-			Slash: decl.Pos() - 1,
-		}},
-	}
+	decl.Decs.Start.Append(formatComment(comment))
 
 	return nil
 }
 
-func (p *Patch) findMethod(file, identifier string) (*ast.FuncDecl, bool, error) {
+func (p *Patch) findMethod(file, identifier string) (*dst.FuncDecl, bool, error) {
 	parts := strings.Split(identifier, ".")
 	if len(parts) != 2 {
 		return nil, false, nil
@@ -143,8 +139,12 @@ func (p *Patch) findMethod(file, identifier string) (*ast.FuncDecl, bool, error)
 	name = strings.TrimPrefix(name, "*")
 
 	for _, decl := range node.Decls {
-		funcDecl, ok := decl.(*ast.FuncDecl)
+		funcDecl, ok := decl.(*dst.FuncDecl)
 		if !ok {
+			continue
+		}
+
+		if funcDecl.Name.Name != method {
 			continue
 		}
 
@@ -156,16 +156,12 @@ func (p *Patch) findMethod(file, identifier string) (*ast.FuncDecl, bool, error)
 			continue
 		}
 
-		if funcDecl.Name.Name != method {
-			continue
-		}
-
 		rcv := funcDecl.Recv.List[0].Type
-		if star, ok := rcv.(*ast.StarExpr); ok {
+		if star, ok := rcv.(*dst.StarExpr); ok {
 			rcv = star.X
 		}
 
-		if ident, ok := rcv.(*ast.Ident); ok && ident.Name == name {
+		if ident, ok := rcv.(*dst.Ident); ok && ident.Name == name {
 			return funcDecl, true, nil
 		}
 	}
@@ -173,16 +169,26 @@ func (p *Patch) findMethod(file, identifier string) (*ast.FuncDecl, bool, error)
 	return nil, false, nil
 }
 
-func (p *Patch) findType(file, identifier string) (*ast.TypeSpec, *ast.GenDecl, bool, error) {
+func (p *Patch) commentMethod(decl *dst.FuncDecl, comment string) error {
+	if len(decl.Decs.Start.All()) > 0 {
+		return fmt.Errorf("method %q already has documentation", decl.Name.Name)
+	}
+
+	decl.Decs.Start.Append(formatComment(comment))
+
+	return nil
+}
+
+func (p *Patch) findType(file, identifier string) (*dst.TypeSpec, *dst.GenDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
 	for _, astDecl := range node.Decls {
-		if decl, ok := astDecl.(*ast.GenDecl); ok {
+		if decl, ok := astDecl.(*dst.GenDecl); ok {
 			for _, spec := range decl.Specs {
-				if ts, ok := spec.(*ast.TypeSpec); ok && ts.Name.Name == identifier {
+				if ts, ok := spec.(*dst.TypeSpec); ok && ts.Name.Name == identifier {
 					return ts, decl, true, nil
 				}
 			}
@@ -191,25 +197,22 @@ func (p *Patch) findType(file, identifier string) (*ast.TypeSpec, *ast.GenDecl, 
 	return nil, nil, false, nil
 }
 
-func (p *Patch) commentType(decl *ast.GenDecl, spec *ast.TypeSpec, comment string) error {
-	if decl.Doc != nil {
+func (p *Patch) commentType(decl *dst.GenDecl, spec *dst.TypeSpec, comment string) error {
+	if len(decl.Decs.Start.All()) > 0 {
 		return fmt.Errorf("type %q already has documentation", spec.Name.Name)
 	}
 
-	// INFO(bounoable): ChatGPT said this is the way to go to calculate the
-	// slash position, but I don't know if this is really necessary TBH.
-	line := p.fset.Position(decl.Pos()).Line - 1
-	slash := p.fset.File(decl.Pos()).LineStart(line)
-
-	decl.Doc = &ast.CommentGroup{
-		List: []*ast.Comment{{
-			Text:  formatComment(comment),
-			Slash: slash,
-		}},
-	}
+	decl.Decs.Start.Append(formatComment(comment))
 
 	return nil
 }
+
+// func (p *Patch) slashPos(pos token.Pos) token.Pos {
+// 	// INFO(bounoable): ChatGPT said this is the way to go to calculate the
+// 	// slash position, but I don't know if this is really necessary TBH.
+// 	line := p.fset.Position(pos).Line - 1
+// 	return p.fset.File(pos).LineStart(line)
+// }
 
 func (p *Patch) Apply(repo string) error {
 	log.Printf("Applying patches to %d files ...", len(p.files))
@@ -217,8 +220,11 @@ func (p *Patch) Apply(repo string) error {
 	for path, node := range p.files {
 		log.Printf("Applying patch %q to %q ...", node.Name.Name, path)
 
+		restorer := decorator.NewRestorer()
+		restorer.Fset = p.fset
+
 		var buf bytes.Buffer
-		if err := format.Node(&buf, p.fset, node); err != nil {
+		if err := restorer.Fprint(&buf, node); err != nil {
 			return fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)
 		}
 
@@ -248,10 +254,14 @@ func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 
 	for path, node := range p.files {
+		restorer := decorator.NewRestorer()
+		restorer.Fset = p.fset
+
 		var buf bytes.Buffer
-		if err := format.Node(&buf, p.fset, node); err != nil {
+		if err := restorer.Fprint(&buf, node); err != nil {
 			return nil, fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)
 		}
+
 		result[path] = buf.Bytes()
 	}
 

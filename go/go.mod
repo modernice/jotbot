@@ -12,6 +12,14 @@ require (
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 )
 
-require github.com/sashabaranov/go-openai v1.7.0
+require (
+	github.com/alecthomas/kong v0.7.1
+	github.com/dave/dst v0.27.2
+	github.com/sashabaranov/go-openai v1.7.0
+)
 
-require github.com/alecthomas/kong v0.7.1 // indirect
+require (
+	golang.org/x/mod v0.6.0 // indirect
+	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/tools v0.2.0 // indirect
+)
