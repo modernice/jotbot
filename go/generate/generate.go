@@ -8,7 +8,9 @@ import (
 
 	"github.com/modernice/opendocs/go/find"
 	"github.com/modernice/opendocs/go/git"
+	"github.com/modernice/opendocs/go/internal"
 	"github.com/modernice/opendocs/go/patch"
+	"golang.org/x/exp/slog"
 )
 
 type Service interface {
@@ -29,6 +31,13 @@ type Result struct {
 	generations []Generation
 }
 
+func NewResult(repo fs.FS, generations ...Generation) Result {
+	return Result{
+		repo:        repo,
+		generations: generations,
+	}
+}
+
 type Generation struct {
 	Path       string
 	Identifier string
@@ -37,19 +46,26 @@ type Generation struct {
 
 type Generator struct {
 	svc Service
+	log *slog.Logger
 }
 
-func NewResult(repo fs.FS, generations ...Generation) Result {
-	return Result{
-		repo:        repo,
-		generations: generations,
+type GeneratorOption func(*Generator)
+
+func WithLogger(h slog.Handler) GeneratorOption {
+	return func(g *Generator) {
+		g.log = slog.New(h)
 	}
 }
 
-func New(svc Service) *Generator {
-	return &Generator{
-		svc: svc,
+func New(svc Service, opts ...GeneratorOption) *Generator {
+	gen := &Generator{svc: svc}
+	for _, opt := range opts {
+		opt(gen)
 	}
+	if gen.log == nil {
+		gen.log = internal.NopLogger()
+	}
+	return gen
 }
 
 type Option func(*generation)
@@ -77,6 +93,15 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 		return out, fmt.Errorf("find uncommented code: %w", err)
 	}
 
+	// log.Println("Findings:")
+	// for _, findings := range result {
+	// 	for _, finding := range findings {
+	// 		log.Printf("%s@%s", finding.Path, finding.Identifier)
+	// 	}
+	// }
+
+	// return out, fmt.Errorf("not implemented")
+
 	var (
 		generateCtx *genCtx
 		nGenerated  int
@@ -84,7 +109,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 
 	for _, findings := range result {
 		for _, finding := range findings {
-			log.Printf("Generating docs for %s@%s", finding.Path, finding.Identifier)
+			g.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
 
 			if generateCtx == nil {
 				if generateCtx, err = newCtx(ctx, repo, finding.Path, finding.Identifier); err != nil {
@@ -106,8 +131,6 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 			})
 
 			nGenerated++
-
-			log.Printf("Generated docs for %s@%s", finding.Path, finding.Identifier)
 
 			if cfg.limit > 0 && nGenerated >= cfg.limit {
 				log.Printf("Limit of %d generations reached. Stopping.", cfg.limit)
