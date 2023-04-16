@@ -24,8 +24,14 @@ func TestFinder_Uncommented(t *testing.T) {
 		tests.ExpectFindings(t, find.Findings{
 			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
 			"bar.go": {
-				{Path: "bar.go", Identifier: "Foo"},
 				{Path: "bar.go", Identifier: "Bar"},
+				{Path: "bar.go", Identifier: "Foo"},
+			},
+			"baz.go": {
+				{Path: "baz.go", Identifier: "*X.Bar"},
+				{Path: "baz.go", Identifier: "X"},
+				{Path: "baz.go", Identifier: "X.Foo"},
+				{Path: "baz.go", Identifier: "Y.Foo"},
 			},
 		}, result)
 	})

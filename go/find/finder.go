@@ -85,42 +85,66 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		return nil, fmt.Errorf("parse code: %w", err)
 	}
 
-	for _, decl := range node.Decls {
-		switch decl := decl.(type) {
+	ast.Inspect(node, func(node ast.Node) bool {
+		var (
+			identifier string
+			cont       = true
+		)
+
+		switch node := node.(type) {
 		case *ast.FuncDecl:
-			if decl.Doc == nil {
-				findings = append(findings, Finding{
-					Path:       path,
-					Identifier: decl.Name.Name,
-				})
+			if node.Doc != nil {
+				break
+			}
+
+			identifier = node.Name.Name
+
+			if node.Recv != nil && len(node.Recv.List) > 0 {
+				identifier = methodIdentifier(identifier, node.Recv.List[0].Type)
 			}
 		case *ast.GenDecl:
-			for _, spec := range decl.Specs {
-				switch spec := spec.(type) {
-				case *ast.TypeSpec:
-					if decl.Doc == nil {
-						findings = append(findings, Finding{
-							Path:       path,
-							Identifier: spec.Name.Name,
-						})
-					}
-				case *ast.ValueSpec:
-					if decl.Doc == nil {
-						findings = append(findings, Finding{
-							Path:       path,
-							Identifier: spec.Names[0].Name,
-						})
-					}
+			if node.Doc != nil {
+				break
+			}
+
+			if len(node.Specs) == 0 {
+				return true
+			}
+
+			spec := node.Specs[0]
+			cont = false
+
+			switch spec := spec.(type) {
+			case *ast.TypeSpec:
+				if node.Doc == nil {
+					identifier = spec.Name.Name
+				}
+			case *ast.ValueSpec:
+				if node.Doc == nil {
+					identifier = spec.Names[0].Name
 				}
 			}
 		}
-	}
 
-	findings = filterFindings(findings)
-	slices.SortFunc(findings, func(a, b Finding) bool {
-		if a.Path <= b.Path {
-			return a.Path < b.Path || a.Identifier <= b.Identifier
+		if identifier != "" && identifier != "_" {
+			findings = append(findings, Finding{
+				Path:       path,
+				Identifier: identifier,
+			})
 		}
+
+		return cont
+	})
+
+	slices.SortFunc(findings, func(a, b Finding) bool {
+		if a.Path < b.Path {
+			return true
+		}
+
+		if a.Path == b.Path {
+			return a.Identifier <= b.Identifier
+		}
+
 		return false
 	})
 
@@ -135,13 +159,14 @@ func isTestFile(d fs.DirEntry) bool {
 	return strings.HasSuffix(d.Name(), "_test.go")
 }
 
-func filterFindings(findings []Finding) []Finding {
-	out := make([]Finding, 0, len(findings))
-	for _, finding := range findings {
-		if finding.Identifier == "_" {
-			continue
+func methodIdentifier(identifier string, recv ast.Expr) string {
+	switch recv := recv.(type) {
+	case *ast.Ident:
+		return recv.Name + "." + identifier
+	case *ast.StarExpr:
+		if ident, ok := recv.X.(*ast.Ident); ok {
+			return "*" + ident.Name + "." + identifier
 		}
-		out = append(out, finding)
 	}
-	return out
+	return identifier
 }

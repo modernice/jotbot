@@ -109,6 +109,7 @@ func InitRepo(name, root string) error {
 
 func ExpectFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
+
 	if !cmp.Equal(want, got) {
 		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))
 	}
