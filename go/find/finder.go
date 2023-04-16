@@ -85,10 +85,10 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		return nil, fmt.Errorf("parse code: %w", err)
 	}
 
-	ast.Inspect(node, func(node ast.Node) bool {
+	for _, node := range node.Decls {
 		var (
 			identifier string
-			cont       = true
+			// cont       = true
 		)
 
 		switch node := node.(type) {
@@ -108,11 +108,10 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 			}
 
 			if len(node.Specs) == 0 {
-				return true
+				break
 			}
 
 			spec := node.Specs[0]
-			cont = false
 
 			switch spec := spec.(type) {
 			case *ast.TypeSpec:
@@ -132,9 +131,7 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 				Identifier: identifier,
 			})
 		}
-
-		return cont
-	})
+	}
 
 	slices.SortFunc(findings, func(a, b Finding) bool {
 		if a.Path < b.Path {
