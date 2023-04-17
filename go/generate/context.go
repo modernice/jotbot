@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/fs"
 	"strings"
-	"sync"
 
 	"golang.org/x/exp/slices"
 )
@@ -19,11 +18,12 @@ type genCtx struct {
 	file       string
 	identifier string
 
-	// shared with all child instances that are created with ctx.new()
-	mux       *sync.RWMutex
-	repo      fs.FS
-	files     []string
-	fileCache map[string][]byte
+	repo  fs.FS
+	files []string
+
+	// // shared with all child instances that are created with ctx.new()
+	// mux       *sync.RWMutex
+	// fileCache map[string][]byte
 }
 
 func newCtx(parent context.Context, repo fs.FS, file, identifier string) (*genCtx, error) {
@@ -31,9 +31,9 @@ func newCtx(parent context.Context, repo fs.FS, file, identifier string) (*genCt
 		Context:    parent,
 		file:       file,
 		identifier: identifier,
-		mux:        &sync.RWMutex{},
-		repo:       repo,
-		fileCache:  make(map[string][]byte),
+		// mux:        &sync.RWMutex{},
+		repo: repo,
+		// fileCache:  make(map[string][]byte),
 	}
 	if err := ctx.buildFileList(); err != nil {
 		return nil, fmt.Errorf("build file list: %w", err)
@@ -46,10 +46,10 @@ func (ctx *genCtx) new(parent context.Context, file, identifier string) *genCtx 
 		Context:    parent,
 		file:       file,
 		identifier: identifier,
-		mux:        ctx.mux,
-		repo:       ctx.repo,
-		files:      ctx.files,
-		fileCache:  ctx.fileCache,
+		// mux:        ctx.mux,
+		repo:  ctx.repo,
+		files: ctx.files,
+		// fileCache:  ctx.fileCache,
 	}
 }
 
