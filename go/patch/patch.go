@@ -245,7 +245,7 @@ func (p *Patch) Commit() git.Commit {
 }
 
 func (p *Patch) Apply(repo string) error {
-	slog.Info("Applying patches ...", "files", len(p.files))
+	p.log.Info("Applying patches ...", "files", len(p.files))
 
 	for file, node := range p.files {
 		restorer := decorator.NewRestorer()
