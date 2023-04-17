@@ -53,6 +53,7 @@ func (g *Service) createCompletion(ctx context.Context, files []string, file, id
 
 	filesPrompt := filesPrompt(files)
 
+	identifier = normalizeIdentifier(identifier)
 	msg := prompt(file, identifier, code)
 
 	resp, err := g.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
@@ -98,6 +99,14 @@ func (g *Service) createCompletion(ctx context.Context, files []string, file, id
 	return choice, nil
 }
 
+func normalizeIdentifier(identifier string) string {
+	parts := strings.Split(identifier, ".")
+	if len(parts) == 0 {
+		return identifier
+	}
+	return strings.TrimPrefix(parts[0], "*")
+}
+
 func filesPrompt(files []string) string {
 	var sb strings.Builder
 	sb.WriteString("Files:")
@@ -111,5 +120,5 @@ func filesPrompt(files []string) string {
 }
 
 func prompt(file, identifier string, code []byte) string {
-	return fmt.Sprintf("Write the documentation for the %q type in GoDoc format, with symbols wrappe within brackets. Capitalize all proper nouns. Only output the documentation, not the input code. Do not include examples. Begin with %q or %q. This is the source code of %q:", identifier, fmt.Sprintf("%s is ", identifier), fmt.Sprintf("%s represents ", identifier), string(code))
+	return fmt.Sprintf("Write a concise documentation for the %q type in GoDoc format, with symbols wrapped within brackets. Capitalize all proper nouns. Only output the documentation, not the input code. Do not include examples. Begin with %q or %q. This is the source code of %q:", identifier, fmt.Sprintf("%s is ", identifier), fmt.Sprintf("%s represents ", identifier), string(code))
 }

@@ -93,15 +93,6 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 		return out, fmt.Errorf("find uncommented code: %w", err)
 	}
 
-	// log.Println("Findings:")
-	// for _, findings := range result {
-	// 	for _, finding := range findings {
-	// 		log.Printf("%s@%s", finding.Path, finding.Identifier)
-	// 	}
-	// }
-
-	// return out, fmt.Errorf("not implemented")
-
 	var (
 		generateCtx *genCtx
 		nGenerated  int
