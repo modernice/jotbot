@@ -138,5 +138,5 @@ func filesPrompt(files []string) string {
 }
 
 func prompt(file, identifier string, code []byte) string {
-	return fmt.Sprintf("Write a concise documentation for the %q type in GoDoc format, with references to types wrapped within brackets. Only output the documentation, not the input code. Do not include examples. Begin with %q or %q. This is the source code of %q:", identifier, fmt.Sprintf("%s is ", identifier), fmt.Sprintf("%s represents ", identifier), string(code))
+	return fmt.Sprintf("Write a concise documentation for the %q type in idiomatic GoDoc format, with references to types wrapped within brackets. Only output the documentation, not the input code. Do not include examples. Begin with the name of the type. This is the source code of %q:", identifier, string(code))
 }
