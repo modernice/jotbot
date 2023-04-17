@@ -80,7 +80,7 @@ func (f *Finder) Uncommented() (Findings, error) {
 
 		findings, err := f.findUncommented(path)
 		if err != nil {
-			return fmt.Errorf("find uncommented code in %q: %w", path, err)
+			return fmt.Errorf("find uncommented code in %s: %w", path, err)
 		}
 
 		allFindings[path] = append(allFindings[path], findings...)
@@ -94,19 +94,19 @@ func (f *Finder) Uncommented() (Findings, error) {
 }
 
 func (f *Finder) findUncommented(path string) ([]Finding, error) {
-	f.log.Info(fmt.Sprintf("Searching for uncommented code in %q ...", path))
+	f.log.Info(fmt.Sprintf("Searching for uncommented code in %s ...", path))
 
 	var findings []Finding
 
 	codeFile, err := f.repo.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("read %q: %w", path, err)
+		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 	defer codeFile.Close()
 
 	code, err := io.ReadAll(codeFile)
 	if err != nil {
-		return nil, fmt.Errorf("read %q: %w", path, err)
+		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	fset := token.NewFileSet()
@@ -172,7 +172,7 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		return false
 	})
 
-	f.log.Info(fmt.Sprintf("Found %d uncommented types/functions in %q", len(findings), path))
+	f.log.Info(fmt.Sprintf("Found %d uncommented types/functions in %s", len(findings), path))
 
 	return findings, nil
 }

@@ -103,7 +103,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*
 
 			doc, err := g.svc.GenerateDoc(generateCtx)
 			if err != nil {
-				return out, fmt.Errorf("generate doc for %q in %q: %w", finding.Identifier, finding.Path, err)
+				return out, fmt.Errorf("generate doc for %s in %s: %w", finding.Identifier, finding.Path, err)
 			}
 
 			out.Generations = append(out.Generations, Generation{

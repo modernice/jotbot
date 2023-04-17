@@ -66,7 +66,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	{
 		spec, decl, ok, err := p.findType(file, identifier)
 		if err != nil {
-			return fmt.Errorf("look for type %q in %q: %w", identifier, file, err)
+			return fmt.Errorf("look for type %s in %s: %w", identifier, file, err)
 		}
 		if ok {
 			return p.commentType(decl, spec, comment)
@@ -76,7 +76,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	{
 		decl, ok, err := p.findFunction(file, identifier)
 		if err != nil {
-			return fmt.Errorf("look for function %q in %q: %w", identifier, file, err)
+			return fmt.Errorf("look for function %s in %s: %w", identifier, file, err)
 		}
 		if ok {
 			return p.commentFunction(decl, comment)
@@ -86,14 +86,14 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	{
 		decl, ok, err := p.findMethod(file, identifier)
 		if err != nil {
-			return fmt.Errorf("look for method %q in %q: %w", identifier, file, err)
+			return fmt.Errorf("look for method %s in %s: %w", identifier, file, err)
 		}
 		if ok {
 			return p.commentMethod(decl, comment)
 		}
 	}
 
-	return fmt.Errorf("could not find %q in %q", identifier, file)
+	return fmt.Errorf("could not find %s in %s", identifier, file)
 }
 
 func (p *Patch) parseFile(path string) (*dst.File, error) {
@@ -103,18 +103,18 @@ func (p *Patch) parseFile(path string) (*dst.File, error) {
 
 	f, err := p.repo.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open %q: %w", path, err)
+		return nil, fmt.Errorf("open %s: %w", path, err)
 	}
 	defer f.Close()
 
 	code, err := io.ReadAll(f)
 	if err != nil {
-		return nil, fmt.Errorf("read %q: %w", path, err)
+		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	node, err := decorator.ParseFile(p.fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
-		return nil, fmt.Errorf("parse %q: %w", path, err)
+		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 	p.files[path] = node
 
@@ -136,7 +136,7 @@ func (p *Patch) findFunction(file, identifier string) (*dst.FuncDecl, bool, erro
 
 func (p *Patch) commentFunction(decl *dst.FuncDecl, comment string) error {
 	if len(decl.Decs.Start.All()) > 0 {
-		return fmt.Errorf("function %q already has documentation", decl.Name.Name)
+		return fmt.Errorf("function %s already has documentation", decl.Name.Name)
 	}
 
 	decl.Decs.Start.Append(formatComment(comment))
@@ -191,7 +191,7 @@ func (p *Patch) findMethod(file, identifier string) (*dst.FuncDecl, bool, error)
 
 func (p *Patch) commentMethod(decl *dst.FuncDecl, comment string) error {
 	if len(decl.Decs.Start.All()) > 0 {
-		return fmt.Errorf("method %q already has documentation", decl.Name.Name)
+		return fmt.Errorf("method %s already has documentation", decl.Name.Name)
 	}
 
 	decl.Decs.Start.Append(formatComment(comment))
@@ -219,7 +219,7 @@ func (p *Patch) findType(file, identifier string) (*dst.TypeSpec, *dst.GenDecl, 
 
 func (p *Patch) commentType(decl *dst.GenDecl, spec *dst.TypeSpec, comment string) error {
 	if len(decl.Decs.Start.All()) > 0 {
-		return fmt.Errorf("type %q already has documentation", spec.Name.Name)
+		return fmt.Errorf("type %s already has documentation", spec.Name.Name)
 	}
 
 	decl.Decs.Start.Append(formatComment(comment))
@@ -253,12 +253,12 @@ func (p *Patch) Apply(repo string) error {
 
 		var buf bytes.Buffer
 		if err := restorer.Fprint(&buf, node); err != nil {
-			return fmt.Errorf("format %q: %w", file, err)
+			return fmt.Errorf("format %s: %w", file, err)
 		}
 
 		fullpath := filepath.Join(repo, file)
 		if err := p.patchFile(fullpath, &buf); err != nil {
-			return fmt.Errorf("patch %q: %w", file, err)
+			return fmt.Errorf("patch %s: %w", file, err)
 		}
 	}
 
@@ -266,11 +266,11 @@ func (p *Patch) Apply(repo string) error {
 }
 
 func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
-	p.log.Info(fmt.Sprintf("Patching file %q ...", path))
+	p.log.Info(fmt.Sprintf("Patching file %s ...", path))
 
 	f, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("create %q: %w", path, err)
+		return fmt.Errorf("create %s: %w", path, err)
 	}
 	defer f.Close()
 
@@ -287,7 +287,7 @@ func (p *Patch) DryRun() (map[string][]byte, error) {
 
 		var buf bytes.Buffer
 		if err := restorer.Fprint(&buf, node); err != nil {
-			return nil, fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)
+			return nil, fmt.Errorf("format %s in %s: %w", node.Name.Name, path, err)
 		}
 
 		result[path] = buf.Bytes()

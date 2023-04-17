@@ -77,7 +77,7 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 	}
 
 	if err := p.Apply(r.root); err != nil {
-		return fmt.Errorf("apply patch to repository %q: %w", r.root, err)
+		return fmt.Errorf("apply patch to repository %s: %w", r.root, err)
 	}
 
 	if _, _, err := r.git.Cmd("add", "."); err != nil {
