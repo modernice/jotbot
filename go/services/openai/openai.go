@@ -80,7 +80,7 @@ func (g *Service) createCompletion(ctx context.Context, files []string, file, id
 		// TopP:            0,
 		MaxTokens: 512,
 		// PresencePenalty:  0,
-		// FrequencyPenalty: 0,
+		FrequencyPenalty: 0.5,
 		// LogitBias: map[string]int{},
 		Messages: []openai.ChatCompletionMessage{
 			{
@@ -138,5 +138,5 @@ func filesPrompt(files []string) string {
 }
 
 func prompt(file, identifier string, code []byte) string {
-	return fmt.Sprintf("Write a concise documentation for the %q type in GoDoc format, with symbols wrapped within brackets. Capitalize all proper nouns. Only output the documentation, not the input code. Do not include examples. Begin with %q or %q. This is the source code of %q:", identifier, fmt.Sprintf("%s is ", identifier), fmt.Sprintf("%s represents ", identifier), string(code))
+	return fmt.Sprintf("Write a concise documentation for the %q type in GoDoc format, with references to types wrapped within brackets. Only output the documentation, not the input code. Do not include examples. Begin with %q or %q. This is the source code of %q:", identifier, fmt.Sprintf("%s is ", identifier), fmt.Sprintf("%s represents ", identifier), string(code))
 }
