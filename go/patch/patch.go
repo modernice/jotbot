@@ -14,6 +14,8 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/modernice/opendocs/go/git"
+	"golang.org/x/exp/slog"
 )
 
 type Patch struct {
@@ -21,6 +23,7 @@ type Patch struct {
 	fset        *token.FileSet
 	files       map[string]*dst.File
 	identifiers map[string][]string
+	nodeIdents  map[dst.Node]string
 }
 
 func New(repo fs.FS) *Patch {
@@ -29,6 +32,7 @@ func New(repo fs.FS) *Patch {
 		fset:        token.NewFileSet(),
 		files:       make(map[string]*dst.File),
 		identifiers: make(map[string][]string),
+		nodeIdents:  make(map[dst.Node]string),
 	}
 }
 
@@ -37,9 +41,12 @@ func (p *Patch) Identifiers() map[string][]string {
 }
 
 func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
+	var node dst.Node
+
 	defer func() {
 		if rerr == nil {
 			p.identifiers[file] = append(p.identifiers[file], identifier)
+			p.nodeIdents[node] = identifier
 		}
 	}()
 
@@ -49,6 +56,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for type %q in %q: %w", identifier, file, err)
 		}
 		if ok {
+			node = decl
 			return p.commentType(decl, spec, comment)
 		}
 	}
@@ -59,6 +67,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for function %q in %q: %w", identifier, file, err)
 		}
 		if ok {
+			node = decl
 			return p.commentFunction(decl, comment)
 		}
 	}
@@ -69,6 +78,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for method %q in %q: %w", identifier, file, err)
 		}
 		if ok {
+			node = decl
 			return p.commentMethod(decl, comment)
 		}
 	}
@@ -207,25 +217,37 @@ func (p *Patch) commentType(decl *dst.GenDecl, spec *dst.TypeSpec, comment strin
 	return nil
 }
 
-// func (p *Patch) slashPos(pos token.Pos) token.Pos {
-// 	// INFO(bounoable): ChatGPT said this is the way to go to calculate the
-// 	// slash position, but I don't know if this is really necessary TBH.
-// 	line := p.fset.Position(pos).Line - 1
-// 	return p.fset.File(pos).LineStart(line)
-// }
+func (p *Patch) Commit() git.Commit {
+	c := git.DefaultCommit()
+	if len(p.files) == 0 {
+		return c
+	}
+
+	c.Desc = append(c.Desc, "Updated docs:")
+
+	for file, identifiers := range p.identifiers {
+		for _, ident := range identifiers {
+			c.Desc = append(c.Desc, fmt.Sprintf("  - %s@%s", file, ident))
+		}
+	}
+
+	return c
+}
 
 func (p *Patch) Apply(repo string) error {
-	log.Printf("Applying patches to %d files ...", len(p.files))
+	slog.Info("Applying patches ...", "files", len(p.files))
 
 	for path, node := range p.files {
-		log.Printf("Applying patch %q to %q ...", node.Name.Name, path)
+		ident := p.nodeIdents[node]
+
+		slog.Info("Applying patch ...", "identifier", ident, "path", path)
 
 		restorer := decorator.NewRestorer()
 		restorer.Fset = p.fset
 
 		var buf bytes.Buffer
 		if err := restorer.Fprint(&buf, node); err != nil {
-			return fmt.Errorf("format %q in %q: %w", node.Name.Name, path, err)
+			return fmt.Errorf("format %q in %q: %w", ident, path, err)
 		}
 
 		path = filepath.Join(repo, path)

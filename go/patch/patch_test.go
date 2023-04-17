@@ -16,7 +16,7 @@ import (
 
 var _ interface {
 	git.Patch
-	git.IdentifierProvider
+	git.Committer
 } = (*patch.Patch)(nil)
 
 var dryRunTests = []struct {

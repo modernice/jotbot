@@ -10,8 +10,8 @@ type Patch interface {
 	Apply(root string) error
 }
 
-type IdentifierProvider interface {
-	Identifiers() map[string][]string
+type Committer interface {
+	Commit() Commit
 }
 
 type Repository struct {
@@ -64,15 +64,16 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 		return fmt.Errorf("add changes: %w", err)
 	}
 
-	msgs := []string{"docs: add missing documentation"}
-
-	if fp, ok := p.(IdentifierProvider); ok {
-		msgs = append(msgs, CommitDescription(fp.Identifiers()))
+	c := DefaultCommit()
+	if com, ok := p.(Committer); ok {
+		c = com.Commit()
 	}
 
+	paras := c.Paragraphs()
+
 	args := []string{"commit"}
-	for _, msg := range msgs {
-		args = append(args, "-m", msg)
+	for _, p := range paras {
+		args = append(args, "-m", p)
 	}
 
 	if _, _, err := r.git.Cmd(args...); err != nil {
@@ -81,3 +82,7 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 
 	return nil
 }
+
+// func quote(s string) string {
+// 	return fmt.Sprintf("%q", s)
+// }

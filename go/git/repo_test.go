@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/opendocs/go/git"
-	igit "github.com/modernice/opendocs/go/internal/git"
+	"github.com/modernice/opendocs/go/internal/git/gittest"
 	"github.com/modernice/opendocs/go/internal/tests"
 	"github.com/modernice/opendocs/go/patch"
 	"github.com/psanford/memfs"
@@ -17,7 +17,7 @@ import (
 
 var (
 	repoRoot = filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "repo")
-	g        = igit.Git(repoRoot)
+	g        = gittest.Git(repoRoot)
 )
 
 func TestRepo_Commit(t *testing.T) {
@@ -51,7 +51,14 @@ func TestRepo_Commit(t *testing.T) {
 		}
 
 		g.AssertBranch(t, "opendocs-patch")
-		g.AssertCommit(t, "docs: add missing documentation", git.CommitDescription(p.Identifiers()))
+		g.AssertCommit(t, git.Commit{
+			Msg: "docs: add missing documentation",
+			Desc: []string{
+				"Updated docs:",
+				"  - foo.go@Foo",
+			},
+			Footer: "This commit was created by opendocs.",
+		})
 
 		dryRun, err := p.DryRun()
 		if err != nil {
