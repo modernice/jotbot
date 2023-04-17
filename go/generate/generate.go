@@ -45,41 +45,52 @@ type Generation struct {
 }
 
 type Generator struct {
-	svc   Service
-	limit int
-	log   *slog.Logger
+	svc Service
 }
 
-type Option func(*Generator)
+func New(svc Service, opts ...Option) *Generator {
+	return &Generator{svc: svc}
+}
+
+type Option func(*generation)
 
 func Limit(n int) Option {
-	return func(g *Generator) {
+	return func(g *generation) {
 		g.limit = n
 	}
 }
 
 func WithLogger(h slog.Handler) Option {
-	return func(g *Generator) {
+	return func(g *generation) {
 		g.log = slog.New(h)
 	}
 }
 
-func New(svc Service, opts ...Option) *Generator {
-	gen := &Generator{svc: svc}
-	for _, opt := range opts {
-		opt(gen)
+func Footer(msg string) Option {
+	return func(g *generation) {
+		g.footer = msg
 	}
-	if gen.log == nil {
-		gen.log = internal.NopLogger()
-	}
-	return gen
+}
+
+type generation struct {
+	limit  int
+	footer string
+	log    *slog.Logger
 }
 
 func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*Result, error) {
-	out := NewResult(repo)
-	out.Logger = g.log.Handler()
+	var cfg generation
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	if cfg.log == nil {
+		cfg.log = internal.NopLogger()
+	}
 
-	result, err := find.New(repo, find.WithLogger(g.log.Handler())).Uncommented()
+	out := NewResult(repo)
+	out.Logger = cfg.log.Handler()
+
+	result, err := find.New(repo, find.WithLogger(cfg.log.Handler())).Uncommented()
 	if err != nil {
 		return out, fmt.Errorf("find uncommented code: %w", err)
 	}
@@ -91,7 +102,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*
 
 	for _, findings := range result {
 		for _, finding := range findings {
-			g.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
+			cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
 
 			if generateCtx == nil {
 				if generateCtx, err = newCtx(ctx, repo, finding.Path, finding.Identifier); err != nil {
@@ -106,6 +117,10 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*
 				return out, fmt.Errorf("generate doc for %s in %s: %w", finding.Identifier, finding.Path, err)
 			}
 
+			if cfg.footer != "" {
+				doc = fmt.Sprintf("%s\n\n%s", doc, cfg.footer)
+			}
+
 			out.Generations = append(out.Generations, Generation{
 				Path:       finding.Path,
 				Identifier: finding.Identifier,
@@ -114,8 +129,8 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*
 
 			nGenerated++
 
-			if g.limit > 0 && nGenerated >= g.limit {
-				g.log.Debug(fmt.Sprintf("Limit of %d generations reached. Stopping.", g.limit))
+			if cfg.limit > 0 && nGenerated >= cfg.limit {
+				cfg.log.Debug(fmt.Sprintf("Limit of %d generations reached. Stopping.", cfg.limit))
 				return out, nil
 			}
 		}

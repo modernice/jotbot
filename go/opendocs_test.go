@@ -11,12 +11,10 @@ import (
 	"github.com/modernice/opendocs/go/generate"
 	igen "github.com/modernice/opendocs/go/internal/generate"
 	"github.com/modernice/opendocs/go/internal/tests"
+	"golang.org/x/exp/slog"
 )
 
 func TestRepository_Generate(t *testing.T) {
-	sourceRoot := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "opendocs-generate-source")
-	tests.InitRepo("basic", sourceRoot)
-
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "opendocs-generate")
 	tests.WithRepo("basic", root, func(repoFS fs.FS) {
 		repo := opendocs.Repo(root)
@@ -30,7 +28,7 @@ func TestRepository_Generate(t *testing.T) {
 			WithDoc("baz.go", "*X.Bar", "Bar is a method of X.").
 			WithDoc("baz.go", "Y.Foo", "Foo is a method of Y.")
 
-		result, err := repo.Generate(context.Background(), svc)
+		result, err := repo.Generate(context.Background(), svc, generate.WithLogger(slog.Default().Handler()))
 		if err != nil {
 			t.Fatalf("generate documentation: %v", err)
 		}

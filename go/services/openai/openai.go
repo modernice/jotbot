@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/modernice/opendocs/go/generate"
+	"github.com/modernice/opendocs/go/internal"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/exp/slog"
 )
@@ -46,6 +47,9 @@ func NewFrom(opts ...Option) *Service {
 	for _, opt := range opts {
 		opt(&svc)
 	}
+	if svc.log == nil {
+		svc.log = internal.NopLogger()
+	}
 	return &svc
 }
 
@@ -74,14 +78,14 @@ func (g *Service) createCompletion(ctx context.Context, files []string, file, id
 	identifier = normalizeIdentifier(identifier)
 	msg := prompt(file, identifier, code)
 
+	g.log.Debug("Creating chat completion ...", "file", file, "identifier", identifier)
+
 	resp, err := g.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model:       openai.GPT3Dot5Turbo,
-		Temperature: 0.01,
-		// TopP:            0,
-		MaxTokens: 512,
-		// PresencePenalty:  0,
-		FrequencyPenalty: 0.5,
-		// LogitBias: map[string]int{},
+		Model:            openai.GPT3Dot5Turbo,
+		Temperature:      0.3,
+		MaxTokens:        512,
+		PresencePenalty:  0.1,
+		FrequencyPenalty: 0.2,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleSystem,
@@ -119,10 +123,10 @@ func (g *Service) createCompletion(ctx context.Context, files []string, file, id
 
 func normalizeIdentifier(identifier string) string {
 	parts := strings.Split(identifier, ".")
-	if len(parts) == 0 {
+	if len(parts) < 2 {
 		return identifier
 	}
-	return strings.TrimPrefix(parts[0], "*")
+	return parts[1]
 }
 
 func filesPrompt(files []string) string {

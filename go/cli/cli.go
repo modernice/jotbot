@@ -38,17 +38,18 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		}
 	}
 
-	svc := openai.New(cfg.APIKey)
-	repo := opendocs.Repo(cfg.Generate.Root)
-
-	opts := []generate.Option{generate.Limit(cfg.Generate.Limit)}
-
 	var level slog.Level
 	if cfg.Verbose {
 		level = slog.LevelDebug
 	}
+	logHandler := slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)
 
-	opts = append(opts, generate.WithLogger(slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)))
+	svc := openai.New(cfg.APIKey, openai.WithLogger(logHandler))
+	repo := opendocs.Repo(cfg.Generate.Root)
+
+	opts := []generate.Option{generate.Limit(cfg.Generate.Limit)}
+
+	opts = append(opts, generate.WithLogger(logHandler))
 
 	result, err := repo.Generate(context.Background(), svc, opts...)
 	if err != nil {

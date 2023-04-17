@@ -9,8 +9,10 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/modernice/opendocs/go/internal"
+	"github.com/modernice/opendocs/go/internal/slice"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
@@ -172,7 +174,9 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		return false
 	})
 
-	f.log.Info(fmt.Sprintf("Found %d uncommented types/functions in %s", len(findings), path))
+	idents := slice.Map(findings, func(f Finding) string { return f.Identifier })
+
+	f.log.Info(fmt.Sprintf("Found %d uncommented types/functions in %s", len(findings), path), "identifiers", idents)
 
 	return findings, nil
 }
@@ -186,7 +190,8 @@ func isTestFile(d fs.DirEntry) bool {
 }
 
 func isUnexported(identifier string) bool {
-	return len(identifier) > 0 && strings.ToLower(identifier[:1]) == identifier[:1]
+	runes := []rune(identifier)
+	return len(identifier) > 0 && unicode.IsLetter(runes[0]) && strings.ToLower(identifier[:1]) == identifier[:1]
 }
 
 func methodIdentifier(identifier string, recv ast.Expr) string {
