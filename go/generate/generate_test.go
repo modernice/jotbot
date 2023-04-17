@@ -13,7 +13,7 @@ import (
 	"github.com/modernice/opendocs/go/patch"
 )
 
-func mockService(repo fs.FS) (*igen.Service, generate.Result) {
+func mockService(repo fs.FS) (*igen.Service, *generate.Result) {
 	svc := igen.MockService().
 		WithDoc("operations.go", "Add", "Add adds numbers together.").
 		WithDoc("operations.go", "Sub", "Sub subtracts numbers.").
@@ -73,7 +73,7 @@ func TestResult_Patch(t *testing.T) {
 		p := result.Patch()
 
 		want := patch.New(repoFS)
-		for _, gen := range mockResult.Generations() {
+		for _, gen := range mockResult.Generations {
 			want.Comment(gen.Path, gen.Identifier, gen.Doc)
 		}
 

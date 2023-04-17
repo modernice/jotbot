@@ -26,14 +26,15 @@ type Context interface {
 }
 
 type Result struct {
-	repo        fs.FS
-	generations []Generation
+	Repo        fs.FS
+	Generations []Generation
+	Logger      slog.Handler
 }
 
-func NewResult(repo fs.FS, generations ...Generation) Result {
-	return Result{
-		repo:        repo,
-		generations: generations,
+func NewResult(repo fs.FS, generations ...Generation) *Result {
+	return &Result{
+		Repo:        repo,
+		Generations: generations,
 	}
 }
 
@@ -74,8 +75,9 @@ func New(svc Service, opts ...Option) *Generator {
 	return gen
 }
 
-func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (Result, error) {
+func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*Result, error) {
 	out := NewResult(repo)
+	out.Logger = g.log.Handler()
 
 	result, err := find.New(repo, find.WithLogger(g.log.Handler())).Uncommented()
 	if err != nil {
@@ -104,7 +106,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 				return out, fmt.Errorf("generate doc for %q in %q: %w", finding.Identifier, finding.Path, err)
 			}
 
-			out.generations = append(out.generations, Generation{
+			out.Generations = append(out.Generations, Generation{
 				Path:       finding.Path,
 				Identifier: finding.Identifier,
 				Doc:        doc,
@@ -122,19 +124,16 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 	return out, nil
 }
 
-func (r Result) Generations() []Generation {
-	return r.generations
-}
-
-func (r Result) Patch(opts ...patch.Option) *patch.Patch {
-	p := patch.New(r.repo, opts...)
-	for _, gen := range r.generations {
+func (r *Result) Patch() *patch.Patch {
+	opts := []patch.Option{patch.WithLogger(r.Logger)}
+	p := patch.New(r.Repo, opts...)
+	for _, gen := range r.Generations {
 		p.Comment(gen.Path, gen.Identifier, gen.Doc)
 	}
 	return p
 }
 
-func (r Result) Commit(root string, opts ...git.CommitOption) (*git.Repository, error) {
-	repo := git.Repo(root)
+func (r *Result) Commit(root string, opts ...git.CommitOption) (*git.Repository, error) {
+	repo := git.Repo(root, git.WithLogger(r.Logger))
 	return repo, repo.Commit(r.Patch(), opts...)
 }

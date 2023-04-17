@@ -12,6 +12,7 @@ import (
 	"github.com/modernice/opendocs/go/generate"
 	"github.com/modernice/opendocs/go/git"
 	"github.com/modernice/opendocs/go/services/openai"
+	"golang.org/x/exp/slog"
 )
 
 type CLI struct {
@@ -22,7 +23,8 @@ type CLI struct {
 		DryRun bool   `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
-	APIKey string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
+	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
+	Verbose bool   `name:"verbose" short:"v" env:"OPENDOCS_VERBOSE" help:"Enable verbose logging."`
 }
 
 func (cfg *CLI) Run(ctx *kong.Context) error {
@@ -39,7 +41,16 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	svc := openai.New(cfg.APIKey)
 	repo := opendocs.Repo(cfg.Generate.Root)
 
-	result, err := repo.Generate(context.Background(), svc, generate.Limit(cfg.Generate.Limit))
+	opts := []generate.Option{generate.Limit(cfg.Generate.Limit)}
+
+	var level slog.Level
+	if cfg.Verbose {
+		level = slog.LevelDebug
+	}
+
+	opts = append(opts, generate.WithLogger(slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)))
+
+	result, err := repo.Generate(context.Background(), svc, opts...)
 	if err != nil {
 		return err
 	}
