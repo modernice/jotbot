@@ -15,6 +15,7 @@ import (
 	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/git"
 	"github.com/modernice/opendocs/internal"
+	"github.com/modernice/opendocs/internal/slice"
 	"golang.org/x/exp/slog"
 )
 
@@ -278,54 +279,75 @@ func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
 	return err
 }
 
+func (p *Patch) File(file string) ([]byte, error) {
+	node, ok := p.files[file]
+	if !ok {
+		return nil, fmt.Errorf("file %s not found in patch", file)
+	}
+
+	restorer := decorator.NewRestorer()
+	restorer.Fset = p.fset
+
+	var buf bytes.Buffer
+	if err := restorer.Fprint(&buf, node); err != nil {
+		return buf.Bytes(), fmt.Errorf("format %s in %s: %w", node.Name.Name, file, err)
+	}
+
+	return buf.Bytes(), nil
+}
+
 func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 
-	for path, node := range p.files {
-		restorer := decorator.NewRestorer()
-		restorer.Fset = p.fset
-
-		var buf bytes.Buffer
-		if err := restorer.Fprint(&buf, node); err != nil {
-			return nil, fmt.Errorf("format %s in %s: %w", node.Name.Name, path, err)
+	for path := range p.files {
+		b, err := p.File(path)
+		if err != nil {
+			return result, err
 		}
-
-		result[path] = buf.Bytes()
+		result[path] = b
 	}
 
 	return result, nil
 }
 
 func formatComment(doc string) string {
-	var buf bytes.Buffer
-	for _, line := range splitString(doc, 80) {
-		buf.WriteString("// ")
-		buf.WriteString(line)
-		buf.WriteByte('\n')
-	}
-	return buf.String()
+	lines := splitString(doc, 77)
+	lines = slice.Map(lines, func(s string) string {
+		return "// " + s
+	})
+	return strings.Join(lines, "\n")
 }
 
-func splitString(input string, maxLength int) []string {
-	var result []string
-	words := strings.Fields(input)
-	currentLine := ""
+func splitString(str string, maxLen int) []string {
+	var out []string
 
-	for _, word := range words {
-		if len(currentLine)+len(word)+1 > maxLength {
-			result = append(result, currentLine)
-			currentLine = word
-		} else {
-			if currentLine != "" {
-				currentLine += " "
-			}
-			currentLine += word
+	paras := strings.Split(str, "\n\n")
+	for i, para := range paras {
+		lines := splitByWords(para, maxLen)
+		out = append(out, lines...)
+		if i < len(paras)-1 {
+			out = append(out, "")
 		}
 	}
 
-	if currentLine != "" {
-		result = append(result, currentLine)
+	return out
+}
+
+func splitByWords(str string, maxLen int) []string {
+	words := strings.Fields(str)
+
+	var lines []string
+	var line string
+	for _, word := range words {
+		if len(line)+len(word) > maxLen {
+			lines = append(lines, line)
+			line = ""
+		}
+		line += word + " "
+	}
+	if line = strings.TrimSpace(line); line != "" {
+		lines = append(lines, line)
 	}
 
-	return result
+	return lines
 }

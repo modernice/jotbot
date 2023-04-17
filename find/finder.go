@@ -2,16 +2,17 @@ package find
 
 import (
 	"fmt"
-	"go/ast"
 	"go/parser"
 	"go/token"
 	"io"
 	"io/fs"
 	"path/filepath"
 	"strings"
-	"unicode"
 
+	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/internal"
+	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/modernice/opendocs/internal/slice"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
@@ -112,7 +113,7 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 	}
 
 	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
+	node, err := decorator.ParseFile(fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
 		return nil, fmt.Errorf("parse code: %w", err)
 	}
@@ -121,18 +122,14 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 		var identifier string
 
 		switch node := node.(type) {
-		case *ast.FuncDecl:
-			if node.Doc != nil {
+		case *dst.FuncDecl:
+			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
 			}
 
-			identifier = node.Name.Name
-
-			if node.Recv != nil && len(node.Recv.List) > 0 {
-				identifier = methodIdentifier(identifier, node.Recv.List[0].Type)
-			}
-		case *ast.GenDecl:
-			if node.Doc != nil {
+			identifier = nodes.Identifier(node)
+		case *dst.GenDecl:
+			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
 			}
 
@@ -143,18 +140,18 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 			spec := node.Specs[0]
 
 			switch spec := spec.(type) {
-			case *ast.TypeSpec:
-				if node.Doc == nil {
-					identifier = spec.Name.Name
+			case *dst.TypeSpec:
+				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+					identifier = nodes.Identifier(spec)
 				}
-			case *ast.ValueSpec:
-				if node.Doc == nil {
-					identifier = spec.Names[0].Name
+			case *dst.ValueSpec:
+				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+					identifier = nodes.Identifier(spec)
 				}
 			}
 		}
 
-		if identifier != "" && identifier != "_" && !isUnexported(identifier) {
+		if identifier != "" {
 			findings = append(findings, Finding{
 				Path:       path,
 				Identifier: identifier,
@@ -187,21 +184,4 @@ func isGoFile(d fs.DirEntry) bool {
 
 func isTestFile(d fs.DirEntry) bool {
 	return strings.HasSuffix(d.Name(), "_test.go")
-}
-
-func isUnexported(identifier string) bool {
-	runes := []rune(identifier)
-	return len(identifier) > 0 && unicode.IsLetter(runes[0]) && strings.ToLower(identifier[:1]) == identifier[:1]
-}
-
-func methodIdentifier(identifier string, recv ast.Expr) string {
-	switch recv := recv.(type) {
-	case *ast.Ident:
-		return recv.Name + "." + identifier
-	case *ast.StarExpr:
-		if ident, ok := recv.X.(*ast.Ident); ok {
-			return "*" + ident.Name + "." + identifier
-		}
-	}
-	return identifier
 }

@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/dave/jennifer/jen"
@@ -140,5 +141,50 @@ func TestPatch_DryRun_realFiles(t *testing.T) {
 		// TODO(bounoable): Implement tests.ExpectComment
 		// tests.ExpectComment(t, filepath.Join(root, "foo.go"), "Foo", "Foo is a function that returns a \"foo\" error.")
 		// tests.ExpectComment(t, filepath.Join(root, "baz.go"), "*X.Bar", "Bar is a method of a struct pointer.")
+	})
+}
+
+var splitStringInput = strings.TrimSpace(`
+So the LORD God said to the serpent, Because you have done this, cursed are you among all animals and among all animals and among all animals and among all animals and among all animals and among all wild creatures; upon your belly you shall go, and dust you shall go, and dust you shall return.
+
+Out of the ground the LORD God commanded the man, You may freely eat of every kind, and everything that has the breath of life, I have given you every plant yielding seed that is upon the face of the first is Pishon; it is the one that flows around the whole face of all the wild animals of the evening breeze, and the gold of that land is good; bdellium and onyx stone are there.
+
+I will greatly increase your pangs in childbearing; in pain you shall not eat, for in the day and the tree of which I commanded you, 'You shall not eat of the field had yet sprung up - for the man there was not found a helper as his partner. For God knows that when you eat of every tree of the tree that is in the middle of the earth of every kind. And it was so.
+`)
+
+var splitStringWant = strings.TrimSpace(`
+So the LORD God said to the serpent, Because you have done this, cursed are
+you among all animals and among all animals and among all animals and among
+all animals and among all animals and among all wild creatures; upon your
+belly you shall go, and dust you shall go, and dust you shall return.
+
+Out of the ground the LORD God commanded the man, You may freely eat of every
+kind, and everything that has the breath of life, I have given you every
+plant yielding seed that is upon the face of the first is Pishon; it is the
+one that flows around the whole face of all the wild animals of the evening
+breeze, and the gold of that land is good; bdellium and onyx stone are there.
+
+I will greatly increase your pangs in childbearing; in pain you shall not
+eat, for in the day and the tree of which I commanded you, 'You shall not eat
+of the field had yet sprung up - for the man there was not found a helper as
+his partner. For God knows that when you eat of every tree of the tree that
+is in the middle of the earth of every kind. And it was so.
+`)
+
+func TestPatch_Comment_splitString(t *testing.T) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "split-string")
+	tests.WithRepo("basic", root, func(repoFS fs.FS) {
+		p := patch.New(repoFS)
+
+		if err := p.Comment("foo.go", "Foo", splitStringInput); err != nil {
+			t.Fatal(err)
+		}
+
+		b, err := p.File("foo.go")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tests.ExpectComment(t, "Foo", splitStringWant, strings.NewReader(string(b)))
 	})
 }
