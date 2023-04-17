@@ -3,7 +3,9 @@ package git
 import (
 	"fmt"
 
+	"github.com/modernice/opendocs/go/internal"
 	"github.com/modernice/opendocs/go/internal/git"
+	"golang.org/x/exp/slog"
 )
 
 type Patch interface {
@@ -17,13 +19,29 @@ type Committer interface {
 type Repository struct {
 	root string
 	git  git.Git
+	log  *slog.Logger
 }
 
-func Repo(root string) *Repository {
-	return &Repository{
+type Option func(*Repository)
+
+func WithLogger(h slog.Handler) Option {
+	return func(r *Repository) {
+		r.log = slog.New(h)
+	}
+}
+
+func Repo(root string, opts ...Option) *Repository {
+	repo := &Repository{
 		root: root,
 		git:  git.Git(root),
 	}
+	for _, opt := range opts {
+		opt(repo)
+	}
+	if repo.log == nil {
+		repo.log = internal.NopLogger()
+	}
+	return repo
 }
 
 func (repo *Repository) Root() string {
@@ -51,6 +69,8 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 	if cfg.branch == "" {
 		cfg.branch = "opendocs-patch"
 	}
+
+	r.log.Info("[git] Committing patch ...", "branch", cfg.branch)
 
 	if _, _, err := r.git.Cmd("checkout", "-b", cfg.branch); err != nil {
 		return fmt.Errorf("checkout branch: %w", err)
@@ -82,7 +102,3 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 
 	return nil
 }
-
-// func quote(s string) string {
-// 	return fmt.Sprintf("%q", s)
-// }
