@@ -152,7 +152,7 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 			}
 		}
 
-		if identifier != "" && identifier != "_" {
+		if identifier != "" && identifier != "_" && !isUnexported(identifier) {
 			findings = append(findings, Finding{
 				Path:       path,
 				Identifier: identifier,
@@ -183,6 +183,10 @@ func isGoFile(d fs.DirEntry) bool {
 
 func isTestFile(d fs.DirEntry) bool {
 	return strings.HasSuffix(d.Name(), "_test.go")
+}
+
+func isUnexported(identifier string) bool {
+	return len(identifier) > 0 && strings.ToLower(identifier[:1]) == identifier[:1]
 }
 
 func methodIdentifier(identifier string, recv ast.Expr) string {
