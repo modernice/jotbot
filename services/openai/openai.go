@@ -92,9 +92,11 @@ func (svc *Service) createCompletion(
 	identifier := normalizeIdentifier(longIdentifier)
 	msg := prompt(file, identifier, longIdentifier, code)
 
+	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:            svc.model,
-		TopP:             0.2,
+		Temperature:      0.1,
+		TopP:             0.3,
 		MaxTokens:        512,
 		PresencePenalty:  0.1,
 		FrequencyPenalty: 0.1,
@@ -196,7 +198,7 @@ func normalizeIdentifier(identifier string) string {
 
 func prompt(file, identifier, longIdentifier string, code []byte) string {
 	return fmt.Sprintf(
-		"Create a concise documentation for %q in GoDoc format, with references to symbols wrapped within brackets. Provide only the documentation, excluding the input code and examples. Begin the first sentence with %q. Maintain brevity without sacrificing specificity. Here is the source code for %q:\n%s",
+		"Write the documentation for %q in GoDoc format, with references to symbols wrapped within brackets. Provide only the documentation, excluding the input code and examples. Begin the first sentence with %q. Maintain brevity without sacrificing specificity. Write in the style of the Go library documentations. Do not link to any websites. Here is the source code for %q:\n%s",
 		longIdentifier,
 		fmt.Sprintf("%s ", identifier),
 		file,
