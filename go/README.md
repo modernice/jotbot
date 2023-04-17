@@ -1,49 +1,47 @@
 # opendocs
 
-## Usage
+`opendocs` writes documentation for your Go code (support for other languages
+is planned). Documentation is generated using OpenAI's GPT-3 (or GPT-3.5-Turbo) API.
 
-### Basic
+## Requirements
 
-```go
-package example
+Git is not required to use `opendocs`. However, if you want to use the automatic
+commit feature, you need to have Git installed on your machine.
 
-func example(root string) {
-	repo := opendocs.New(root)
+## Installation
 
-	// first generate the docs
-	result, err := repo.Generate(context.TODO()) // generate docs
-	if err != nil {
-		panic(err)
-	}
-	
-	// then commit to the repo
-	err := result.Commit("/path/to/repo")
-
-	// or without git
-	patch := result.Patch()
-	patch.Apply("/path/to/repo")
-}
+```sh
+go get github.com/modernice/opendocs
 ```
 
-### Generate docs
+## Usage
+
+### Library
 
 ```go
-package example
+package main
 
-func example(repo fs.FS) {
-	var svc generate.Service // can be openai but also anything else
+import (
+	"context"
+	"fmt"
+	"log"
 
-	g := generate.New(svc)
+	"github.com/modernice/opendocs"
+	"github.com/modernice/opendocs/services/openai"
+)
 
-	result, err := g.Generate(context.TODO(), repo) // map[string][]Generation
+func main() {
+	root := "/path/to/your/go/project"
+	svc := openai.New("YOUR-API-KEY")
+	repo := opendocs.Repo(root)
 
-	for path, generations := range result {
-		for _, gen := range generations {
-			gen.Identifier // identifier of the type or function
-			gen.Doc // the generated doc
-		}
-	}
+	result, err := repo.Generate(ctx, svc)
+	// handle err
 
-	p, err := result.Patch() // generate a patch from the result
+	err = result.Commit(root) // requires Git
+	// handle err
+
+	err = result.Patch().Apply(root) // does not require Git
+	// handle err
 }
 ```
