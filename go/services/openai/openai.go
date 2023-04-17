@@ -7,6 +7,7 @@ import (
 
 	"github.com/modernice/opendocs/go/generate"
 	"github.com/sashabaranov/go-openai"
+	"golang.org/x/exp/slog"
 )
 
 var _ generate.Service = (*Service)(nil)
@@ -18,17 +19,34 @@ var systemPrompt = `You are DocGPT, a code documentation writer.` +
 
 type Service struct {
 	client *openai.Client
+	log    *slog.Logger
 }
 
-func New(apiKey string) *Service {
-	client := openai.NewClient(apiKey)
-	return NewWithClient(client)
-}
+type Option func(*Service)
 
-func NewWithClient(client *openai.Client) *Service {
-	return &Service{
-		client: client,
+func WithLogger(h slog.Handler) Option {
+	return func(s *Service) {
+		s.log = slog.New(h)
 	}
+}
+
+func WithClient(c *openai.Client) Option {
+	return func(s *Service) {
+		s.client = c
+	}
+}
+
+func New(apiKey string, opts ...Option) *Service {
+	client := openai.NewClient(apiKey)
+	return NewFrom(append([]Option{WithClient(client)}, opts...)...)
+}
+
+func NewFrom(opts ...Option) *Service {
+	var svc Service
+	for _, opt := range opts {
+		opt(&svc)
+	}
+	return &svc
 }
 
 func (g *Service) GenerateDoc(ctx generate.Context) (string, error) {

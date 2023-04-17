@@ -7,7 +7,6 @@ import (
 	"go/token"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/go/git"
+	"github.com/modernice/opendocs/go/internal"
 	"golang.org/x/exp/slog"
 )
 
@@ -23,15 +23,31 @@ type Patch struct {
 	fset        *token.FileSet
 	files       map[string]*dst.File
 	identifiers map[string][]string
+	log         *slog.Logger
 }
 
-func New(repo fs.FS) *Patch {
-	return &Patch{
+type Option func(*Patch)
+
+func WithLogger(h slog.Handler) Option {
+	return func(p *Patch) {
+		p.log = slog.New(h)
+	}
+}
+
+func New(repo fs.FS, opts ...Option) *Patch {
+	p := &Patch{
 		repo:        repo,
 		fset:        token.NewFileSet(),
 		files:       make(map[string]*dst.File),
 		identifiers: make(map[string][]string),
 	}
+	for _, opt := range opts {
+		opt(p)
+	}
+	if p.log == nil {
+		p.log = internal.NopLogger()
+	}
+	return p
 }
 
 func (p *Patch) Identifiers() map[string][]string {
@@ -44,6 +60,8 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			p.identifiers[file] = append(p.identifiers[file], identifier)
 		}
 	}()
+
+	p.log.Debug("Adding comment ...", "identifier", identifier, "file", file)
 
 	{
 		spec, decl, ok, err := p.findType(file, identifier)
@@ -230,8 +248,6 @@ func (p *Patch) Apply(repo string) error {
 	slog.Info("Applying patches ...", "files", len(p.files))
 
 	for file, node := range p.files {
-		slog.Info("Applying patch ...", "file", file)
-
 		restorer := decorator.NewRestorer()
 		restorer.Fset = p.fset
 
@@ -250,7 +266,7 @@ func (p *Patch) Apply(repo string) error {
 }
 
 func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
-	log.Printf("Patching file %q ....", path)
+	p.log.Info(fmt.Sprintf("Patching file %q ...", path))
 
 	f, err := os.Create(path)
 	if err != nil {

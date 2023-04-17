@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"log"
 
 	"github.com/modernice/opendocs/go/find"
 	"github.com/modernice/opendocs/go/git"
@@ -124,7 +123,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 			nGenerated++
 
 			if cfg.limit > 0 && nGenerated >= cfg.limit {
-				log.Printf("Limit of %d generations reached. Stopping.", cfg.limit)
+				g.log.Debug(fmt.Sprintf("Limit of %d generations reached. Stopping.", cfg.limit))
 				return out, nil
 			}
 		}

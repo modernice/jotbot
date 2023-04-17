@@ -10,12 +10,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/modernice/opendocs/go/internal"
 	"golang.org/x/exp/slices"
+	"golang.org/x/exp/slog"
 )
 
 type Finder struct {
 	repo fs.FS
+	log  *slog.Logger
 }
+
+type Option func(*Finder)
 
 type Finding struct {
 	Path       string
@@ -24,11 +29,26 @@ type Finding struct {
 
 type Findings map[string][]Finding
 
-func New(repo fs.FS) *Finder {
-	return &Finder{repo}
+func WithLogger(h slog.Handler) Option {
+	return func(f *Finder) {
+		f.log = slog.New(h)
+	}
+}
+
+func New(repo fs.FS, opts ...Option) *Finder {
+	f := &Finder{repo: repo}
+	for _, opt := range opts {
+		opt(f)
+	}
+	if f.log == nil {
+		f.log = internal.NopLogger()
+	}
+	return f
 }
 
 func (f *Finder) Uncommented() (Findings, error) {
+	f.log.Info("Searching for uncommented code in repository ...", "repo", f.repo)
+
 	allFindings := make(Findings)
 
 	if err := fs.WalkDir(f.repo, ".", func(path string, d fs.DirEntry, err error) error {
@@ -38,15 +58,23 @@ func (f *Finder) Uncommented() (Findings, error) {
 
 		if d.IsDir() {
 			if d.Name() != "." && strings.HasPrefix(d.Name(), ".") {
+				f.log.Debug("Skipping directory", "path", path, "reason", "hidden directory")
 				return filepath.SkipDir
 			}
 			if d.Name() == "testdata" {
+				f.log.Debug("Skipping directory", "path", path, "reason", "testdata directory")
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if !isGoFile(d) || isTestFile(d) {
+		if !isGoFile(d) {
+			f.log.Debug("Skipping file", "path", path, "reason", "not a Go file")
+			return nil
+		}
+
+		if isTestFile(d) {
+			f.log.Debug("Skipping file", "path", path, "reason", "test file")
 			return nil
 		}
 
@@ -66,6 +94,8 @@ func (f *Finder) Uncommented() (Findings, error) {
 }
 
 func (f *Finder) findUncommented(path string) ([]Finding, error) {
+	f.log.Info(fmt.Sprintf("Searching for uncommented code in %q ...", path))
+
 	var findings []Finding
 
 	codeFile, err := f.repo.Open(path)
@@ -86,10 +116,7 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 	}
 
 	for _, node := range node.Decls {
-		var (
-			identifier string
-			// cont       = true
-		)
+		var identifier string
 
 		switch node := node.(type) {
 		case *ast.FuncDecl:
@@ -144,6 +171,8 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 
 		return false
 	})
+
+	f.log.Info(fmt.Sprintf("Found %d uncommented types/functions in %q", len(findings), path))
 
 	return findings, nil
 }
