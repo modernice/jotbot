@@ -12,9 +12,7 @@ type Repository struct {
 }
 
 func Repo(root string) *Repository {
-	return &Repository{
-		root: root,
-	}
+	return &Repository{root}
 }
 
 func (r *Repository) Root() string {
@@ -22,7 +20,7 @@ func (r *Repository) Root() string {
 }
 
 func (repo *Repository) Generate(ctx context.Context, svc generate.Service, opts ...generate.Option) (generate.Result, error) {
-	g := generate.New(svc)
+	g := generate.New(svc, opts...)
 	result, err := g.Generate(ctx, os.DirFS(repo.root), opts...)
 	if err != nil {
 		return result, err

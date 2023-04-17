@@ -25,8 +25,8 @@ type Repository struct {
 type Option func(*Repository)
 
 func WithLogger(h slog.Handler) Option {
-	return func(r *Repository) {
-		r.log = slog.New(h)
+	return func(repo *Repository) {
+		repo.log = slog.New(h)
 	}
 }
 

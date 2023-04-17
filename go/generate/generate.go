@@ -44,19 +44,26 @@ type Generation struct {
 }
 
 type Generator struct {
-	svc Service
-	log *slog.Logger
+	svc   Service
+	limit int
+	log   *slog.Logger
 }
 
-type GeneratorOption func(*Generator)
+type Option func(*Generator)
 
-func WithLogger(h slog.Handler) GeneratorOption {
+func Limit(n int) Option {
+	return func(g *Generator) {
+		g.limit = n
+	}
+}
+
+func WithLogger(h slog.Handler) Option {
 	return func(g *Generator) {
 		g.log = slog.New(h)
 	}
 }
 
-func New(svc Service, opts ...GeneratorOption) *Generator {
+func New(svc Service, opts ...Option) *Generator {
 	gen := &Generator{svc: svc}
 	for _, opt := range opts {
 		opt(gen)
@@ -67,27 +74,10 @@ func New(svc Service, opts ...GeneratorOption) *Generator {
 	return gen
 }
 
-type Option func(*generation)
-
-func Limit(n int) Option {
-	return func(g *generation) {
-		g.limit = n
-	}
-}
-
-type generation struct {
-	limit int
-}
-
 func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (Result, error) {
-	var cfg generation
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-
 	out := NewResult(repo)
 
-	result, err := find.New(repo).Uncommented()
+	result, err := find.New(repo, find.WithLogger(g.log.Handler())).Uncommented()
 	if err != nil {
 		return out, fmt.Errorf("find uncommented code: %w", err)
 	}
@@ -122,8 +112,8 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (R
 
 			nGenerated++
 
-			if cfg.limit > 0 && nGenerated >= cfg.limit {
-				g.log.Debug(fmt.Sprintf("Limit of %d generations reached. Stopping.", cfg.limit))
+			if g.limit > 0 && nGenerated >= g.limit {
+				g.log.Debug(fmt.Sprintf("Limit of %d generations reached. Stopping.", g.limit))
 				return out, nil
 			}
 		}
@@ -136,8 +126,8 @@ func (r Result) Generations() []Generation {
 	return r.generations
 }
 
-func (r Result) Patch() *patch.Patch {
-	p := patch.New(r.repo)
+func (r Result) Patch(opts ...patch.Option) *patch.Patch {
+	p := patch.New(r.repo, opts...)
 	for _, gen := range r.generations {
 		p.Comment(gen.Path, gen.Identifier, gen.Doc)
 	}

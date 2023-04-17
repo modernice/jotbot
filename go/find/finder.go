@@ -20,14 +20,14 @@ type Finder struct {
 	log  *slog.Logger
 }
 
-type Option func(*Finder)
-
 type Finding struct {
 	Path       string
 	Identifier string
 }
 
 type Findings map[string][]Finding
+
+type Option func(*Finder)
 
 func WithLogger(h slog.Handler) Option {
 	return func(f *Finder) {
