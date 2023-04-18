@@ -94,7 +94,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 
 	files, errs := make(chan File), make(chan error)
 
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	var (
 		nFiles     int64
@@ -123,11 +123,6 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 			return false
 		case files <- File{file, gens}:
 			atomic.AddInt64(&nFiles, 1)
-
-			if !canGenerate() {
-				cancel()
-			}
-
 			return true
 		}
 	}
@@ -141,7 +136,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 
 	workers := runtime.NumCPU()
 	if cfg.fileLimit > 0 && cfg.fileLimit < workers {
-		cfg.log.Debug(fmt.Sprintf("File limit is lower than number of workers. Reducing workers to %d.", cfg.fileLimit))
+		cfg.log.Debug(fmt.Sprintf("File limit (%d) is lower than number of workers (%d). Reducing workers to %d.", cfg.fileLimit, workers, cfg.fileLimit))
 		workers = cfg.fileLimit
 	}
 

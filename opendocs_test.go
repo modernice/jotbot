@@ -14,7 +14,7 @@ import (
 )
 
 func TestRepository_Generate(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "generate")
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generate")
 
 	tests.WithRepo("basic", root, func(repoFS fs.FS) {
 		svc := igen.MockService().
