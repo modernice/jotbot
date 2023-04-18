@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
-	"strings"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -198,8 +197,4 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 
 func isGoFile(d fs.DirEntry) bool {
 	return filepath.Ext(d.Name()) == ".go"
-}
-
-func isTestFile(d fs.DirEntry) bool {
-	return strings.HasSuffix(d.Name(), "_test.go")
 }
