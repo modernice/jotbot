@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"sync"
 
 	"golang.org/x/exp/slices"
 )
@@ -20,9 +21,9 @@ type genCtx struct {
 	repo  fs.FS
 	files []string
 
-	// // shared with all child instances that are created with ctx.new()
-	// mux       *sync.RWMutex
-	// fileCache map[string][]byte
+	// shared with all child instances that are created with ctx.new()
+	mux       *sync.RWMutex
+	fileCache map[string][]byte
 }
 
 func newCtx(parent context.Context, repo fs.FS, file, identifier string) (*genCtx, error) {
@@ -30,9 +31,9 @@ func newCtx(parent context.Context, repo fs.FS, file, identifier string) (*genCt
 		Context:    parent,
 		file:       file,
 		identifier: identifier,
-		// mux:        &sync.RWMutex{},
-		repo: repo,
-		// fileCache:  make(map[string][]byte),
+		mux:        &sync.RWMutex{},
+		repo:       repo,
+		fileCache:  make(map[string][]byte),
 	}
 	if err := ctx.buildFileList(); err != nil {
 		return nil, fmt.Errorf("build file list: %w", err)
@@ -45,10 +46,10 @@ func (ctx *genCtx) new(parent context.Context, file, identifier string) *genCtx 
 		Context:    parent,
 		file:       file,
 		identifier: identifier,
-		// mux:        ctx.mux,
-		repo:  ctx.repo,
-		files: ctx.files,
-		// fileCache:  ctx.fileCache,
+		mux:        ctx.mux,
+		repo:       ctx.repo,
+		files:      ctx.files,
+		fileCache:  ctx.fileCache,
 	}
 }
 
@@ -65,12 +66,33 @@ func (ctx *genCtx) Identifier() string {
 }
 
 func (ctx *genCtx) Read(file string) ([]byte, error) {
+	if b, ok := ctx.cached(file); ok {
+		return b, nil
+	}
+
+	ctx.mux.Lock()
+	defer ctx.mux.Unlock()
+
 	f, err := ctx.repo.Open(file)
 	if err != nil {
 		return nil, fmt.Errorf("open %q: %w", file, err)
 	}
 	defer f.Close()
-	return io.ReadAll(f)
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return b, err
+	}
+	ctx.fileCache[file] = b
+
+	return b, nil
+}
+
+func (ctx *genCtx) cached(file string) ([]byte, bool) {
+	ctx.mux.RLock()
+	defer ctx.mux.RUnlock()
+	b, ok := ctx.fileCache[file]
+	return b, ok
 }
 
 func (ctx *genCtx) buildFileList() error {
