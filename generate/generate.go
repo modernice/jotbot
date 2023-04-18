@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"runtime"
 	"sync"
+	"sync/atomic"
 
 	"github.com/modernice/opendocs/find"
 	"github.com/modernice/opendocs/internal"
@@ -47,6 +48,12 @@ func Limit(n int) Option {
 	}
 }
 
+func FileLimit(n int) Option {
+	return func(g *generation) {
+		g.fileLimit = n
+	}
+}
+
 func WithLogger(h slog.Handler) Option {
 	return func(g *generation) {
 		g.log = slog.New(h)
@@ -60,9 +67,10 @@ func Footer(msg string) Option {
 }
 
 type generation struct {
-	limit  int
-	footer string
-	log    *slog.Logger
+	limit     int
+	fileLimit int
+	footer    string
+	log       *slog.Logger
 }
 
 func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<-chan Generation, <-chan error, error) {
@@ -104,11 +112,27 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		}
 	}
 
-	cpus := runtime.NumCPU()
+	var nFiles int64
+	fileDone := func() {
+		if cfg.limit <= 0 {
+			return
+		}
+
+		n := atomic.AddInt64(&nFiles, 1)
+		if n >= int64(cfg.fileLimit) {
+			cancel()
+		}
+	}
+
+	workers := runtime.NumCPU()
+	if cfg.fileLimit > 0 && cfg.fileLimit < workers {
+		cfg.log.Debug(fmt.Sprintf("File limit is lower than number of workers. Reducing workers to %d.", cfg.fileLimit))
+		workers = cfg.fileLimit
+	}
 
 	queue := make(chan string)
 	var wg sync.WaitGroup
-	wg.Add(cpus)
+	wg.Add(workers)
 
 	go func() {
 		defer cancel()
@@ -128,9 +152,9 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		}
 	}()
 
-	cfg.log.Debug(fmt.Sprintf("Generating docs using %d workers ...", cpus))
+	cfg.log.Debug(fmt.Sprintf("Generating docs using %d workers ...", workers))
 
-	for i := 0; i < cpus; i++ {
+	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
 			for file := range queue {
@@ -153,6 +177,8 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 						return
 					}
 				}
+
+				fileDone()
 			}
 		}()
 	}

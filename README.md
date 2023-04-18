@@ -16,7 +16,7 @@ go get github.com/modernice/opendocs
 
 ## Usage
 
-### Library
+### Basic
 
 ```go
 package main

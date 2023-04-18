@@ -17,11 +17,12 @@ import (
 
 type CLI struct {
 	Generate struct {
-		Root   string `arg:"" default:"." help:"Root directory of the repository."`
-		Branch string `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
-		Limit  int    `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
-		DryRun bool   `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
-		Model  string `default:"text-davinci-003" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
+		Root      string `arg:"" default:"." help:"Root directory of the repository."`
+		Branch    string `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
+		Limit     int    `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
+		FileLimit int    `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
+		DryRun    bool   `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
+		Model     string `default:"text-davinci-003" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -48,7 +49,10 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	svc := openai.New(cfg.APIKey, openai.WithLogger(logHandler), openai.Model(cfg.Generate.Model))
 	repo := opendocs.Repo(cfg.Generate.Root)
 
-	opts := []generate.Option{generate.Limit(cfg.Generate.Limit)}
+	opts := []generate.Option{
+		generate.Limit(cfg.Generate.Limit),
+		generate.FileLimit(cfg.Generate.FileLimit),
+	}
 
 	opts = append(opts, generate.WithLogger(logHandler))
 
