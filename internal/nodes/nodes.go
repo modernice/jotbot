@@ -24,12 +24,11 @@ func trimSlash(s string) string {
 	return strings.TrimLeft(strings.TrimPrefix(s, "//"), " ")
 }
 
-func Identifier(node dst.Node) string {
-	var identifier string
-
+func Identifier(node dst.Node) (identifier string, exported bool) {
 	switch node := node.(type) {
 	case *dst.FuncDecl:
 		identifier = node.Name.Name
+		exported = isExported(identifier)
 
 		if node.Recv != nil && len(node.Recv.List) > 0 {
 			identifier = methodIdentifier(identifier, node.Recv.List[0].Type)
@@ -47,17 +46,17 @@ func Identifier(node dst.Node) string {
 		case *dst.ValueSpec:
 			identifier = spec.Names[0].Name
 		}
+
+		exported = isExported(identifier)
 	case *dst.TypeSpec:
 		identifier = node.Name.Name
+		exported = isExported(identifier)
 	case *dst.ValueSpec:
 		identifier = node.Names[0].Name
+		exported = isExported(identifier)
 	}
 
-	if identifier == "_" || isUnexported(identifier) {
-		identifier = ""
-	}
-
-	return identifier
+	return
 }
 
 func Find(identifier string, root dst.Node) (dst.Node, bool) {
@@ -71,7 +70,7 @@ func FindT[Node dst.Node](identifier string, root dst.Node) (Node, bool) {
 	)
 
 	dst.Inspect(root, func(node dst.Node) bool {
-		if Identifier(node) == identifier {
+		if ident, _ := Identifier(node); ident == identifier {
 			found, ok = node.(Node)
 			return false
 		}
@@ -93,7 +92,13 @@ func methodIdentifier(identifier string, recv dst.Expr) string {
 	return identifier
 }
 
-func isUnexported(identifier string) bool {
+func isExported(identifier string) bool {
+	if len(identifier) == 0 {
+		return false
+	}
 	runes := []rune(identifier)
-	return len(identifier) > 0 && unicode.IsLetter(runes[0]) && strings.ToLower(identifier[:1]) == identifier[:1]
+	unexported := len(identifier) > 0 &&
+		unicode.IsLetter(runes[0]) &&
+		strings.ToLower(identifier[:1]) == identifier[:1]
+	return !unexported
 }

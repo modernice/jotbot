@@ -28,9 +28,9 @@ type Finding struct {
 	Identifier string
 }
 
-func (f Finding) String() string {
-	return fmt.Sprintf("%s@%s", f.Path, f.Identifier)
-}
+// func (f Finding) String() string {
+// 	return fmt.Sprintf("%s@%s", f.Path, f.Identifier)
+// }
 
 type Findings map[string][]Finding
 
@@ -140,7 +140,10 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 	}
 
 	for _, node := range node.Decls {
-		var identifier string
+		var (
+			identifier string
+			exported   bool
+		)
 
 		switch node := node.(type) {
 		case *dst.FuncDecl:
@@ -148,7 +151,7 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 				break
 			}
 
-			identifier = nodes.Identifier(node)
+			identifier, exported = nodes.Identifier(node)
 		case *dst.GenDecl:
 			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
@@ -163,16 +166,16 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 			switch spec := spec.(type) {
 			case *dst.TypeSpec:
 				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
-					identifier = nodes.Identifier(spec)
+					identifier, exported = nodes.Identifier(spec)
 				}
 			case *dst.ValueSpec:
 				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
-					identifier = nodes.Identifier(spec)
+					identifier, exported = nodes.Identifier(spec)
 				}
 			}
 		}
 
-		if identifier != "" {
+		if exported && identifier != "" && identifier != "_" {
 			findings = append(findings, Finding{
 				Path:       path,
 				Identifier: identifier,
