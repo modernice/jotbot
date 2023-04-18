@@ -2,7 +2,16 @@ package nodes
 
 import (
 	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 )
+
+func MinifyCode(code []byte) (*dst.File, error) {
+	node, err := decorator.Parse(code)
+	if err != nil {
+		return nil, err
+	}
+	return Minify(node), nil
+}
 
 func Minify[Node dst.Node](in Node) Node {
 	out := dst.Clone(in)

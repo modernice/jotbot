@@ -7,6 +7,7 @@ import (
 
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/internal"
+	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/exp/slog"
 )
@@ -74,7 +75,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 		return "", err
 	}
 
-	answer, err := svc.createCompletion(ctx, files, file, identifier, code)
+	answer, err := svc.createCompletion(ctx, files, file, identifier, code, 0)
 	if err != nil {
 		return "", fmt.Errorf("create completion: %w", err)
 	}
@@ -88,7 +89,10 @@ func (svc *Service) createCompletion(
 	file,
 	longIdentifier string,
 	code []byte,
+	tries int,
 ) (string, error) {
+	tries++
+
 	identifier := normalizeIdentifier(longIdentifier)
 	msg := prompt(file, identifier, longIdentifier, code)
 
@@ -103,45 +107,75 @@ func (svc *Service) createCompletion(
 		Prompt:           msg,
 	}
 
-	svc.log.Debug("[OpenAI] Creating completion ...", "file", file, "identifier", identifier, "model", req.Model)
+	svc.log.Debug("[OpenAI] Generating documentation ...", "file", file, "identifier", identifier, "model", req.Model)
 
 	generate := svc.useModel(req.Model)
-	answer, err := generate(ctx, req)
+	result, err := generate(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	answer = normalizeAnswer(answer)
+	result.normalize()
 
-	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", answer)
+	if result.finishReason == "length" {
+		if tries > 1 {
+			svc.log.Warn("[OpenAI] Source file has too many tokens, and cannot be further minified. Giving up.", "file", file)
+			return "", nil
+		}
 
-	return answer, nil
+		svc.log.Debug("[OpenAI] Source file has too many tokens. Retrying with minified code ...", "file", file, "identifier", identifier, "reason", "length")
+
+		return svc.retryMinified(ctx, files, file, longIdentifier, code, tries)
+	}
+
+	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", result.text)
+
+	return result.text, nil
 }
 
-func (svc *Service) useModel(model string) func(context.Context, openai.CompletionRequest) (string, error) {
+func (svc *Service) retryMinified(ctx context.Context, files []string, file, identifier string, code []byte, tries int) (string, error) {
+	node, err := nodes.MinifyCode(code)
+	if err != nil {
+		return "", fmt.Errorf("minify code: %w", err)
+	}
+
+	if code, err = nodes.Format(node); err != nil {
+		return "", fmt.Errorf("format minified code: %w", err)
+	}
+
+	return svc.createCompletion(ctx, files, file, identifier, code, tries)
+}
+
+func (svc *Service) useModel(model string) func(context.Context, openai.CompletionRequest) (result, error) {
 	if isChatModel(model) {
-		return svc.createChatCompletion
+		return svc.createWithChat
 	}
-
-	return func(ctx context.Context, req openai.CompletionRequest) (string, error) {
-		resp, err := svc.client.CreateCompletion(ctx, req)
-		if err != nil {
-			return "", err
-		}
-
-		if len(resp.Choices) == 0 {
-			return "", fmt.Errorf("openai: no choices returned")
-		}
-
-		choice := resp.Choices[0]
-		if choice.FinishReason != "stop" {
-			return choice.Text, fmt.Errorf("openai: unexpected finish reason: %q", choice.FinishReason)
-		}
-
-		return choice.Text, nil
-	}
+	return svc.createWithGPT
 }
 
-func (svc *Service) createChatCompletion(ctx context.Context, req openai.CompletionRequest) (string, error) {
+type result struct {
+	finishReason string
+	text         string
+}
+
+func (svc *Service) createWithGPT(ctx context.Context, req openai.CompletionRequest) (result, error) {
+	resp, err := svc.client.CreateCompletion(ctx, req)
+	if err != nil {
+		return result{}, err
+	}
+
+	if len(resp.Choices) == 0 {
+		return result{}, fmt.Errorf("openai: no choices returned")
+	}
+
+	choice := resp.Choices[0]
+
+	return result{
+		finishReason: choice.FinishReason,
+		text:         choice.Text,
+	}, nil
+}
+
+func (svc *Service) createWithChat(ctx context.Context, req openai.CompletionRequest) (result, error) {
 	resp, err := svc.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 		Model:            openai.GPT3Dot5Turbo,
 		Temperature:      req.Temperature,
@@ -160,19 +194,20 @@ func (svc *Service) createChatCompletion(ctx context.Context, req openai.Complet
 		},
 	})
 	if err != nil {
-		return "", err
+		return result{}, err
 	}
 
 	choice := resp.Choices[0]
-	if choice.FinishReason != "stop" {
-		return choice.Message.Content, fmt.Errorf("openai: unexpected finish reason: %q", choice.FinishReason)
+	res := result{
+		finishReason: choice.FinishReason,
+		text:         choice.Message.Content,
 	}
 
 	if choice.Message.Role != openai.ChatMessageRoleAssistant {
-		return choice.Message.Content, fmt.Errorf("openai: unexpected message role in answer: %q", choice.Message.Role)
+		return res, fmt.Errorf("openai: unexpected message role in answer: %q", choice.Message.Role)
 	}
 
-	return choice.Message.Content, nil
+	return res, nil
 }
 
 var chatModels = map[string]bool{
@@ -204,6 +239,10 @@ func prompt(file, identifier, longIdentifier string, code []byte) string {
 		file,
 		string(code),
 	)
+}
+
+func (r *result) normalize() {
+	r.text = normalizeAnswer(r.text)
 }
 
 func normalizeAnswer(answer string) string {
