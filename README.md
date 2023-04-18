@@ -45,3 +45,27 @@ func main() {
 	// handle err
 }
 ```
+
+### Configurable Finder
+
+```go
+package example
+
+func main() {
+	f := find.New(
+		// pre-defined skips
+		find.Skip{
+			Hidden: true,
+			Testdata: true,
+			Testfiles: true,
+		},
+
+		// custom skip function
+		find.SkipFunc(d fs.DirEntry) bool {
+			return false
+		},
+	)
+
+	f.Uncommented()
+}
+```

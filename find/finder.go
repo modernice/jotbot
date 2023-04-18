@@ -20,6 +20,7 @@ import (
 
 type Finder struct {
 	repo fs.FS
+	skip *Skip
 	log  *slog.Logger
 }
 
@@ -30,18 +31,30 @@ type Finding struct {
 
 type Findings map[string][]Finding
 
-type Option func(*Finder)
+type Option interface {
+	apply(*Finder)
+}
+
+type optionFunc func(*Finder)
+
+func (opt optionFunc) apply(f *Finder) {
+	opt(f)
+}
 
 func WithLogger(h slog.Handler) Option {
-	return func(f *Finder) {
+	return optionFunc(func(f *Finder) {
 		f.log = slog.New(h)
-	}
+	})
 }
 
 func New(repo fs.FS, opts ...Option) *Finder {
 	f := &Finder{repo: repo}
 	for _, opt := range opts {
-		opt(f)
+		opt.apply(f)
+	}
+	if f.skip == nil {
+		skip := SkipDefault()
+		f.skip = &skip
 	}
 	if f.log == nil {
 		f.log = internal.NopLogger()
@@ -59,13 +72,18 @@ func (f *Finder) Uncommented() (Findings, error) {
 			return err
 		}
 
+		if d.Name() == "." || d.Name() == "" {
+			return nil
+		}
+
+		exclude := Exclude{
+			DirEntry: d,
+			Path:     path,
+		}
+
 		if d.IsDir() {
-			if d.Name() != "." && strings.HasPrefix(d.Name(), ".") {
-				f.log.Debug("Skipping directory", "path", path, "reason", "hidden directory")
-				return filepath.SkipDir
-			}
-			if d.Name() == "testdata" {
-				f.log.Debug("Skipping directory", "path", path, "reason", "testdata directory")
+			if f.skip != nil && f.skip.ExcludeDir(exclude) {
+				f.log.Debug("Skipping directory", "dir", path)
 				return filepath.SkipDir
 			}
 			return nil
@@ -76,8 +94,8 @@ func (f *Finder) Uncommented() (Findings, error) {
 			return nil
 		}
 
-		if isTestFile(d) {
-			f.log.Debug("Skipping file", "path", path, "reason", "test file")
+		if f.skip != nil && f.skip.ExcludeFile(exclude) {
+			f.log.Debug("Skipping file", "path", path)
 			return nil
 		}
 
