@@ -2,6 +2,7 @@ package openai
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -116,7 +117,7 @@ func (svc *Service) createCompletion(
 	}
 	result.normalize()
 
-	if result.finishReason == "length" {
+	if isMaxTokensError(err, result.finishReason) {
 		if tries > 1 {
 			svc.log.Warn("[OpenAI] Source file has too many tokens, and cannot be further minified. Giving up.", "file", file)
 			return "", nil
@@ -130,6 +131,31 @@ func (svc *Service) createCompletion(
 	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", result.text)
 
 	return result.text, nil
+}
+
+func isMaxTokensError(err error, finishReason string) bool {
+	// TODO(bounoable): Should retry with increased max_tokens setting instead.
+	if finishReason == "length" {
+		return true
+	}
+
+	if err == nil {
+		return false
+	}
+
+	var apiErr *openai.APIError
+	if errors.As(err, &apiErr) {
+		// TODO(bounoable): Not a good way to check for a maximum tokens error
+		// but the API doesn't provide a better way to do it.
+		// Error 400 is immediately returned when the max_tokens configuration is
+		// too low. We can simply retry with a higher max_tokens setting in this
+		// case. When finishReason is "length", OpenAI started to write the
+		// answer but couldn't finish because the max_tokens were exceeded.
+		// In this case we need to minify the source code to fit in the request.
+		return apiErr.Code != nil && *apiErr.Code == "400"
+	}
+
+	return false
 }
 
 func (svc *Service) retryMinified(ctx context.Context, files []string, file, identifier string, code []byte, tries int) (string, error) {
