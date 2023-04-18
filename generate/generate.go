@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"runtime"
+	"sync"
 
 	"github.com/modernice/opendocs/find"
-	"github.com/modernice/opendocs/git"
 	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/patch"
 	"golang.org/x/exp/slog"
 )
 
@@ -23,19 +23,6 @@ type Context interface {
 	File() string
 	Files() []string
 	Read(file string) ([]byte, error)
-}
-
-type Result struct {
-	Repo        fs.FS
-	Generations []Generation
-	Logger      slog.Handler
-}
-
-func NewResult(repo fs.FS, generations ...Generation) *Result {
-	return &Result{
-		Repo:        repo,
-		Generations: generations,
-	}
 }
 
 type Generation struct {
@@ -78,7 +65,7 @@ type generation struct {
 	log    *slog.Logger
 }
 
-func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*Result, error) {
+func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<-chan Generation, <-chan error, error) {
 	var cfg generation
 	for _, opt := range opts {
 		opt(&cfg)
@@ -87,68 +74,114 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (*
 		cfg.log = internal.NopLogger()
 	}
 
-	out := NewResult(repo)
-	out.Logger = cfg.log.Handler()
-
 	result, err := find.New(repo, find.WithLogger(cfg.log.Handler())).Uncommented()
 	if err != nil {
-		return out, fmt.Errorf("find uncommented code: %w", err)
+		return nil, nil, fmt.Errorf("find uncommented code: %w", err)
 	}
 
-	var (
-		generateCtx *genCtx
-		nGenerated  int
-	)
+	gens, errs := make(chan Generation), make(chan error)
 
-	for _, findings := range result {
-		for _, finding := range findings {
-			cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
+	ctx, cancel := context.WithCancel(ctx)
 
-			if generateCtx == nil {
-				if generateCtx, err = newCtx(ctx, repo, finding.Path, finding.Identifier); err != nil {
-					return out, fmt.Errorf("create generation context: %w", err)
-				}
-			} else {
-				generateCtx = generateCtx.new(ctx, finding.Path, finding.Identifier)
-			}
-
-			doc, err := g.svc.GenerateDoc(generateCtx)
-			if err != nil {
-				return out, fmt.Errorf("generate doc for %s in %s: %w", finding.Identifier, finding.Path, err)
-			}
-
-			if cfg.footer != "" {
-				doc = fmt.Sprintf("%s\n\n%s", doc, cfg.footer)
-			}
-
-			out.Generations = append(out.Generations, Generation{
-				Path:       finding.Path,
-				Identifier: finding.Identifier,
-				Doc:        doc,
-			})
-
+	var nGenerated int
+	push := func(g Generation) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		case gens <- g:
 			nGenerated++
-
 			if cfg.limit > 0 && nGenerated >= cfg.limit {
-				cfg.log.Debug(fmt.Sprintf("Limit of %d generations reached. Stopping.", cfg.limit))
-				return out, nil
+				cancel()
 			}
+			return true
 		}
 	}
 
-	return out, nil
-}
-
-func (r *Result) Patch() *patch.Patch {
-	opts := []patch.Option{patch.WithLogger(r.Logger)}
-	p := patch.New(r.Repo, opts...)
-	for _, gen := range r.Generations {
-		p.Comment(gen.Path, gen.Identifier, gen.Doc)
+	fail := func(err error) {
+		select {
+		case <-ctx.Done():
+		case errs <- err:
+		}
 	}
-	return p
+
+	cpus := runtime.NumCPU()
+
+	queue := make(chan string)
+	var wg sync.WaitGroup
+	wg.Add(cpus)
+
+	go func() {
+		defer cancel()
+		wg.Wait()
+		close(gens)
+		close(errs)
+	}()
+
+	go func() {
+		defer close(queue)
+		for file := range result {
+			select {
+			case <-ctx.Done():
+				return
+			case queue <- file:
+			}
+		}
+	}()
+
+	cfg.log.Debug(fmt.Sprintf("Generating docs using %d workers ...", cpus))
+
+	for i := 0; i < cpus; i++ {
+		go func() {
+			defer wg.Done()
+			for file := range queue {
+				findings := result[file]
+				for _, finding := range findings {
+					var generateCtx *genCtx
+					var err error
+					if generateCtx, err = g.context(generateCtx, ctx, repo, finding); err != nil {
+						fail(fmt.Errorf("generate %s: create context: %w", finding, err))
+						return
+					}
+
+					gen, err := g.generate(generateCtx, cfg, finding)
+					if err != nil {
+						fail(err)
+						return
+					}
+
+					if !push(gen) {
+						return
+					}
+				}
+			}
+		}()
+	}
+
+	return gens, errs, nil
 }
 
-func (r *Result) Commit(root string, opts ...git.CommitOption) (*git.Repository, error) {
-	repo := git.Repo(root, git.WithLogger(r.Logger))
-	return repo, repo.Commit(r.Patch(), opts...)
+func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, finding find.Finding) (*genCtx, error) {
+	if ctx == nil {
+		return newCtx(parent, repo, finding.Path, finding.Identifier)
+	}
+	return ctx.new(parent, finding.Path, finding.Identifier), nil
+}
+
+func (g *Generator) generate(ctx *genCtx, cfg generation, finding find.Finding) (Generation, error) {
+	cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
+
+	doc, err := g.svc.GenerateDoc(ctx)
+	if err != nil {
+		return Generation{}, fmt.Errorf("generate %s: generate doc: %w", finding, err)
+	}
+
+	if cfg.footer != "" {
+		doc = fmt.Sprintf("%s\n\n%s", doc, cfg.footer)
+	}
+
+	return Generation{
+		Path:       finding.Path,
+		Identifier: finding.Identifier,
+		Doc:        doc,
+	}, nil
 }

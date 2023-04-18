@@ -2,18 +2,24 @@ package opendocs
 
 import (
 	"context"
+	"io/fs"
 	"os"
 
 	"github.com/modernice/opendocs/generate"
+	"github.com/modernice/opendocs/internal"
 )
 
 type Repo string
 
-func (repo Repo) Generate(ctx context.Context, svc generate.Service, opts ...generate.Option) (*generate.Result, error) {
+func (r Repo) FS() fs.FS {
+	return os.DirFS(string(r))
+}
+
+func (repo Repo) Generate(ctx context.Context, svc generate.Service, opts ...generate.Option) ([]generate.Generation, error) {
 	g := generate.New(svc, opts...)
-	result, err := g.Generate(ctx, os.DirFS(string(repo)), opts...)
+	gens, errs, err := g.Generate(ctx, repo.FS(), opts...)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
-	return result, nil
+	return internal.Drain(gens, errs)
 }

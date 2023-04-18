@@ -28,6 +28,10 @@ type Finding struct {
 	Identifier string
 }
 
+func (f Finding) String() string {
+	return fmt.Sprintf("%s@%s", f.Path, f.Identifier)
+}
+
 type Findings map[string][]Finding
 
 type Option interface {

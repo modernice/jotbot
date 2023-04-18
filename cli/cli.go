@@ -52,13 +52,14 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 
 	opts = append(opts, generate.WithLogger(logHandler))
 
-	result, err := repo.Generate(context.Background(), svc, opts...)
+	gens, err := repo.Generate(context.Background(), svc, opts...)
 	if err != nil {
 		return err
 	}
 
+	patch := generate.Patch(repo.FS(), gens)
+
 	if cfg.Generate.DryRun {
-		patch := result.Patch()
 		patchResult, err := patch.DryRun()
 		if err != nil {
 			return fmt.Errorf("dry run: %w", err)
@@ -68,13 +69,14 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	}
 
 	if cfg.Generate.Branch != "" {
-		if _, err := result.Commit(cfg.Generate.Root, git.Branch(cfg.Generate.Branch)); err != nil {
-			return fmt.Errorf("commit changes: %w", err)
+		grepo := git.Repo(cfg.Generate.Root)
+		if err := grepo.Commit(patch, git.Branch(cfg.Generate.Branch)); err != nil {
+			return fmt.Errorf("commit patch: %w", err)
 		}
 		return nil
 	}
 
-	if err := result.Patch().Apply(cfg.Generate.Root); err != nil {
+	if err := patch.Apply(cfg.Generate.Root); err != nil {
 		return fmt.Errorf("apply patch: %w", err)
 	}
 

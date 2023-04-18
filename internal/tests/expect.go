@@ -43,21 +43,18 @@ func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	}
 }
 
-func ExpectGenerationResult(t *testing.T, want, got *generate.Result) {
+func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
 	t.Helper()
-
-	wgen := want.Generations
-	ggen := got.Generations
 
 	less := func(a, b generate.Generation) bool {
 		return fmt.Sprintf("%s@%s", a.Path, a.Identifier) <= fmt.Sprintf("%s@%s", b.Path, b.Identifier)
 	}
 
-	slices.SortFunc(wgen, less)
-	slices.SortFunc(ggen, less)
+	slices.SortFunc(want, less)
+	slices.SortFunc(got, less)
 
-	if !cmp.Equal(wgen, ggen) {
-		t.Fatalf("unexpected generations:\n%s", cmp.Diff(wgen, ggen))
+	if !cmp.Equal(want, got) {
+		t.Fatalf("unexpected generations:\n%s", cmp.Diff(want, got))
 	}
 }
 
