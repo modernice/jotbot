@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -20,9 +21,11 @@ import (
 )
 
 type Patch struct {
+	mux         sync.RWMutex
 	repo        fs.FS
 	fset        *token.FileSet
 	files       map[string]*dst.File
+	fileLocks   map[string]*sync.Mutex
 	identifiers map[string][]string
 	log         *slog.Logger
 }
@@ -40,6 +43,7 @@ func New(repo fs.FS, opts ...Option) *Patch {
 		repo:        repo,
 		fset:        token.NewFileSet(),
 		files:       make(map[string]*dst.File),
+		fileLocks:   make(map[string]*sync.Mutex),
 		identifiers: make(map[string][]string),
 	}
 	for _, opt := range opts {
@@ -58,6 +62,8 @@ func (p *Patch) Identifiers() map[string][]string {
 func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	defer func() {
 		if rerr == nil {
+			p.mux.Lock()
+			defer p.mux.Unlock()
 			p.identifiers[file] = append(p.identifiers[file], identifier)
 		}
 	}()
@@ -70,7 +76,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for type %s in %s: %w", identifier, file, err)
 		}
 		if ok {
-			return p.commentType(decl, spec, comment)
+			return p.commentType(file, decl, spec, comment)
 		}
 	}
 
@@ -80,7 +86,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for function %s in %s: %w", identifier, file, err)
 		}
 		if ok {
-			return p.commentFunction(decl, comment)
+			return p.commentFunction(file, decl, comment)
 		}
 	}
 
@@ -90,7 +96,7 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for method %s in %s: %w", identifier, file, err)
 		}
 		if ok {
-			return p.commentMethod(decl, comment)
+			return p.commentFunction(file, decl, comment)
 		}
 	}
 
@@ -98,6 +104,13 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 }
 
 func (p *Patch) parseFile(path string) (*dst.File, error) {
+	if node, ok := p.cached(path); ok {
+		return node, nil
+	}
+
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
 	if node, ok := p.files[path]; ok {
 		return node, nil
 	}
@@ -122,20 +135,44 @@ func (p *Patch) parseFile(path string) (*dst.File, error) {
 	return node, nil
 }
 
+func (p *Patch) cached(file string) (*dst.File, bool) {
+	p.mux.RLock()
+	defer p.mux.RUnlock()
+	node, ok := p.files[file]
+	return node, ok
+}
+
+func (p *Patch) acquireFile(file string) (*dst.File, func()) {
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
+	if _, ok := p.fileLocks[file]; !ok {
+		p.fileLocks[file] = &sync.Mutex{}
+	}
+
+	p.fileLocks[file].Lock()
+	return p.files[file], p.fileLocks[file].Unlock
+}
+
 func (p *Patch) findFunction(file, identifier string) (*dst.FuncDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
 		return nil, false, err
 	}
+
 	for _, astDecl := range node.Decls {
 		if fd, ok := astDecl.(*dst.FuncDecl); ok && fd.Name.Name == identifier {
 			return fd, true, nil
 		}
 	}
+
 	return nil, false, nil
 }
 
-func (p *Patch) commentFunction(decl *dst.FuncDecl, comment string) error {
+func (p *Patch) commentFunction(file string, decl *dst.FuncDecl, comment string) error {
+	_, unlock := p.acquireFile(file)
+	defer unlock()
+
 	if len(decl.Decs.Start.All()) > 0 {
 		return fmt.Errorf("function %s already has documentation", decl.Name.Name)
 	}
@@ -190,16 +227,6 @@ func (p *Patch) findMethod(file, identifier string) (*dst.FuncDecl, bool, error)
 	return nil, false, nil
 }
 
-func (p *Patch) commentMethod(decl *dst.FuncDecl, comment string) error {
-	if len(decl.Decs.Start.All()) > 0 {
-		return fmt.Errorf("method %s already has documentation", decl.Name.Name)
-	}
-
-	decl.Decs.Start.Append(formatComment(comment))
-
-	return nil
-}
-
 func (p *Patch) findType(file, identifier string) (*dst.TypeSpec, *dst.GenDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
@@ -218,7 +245,10 @@ func (p *Patch) findType(file, identifier string) (*dst.TypeSpec, *dst.GenDecl, 
 	return nil, nil, false, nil
 }
 
-func (p *Patch) commentType(decl *dst.GenDecl, spec *dst.TypeSpec, comment string) error {
+func (p *Patch) commentType(file string, decl *dst.GenDecl, spec *dst.TypeSpec, comment string) error {
+	_, unlock := p.acquireFile(file)
+	defer unlock()
+
 	if len(decl.Decs.Start.All()) > 0 {
 		return fmt.Errorf("type %s already has documentation", spec.Name.Name)
 	}
@@ -247,6 +277,9 @@ func (p *Patch) Commit() git.Commit {
 
 func (p *Patch) Apply(repo string) error {
 	p.log.Info("Applying patches ...", "files", len(p.files))
+
+	p.mux.RLock()
+	defer p.mux.RUnlock()
 
 	for file, node := range p.files {
 		restorer := decorator.NewRestorer()
@@ -280,6 +313,12 @@ func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
 }
 
 func (p *Patch) File(file string) ([]byte, error) {
+	p.mux.RLock()
+	defer p.mux.RUnlock()
+	return p.printFile(file)
+}
+
+func (p *Patch) printFile(file string) ([]byte, error) {
 	node, ok := p.files[file]
 	if !ok {
 		return nil, fmt.Errorf("file %s not found in patch", file)
@@ -299,8 +338,11 @@ func (p *Patch) File(file string) ([]byte, error) {
 func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 
+	p.mux.RLock()
+	defer p.mux.RUnlock()
+
 	for path := range p.files {
-		b, err := p.File(path)
+		b, err := p.printFile(path)
 		if err != nil {
 			return result, err
 		}
