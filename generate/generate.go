@@ -94,7 +94,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 
 	files, errs := make(chan File), make(chan error)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 
 	var (
 		nFiles     int64
@@ -216,7 +216,10 @@ func (g *Generator) generateFile(
 		if err != nil {
 			return generations, err
 		}
-		generations = append(generations, gen)
+
+		if canGenerate() {
+			generations = append(generations, gen)
+		}
 
 		onGenerated()
 	}
