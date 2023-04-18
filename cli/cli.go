@@ -95,6 +95,6 @@ func New() *kong.Context {
 
 func printDryRun(result map[string][]byte) {
 	for path, content := range result {
-		log.Printf("%s:\n\n%s", path, content)
+		log.Printf("\n%s:\n\n%s", path, content)
 	}
 }
