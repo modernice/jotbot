@@ -9,7 +9,8 @@ import (
 var _ generate.Service = (*Service)(nil)
 
 type Service struct {
-	docs map[string]map[string]string // map[file]map[identifier]doc
+	Fallbacks bool
+	docs      map[string]map[string]string // map[file]map[identifier]doc
 }
 
 func MockService() *Service {
@@ -23,7 +24,7 @@ func (svc *Service) Generations() []generate.Generation {
 	for file, identifiers := range svc.docs {
 		for identifier, doc := range identifiers {
 			generations = append(generations, generate.Generation{
-				Path:       file,
+				File:       file,
 				Identifier: identifier,
 				Doc:        doc,
 			})
@@ -46,11 +47,17 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 
 	docs, ok := svc.docs[file]
 	if !ok {
+		if svc.Fallbacks {
+			return "", nil
+		}
 		return "", fmt.Errorf("no docs for file %q", file)
 	}
 
 	doc, ok := docs[id]
 	if !ok {
+		if svc.Fallbacks {
+			return "", nil
+		}
 		return "", fmt.Errorf("no docs for identifier %q in file %q", id, file)
 	}
 

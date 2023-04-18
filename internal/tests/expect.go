@@ -47,7 +47,7 @@ func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
 	t.Helper()
 
 	less := func(a, b generate.Generation) bool {
-		return fmt.Sprintf("%s@%s", a.Path, a.Identifier) <= fmt.Sprintf("%s@%s", b.Path, b.Identifier)
+		return fmt.Sprintf("%s@%s", a.File, a.Identifier) <= fmt.Sprintf("%s@%s", b.File, b.Identifier)
 	}
 
 	slices.SortFunc(want, less)

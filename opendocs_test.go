@@ -7,30 +7,30 @@ import (
 	"path/filepath"
 	"testing"
 
-	opendocs "github.com/modernice/opendocs"
+	"github.com/modernice/opendocs"
+	"github.com/modernice/opendocs/generate"
 	igen "github.com/modernice/opendocs/internal/generate"
 	"github.com/modernice/opendocs/internal/tests"
 )
 
 func TestRepository_Generate(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "opendocs-generate")
-	tests.WithRepo("basic", root, func(fs.FS) {
-		repo := opendocs.Repo(root)
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "generate")
 
+	tests.WithRepo("basic", root, func(repoFS fs.FS) {
 		svc := igen.MockService().
-			WithDoc("foo.go", "Foo", "Foo is a function that always returns an error.").
-			WithDoc("bar.go", "Foo", `Foo is always "foo".`).
-			WithDoc("bar.go", "Bar", "Bar is an empty struct.").
-			WithDoc("baz.go", "X", "X is an empty struct.").
-			WithDoc("baz.go", "X.Foo", "Foo is a method of X.").
-			WithDoc("baz.go", "*X.Bar", "Bar is a method of X.").
-			WithDoc("baz.go", "Y.Foo", "Foo is a method of Y.")
+			WithDoc("foo.go", "Foo", "Foo is a function that returns a \"foo\" error.").
+			WithDoc("bar.go", "Bar", "Bar is an empty struct.")
+		svc.Fallbacks = true
 
-		result, err := repo.Generate(context.Background(), svc)
+		repo := opendocs.New(svc)
+
+		p, err := repo.Generate(context.Background(), root)
 		if err != nil {
-			t.Fatalf("generate documentation: %v", err)
+			t.Fatalf("Generate() should not return error; got %q", err)
 		}
 
-		tests.ExpectGenerations(t, svc.Generations(), result)
+		want := generate.Patch(repoFS, svc.Generations())
+
+		tests.ExpectPatch(t, want, p)
 	})
 }

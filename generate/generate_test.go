@@ -22,22 +22,22 @@ func mockService(repo fs.FS) (*igen.Service, []generate.Generation) {
 		WithDoc("operations.go", "Div", "Div divides numbers.")
 	return svc, []generate.Generation{
 		{
-			Path:       "operations.go",
+			File:       "operations.go",
 			Identifier: "Add",
 			Doc:        "Add adds numbers together.",
 		},
 		{
-			Path:       "operations.go",
+			File:       "operations.go",
 			Identifier: "Sub",
 			Doc:        "Sub subtracts numbers.",
 		},
 		{
-			Path:       "operations.go",
+			File:       "operations.go",
 			Identifier: "Mul",
 			Doc:        "Mul multiplies numbers.",
 		},
 		{
-			Path:       "operations.go",
+			File:       "operations.go",
 			Identifier: "Div",
 			Doc:        "Div divides numbers.",
 		},
@@ -55,7 +55,7 @@ func TestGenerator_Generate(t *testing.T) {
 			t.Fatalf("Generate() should not return an error; got %q", err)
 		}
 
-		result := drain(t, gens, errs)
+		result := generate.Flatten(drain(t, gens, errs))
 
 		tests.ExpectGenerations(t, want, result)
 	})
@@ -78,7 +78,7 @@ func TestFooter(t *testing.T) {
 			t.Fatalf("Generate() should not return an error; got %q", err)
 		}
 
-		result := drain(t, gens, errs)
+		result := generate.Flatten(drain(t, gens, errs))
 
 		tests.ExpectGenerations(t, want, result)
 	})

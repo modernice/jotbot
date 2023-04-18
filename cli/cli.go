@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/alecthomas/kong"
-	opendocs "github.com/modernice/opendocs"
+	"github.com/modernice/opendocs"
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/git"
 	"github.com/modernice/opendocs/services/openai"
@@ -47,21 +47,18 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	logHandler := slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)
 
 	svc := openai.New(cfg.APIKey, openai.WithLogger(logHandler), openai.Model(cfg.Generate.Model))
-	repo := opendocs.Repo(cfg.Generate.Root)
 
 	opts := []generate.Option{
 		generate.Limit(cfg.Generate.Limit),
 		generate.FileLimit(cfg.Generate.FileLimit),
 	}
 
-	opts = append(opts, generate.WithLogger(logHandler))
+	docs := opendocs.New(svc, opendocs.WithLogger(logHandler))
 
-	gens, err := repo.Generate(context.Background(), svc, opts...)
+	patch, err := docs.Generate(context.Background(), cfg.Generate.Root, opts...)
 	if err != nil {
 		return err
 	}
-
-	patch := generate.Patch(repo.FS(), gens)
 
 	if cfg.Generate.DryRun {
 		patchResult, err := patch.DryRun()

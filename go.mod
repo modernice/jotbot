@@ -17,7 +17,6 @@ require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/dave/dst v0.27.2
 	github.com/sashabaranov/go-openai v1.7.0
-	golang.org/x/sync v0.1.0
 )
 
 require (

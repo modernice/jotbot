@@ -17,3 +17,22 @@ func Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) {
 		}
 	}
 }
+
+func Walk[T any](vals <-chan T, errs <-chan error, fn func(T) error) error {
+	for {
+		select {
+		case err, ok := <-errs:
+			if !ok {
+				return nil
+			}
+			return err
+		case v, ok := <-vals:
+			if !ok {
+				return nil
+			}
+			if err := fn(v); err != nil {
+				return err
+			}
+		}
+	}
+}

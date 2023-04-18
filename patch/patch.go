@@ -17,6 +17,7 @@ import (
 	"github.com/modernice/opendocs/git"
 	"github.com/modernice/opendocs/internal"
 	"github.com/modernice/opendocs/internal/slice"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slog"
 )
 
@@ -56,8 +57,36 @@ func New(repo fs.FS, opts ...Option) *Patch {
 }
 
 func (p *Patch) Identifiers() map[string][]string {
-	return p.identifiers
+	p.mux.RLock()
+	defer p.mux.RUnlock()
+	return maps.Clone(p.identifiers)
 }
+
+// func (p *Patch) Merge(p2 *Patch) error {
+// 	// Lock p2 until we're done merging.
+// 	p2.mux.Lock()
+// 	defer p2.mux.Unlock()
+
+// 	for file, identifiers := range p2.identifiers {
+// 		for _, identifier := range identifiers {
+// 			f, ok := p2.files[file]
+// 			if !ok {
+// 				continue
+// 			}
+
+// 			node, ok := nodes.Find(identifier, f)
+// 			if !ok {
+// 				continue
+// 			}
+
+// 			if err := p.Comment(file, identifier, nodes.Doc(node, true)); err != nil {
+// 				return fmt.Errorf("add comment for %s@%s: %w", file, identifier, err)
+// 			}
+// 		}
+// 	}
+
+// 	return nil
+// }
 
 func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	defer func() {
@@ -67,6 +96,10 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			p.identifiers[file] = append(p.identifiers[file], identifier)
 		}
 	}()
+
+	if comment == "" {
+		return nil
+	}
 
 	p.log.Debug("Adding comment ...", "identifier", identifier, "file", file)
 

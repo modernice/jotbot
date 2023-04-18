@@ -26,8 +26,13 @@ type Context interface {
 	Read(file string) ([]byte, error)
 }
 
+type File struct {
+	Path        string
+	Generations []Generation
+}
+
 type Generation struct {
-	Path       string
+	File       string
 	Identifier string
 	Doc        string
 }
@@ -36,7 +41,7 @@ type Generator struct {
 	svc Service
 }
 
-func New(svc Service, opts ...Option) *Generator {
+func New(svc Service) *Generator {
 	return &Generator{svc: svc}
 }
 
@@ -73,7 +78,7 @@ type generation struct {
 	log       *slog.Logger
 }
 
-func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<-chan Generation, <-chan error, error) {
+func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<-chan File, <-chan error, error) {
 	var cfg generation
 	for _, opt := range opts {
 		opt(&cfg)
@@ -87,20 +92,42 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		return nil, nil, fmt.Errorf("find uncommented code: %w", err)
 	}
 
-	gens, errs := make(chan Generation), make(chan error)
+	files, errs := make(chan File), make(chan error)
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	var nGenerated int
-	push := func(g Generation) bool {
+	var (
+		nFiles     int64
+		nGenerated int64
+	)
+
+	canGenerate := func() bool {
+		nf := atomic.LoadInt64(&nFiles)
+		if cfg.fileLimit > 0 && nf >= int64(cfg.fileLimit) {
+			return false
+		}
+
+		ng := atomic.LoadInt64(&nGenerated)
+		if cfg.limit > 0 && ng >= int64(cfg.limit) {
+			return false
+		}
+
+		return true
+	}
+
+	onGenerated := func() { atomic.AddInt64(&nGenerated, 1) }
+
+	push := func(file string, gens []Generation) bool {
 		select {
 		case <-ctx.Done():
 			return false
-		case gens <- g:
-			nGenerated++
-			if cfg.limit > 0 && nGenerated >= cfg.limit {
+		case files <- File{file, gens}:
+			atomic.AddInt64(&nFiles, 1)
+
+			if !canGenerate() {
 				cancel()
 			}
+
 			return true
 		}
 	}
@@ -109,18 +136,6 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		select {
 		case <-ctx.Done():
 		case errs <- err:
-		}
-	}
-
-	var nFiles int64
-	fileDone := func() {
-		if cfg.limit <= 0 {
-			return
-		}
-
-		n := atomic.AddInt64(&nFiles, 1)
-		if n >= int64(cfg.fileLimit) {
-			cancel()
 		}
 	}
 
@@ -137,7 +152,7 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 	go func() {
 		defer cancel()
 		wg.Wait()
-		close(gens)
+		close(files)
 		close(errs)
 	}()
 
@@ -154,36 +169,64 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 
 	cfg.log.Debug(fmt.Sprintf("Generating docs using %d workers ...", workers))
 
+	// root context is only used to create child contexts
+	rootGenCtx, err := newCtx(ctx, repo, "", "")
+	if err != nil {
+		return nil, nil, fmt.Errorf("create generation context: %w", err)
+	}
+
 	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
 			for file := range queue {
-				findings := result[file]
-				for _, finding := range findings {
-					var generateCtx *genCtx
-					var err error
-					if generateCtx, err = g.context(generateCtx, ctx, repo, finding); err != nil {
-						fail(fmt.Errorf("generate %s: create context: %w", finding, err))
-						return
-					}
-
-					gen, err := g.generate(generateCtx, cfg, finding)
-					if err != nil {
-						fail(err)
-						return
-					}
-
-					if !push(gen) {
-						return
-					}
+				gens, err := g.generateFile(rootGenCtx, ctx, file, result[file], repo, cfg, canGenerate, onGenerated)
+				if err != nil {
+					fail(fmt.Errorf("generate %s: %w", file, err))
+					return
 				}
 
-				fileDone()
+				if !push(file, gens) {
+					return
+				}
 			}
 		}()
 	}
 
-	return gens, errs, nil
+	return files, errs, nil
+}
+
+func (g *Generator) generateFile(
+	ctx *genCtx,
+	parent context.Context,
+	file string,
+	findings []find.Finding,
+	repo fs.FS,
+	cfg generation,
+	canGenerate func() bool,
+	onGenerated func(),
+) ([]Generation, error) {
+	var generations []Generation
+
+	var err error
+	for _, finding := range findings {
+		if !canGenerate() {
+			break
+		}
+
+		if ctx, err = g.context(ctx, parent, repo, finding); err != nil {
+			return generations, fmt.Errorf("create context for %s: %w", finding, err)
+		}
+
+		gen, err := g.generateFinding(ctx, cfg, finding)
+		if err != nil {
+			return generations, err
+		}
+		generations = append(generations, gen)
+
+		onGenerated()
+	}
+
+	return generations, nil
 }
 
 func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, finding find.Finding) (*genCtx, error) {
@@ -193,7 +236,7 @@ func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, fin
 	return ctx.new(parent, finding.Path, finding.Identifier), nil
 }
 
-func (g *Generator) generate(ctx *genCtx, cfg generation, finding find.Finding) (Generation, error) {
+func (g *Generator) generateFinding(ctx *genCtx, cfg generation, finding find.Finding) (Generation, error) {
 	cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
 
 	doc, err := g.svc.GenerateDoc(ctx)
@@ -206,7 +249,7 @@ func (g *Generator) generate(ctx *genCtx, cfg generation, finding find.Finding) 
 	}
 
 	return Generation{
-		Path:       finding.Path,
+		File:       finding.Path,
 		Identifier: finding.Identifier,
 		Doc:        doc,
 	}, nil

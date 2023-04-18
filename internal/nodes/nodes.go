@@ -5,10 +5,23 @@ import (
 	"unicode"
 
 	"github.com/dave/dst"
+	"github.com/modernice/opendocs/internal/slice"
 )
 
 func HasDoc(decs dst.Decorations) bool {
 	return len(decs.All()) > 0
+}
+
+func Doc(n dst.Node, removeSlash bool) string {
+	lines := n.Decorations().Start.All()
+	if removeSlash {
+		lines = slice.Map(lines, trimSlash)
+	}
+	return strings.Join(lines, "")
+}
+
+func trimSlash(s string) string {
+	return strings.TrimLeft(strings.TrimPrefix(s, "//"), " ")
 }
 
 func Identifier(node dst.Node) string {
