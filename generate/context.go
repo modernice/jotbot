@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"strings"
 
 	"golang.org/x/exp/slices"
 )
@@ -82,9 +81,6 @@ func (ctx *genCtx) buildFileList() error {
 		}
 
 		if d.IsDir() {
-			if d.Name() != "." && strings.HasPrefix(d.Name(), ".") {
-				return fs.SkipDir
-			}
 			return nil
 		}
 
