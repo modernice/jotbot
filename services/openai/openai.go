@@ -191,12 +191,12 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 func (svc *Service) createCompletion(ctx context.Context, prompt string) (string, error) {
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
-		Model:            svc.model,
-		Temperature:      0.1,
-		TopP:             0.3,
+		Model:       svc.model,
+		Temperature: 0.618,
+		// TopP:             0.3,
 		MaxTokens:        512,
 		PresencePenalty:  0.1,
-		FrequencyPenalty: 0.1,
+		FrequencyPenalty: 0.15,
 		Prompt:           prompt,
 	}
 
