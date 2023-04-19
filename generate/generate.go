@@ -113,6 +113,12 @@ func Footer(msg string) Option {
 	}
 }
 
+func Override(override bool) Option {
+	return func(g *generation) {
+		g.override = override
+	}
+}
+
 // FindWith adds options to a Generator that are used to configure the search
 // for code to generate documentation for. It takes one or more find.Options and
 // returns an Option that can be passed to a Generator.
@@ -126,6 +132,7 @@ type generation struct {
 	limit     int
 	fileLimit int
 	footer    string
+	override  bool
 	findOpts  []find.Option
 	log       *slog.Logger
 }
@@ -147,9 +154,18 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 
 	findOpts := append([]find.Option{find.WithLogger(cfg.log.Handler())}, cfg.findOpts...)
 
-	result, err := find.New(repo, findOpts...).Uncommented()
+	var (
+		result find.Findings
+		err    error
+	)
+
+	if cfg.override {
+		result, err = find.New(repo, findOpts...).All()
+	} else {
+		result, err = find.New(repo, findOpts...).Uncommented()
+	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("find uncommented code: %w", err)
+		return nil, nil, fmt.Errorf("find identifiers: %w", err)
 	}
 
 	files, errs := make(chan File), make(chan error)

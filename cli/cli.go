@@ -12,6 +12,7 @@ import (
 	"github.com/modernice/opendocs/find"
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/git"
+	"github.com/modernice/opendocs/patch"
 	"github.com/modernice/opendocs/services/openai"
 	"golang.org/x/exp/slog"
 )
@@ -67,6 +68,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	opts := []generate.Option{
 		generate.Limit(cfg.Generate.Limit),
 		generate.FileLimit(cfg.Generate.FileLimit),
+		generate.Override(cfg.Generate.Override),
 	}
 	if len(cfg.Generate.Filter) > 0 {
 		opts = append(opts, generate.FindWith(find.Glob(cfg.Generate.Filter...)))
@@ -74,7 +76,12 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 
 	docs := opendocs.New(svc, opendocs.WithLogger(logHandler))
 
-	patch, err := docs.Generate(context.Background(), cfg.Generate.Root, opts...)
+	patch, err := docs.Generate(
+		context.Background(),
+		cfg.Generate.Root,
+		opendocs.GenerateWith(opts...),
+		opendocs.PatchWith(patch.Override(cfg.Generate.Override)),
+	)
 	if err != nil {
 		return err
 	}

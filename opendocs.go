@@ -52,10 +52,34 @@ func New(svc generate.Service, opts ...Option) *Repository {
 	return g
 }
 
+type GenerateOption func(*generation)
+
+func GenerateWith(opts ...generate.Option) GenerateOption {
+	return func(g *generation) {
+		g.genOpts = append(g.genOpts, opts...)
+	}
+}
+
+func PatchWith(opts ...patch.Option) GenerateOption {
+	return func(g *generation) {
+		g.patchOpts = append(g.patchOpts, opts...)
+	}
+}
+
+type generation struct {
+	genOpts   []generate.Option
+	patchOpts []patch.Option
+}
+
 // Generate generates a patch for the Go source code repository located at repo.
 // It returns the generated patch or an error.
-func (g *Repository) Generate(ctx context.Context, repo string, opts ...generate.Option) (*patch.Patch, error) {
-	files, ferrs, err := g.Files(ctx, repo, opts...)
+func (g *Repository) Generate(ctx context.Context, repo string, opts ...GenerateOption) (*patch.Patch, error) {
+	var cfg generation
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	files, ferrs, err := g.Files(ctx, repo, cfg.genOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +88,7 @@ func (g *Repository) Generate(ctx context.Context, repo string, opts ...generate
 
 	pc := make(chan *patch.Patch)
 	go func() {
-		p, err := g.Patch(ctx, os.DirFS(repo), files)
+		p, err := g.Patch(ctx, os.DirFS(repo), files, cfg.patchOpts...)
 		if err != nil {
 			select {
 			case <-ctx.Done():
