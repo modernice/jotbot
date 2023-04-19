@@ -306,7 +306,7 @@ func normalizeIdentifier(identifier string) string {
 
 func promptWithoutCode(file, identifier, longIdentifier string) string {
 	return fmt.Sprintf(
-		"Write a concise documentation for %q in GoDoc format, with references to symbols wrapped within brackets. Provide only the documentation, excluding input code and examples. Begin the first sentence with %q. Do not link to any websites. Write in the style of the Go library documentations. Here is the source code for %q:\n",
+		"Write a concise GoDoc documentation for %q, ensuring clarity and brevity. Use brackets to enclose symbol references, and start the first sentence with %q. Emulate the style of Go library documentation, and avoid linking to external websites. Provide the documentation text only, excluding input code and examples. This is the source code for %q:\n\n",
 		longIdentifier,
 		fmt.Sprintf("%s ", identifier),
 		file,
