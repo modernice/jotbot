@@ -50,6 +50,7 @@ type Service struct {
 	maxDocTokens int
 	minifyTokens int
 	minifySteps  []nodes.MinifyOptions
+	forceMinify  bool
 	log          *slog.Logger
 }
 
@@ -94,9 +95,10 @@ func MaxTokens(maxTokens int) Option {
 	}
 }
 
-func MinifyWith(steps ...nodes.MinifyOptions) Option {
+func MinifyWith(steps []nodes.MinifyOptions, force bool) Option {
 	return func(s *Service) {
 		s.minifySteps = steps
+		s.forceMinify = force
 	}
 }
 
@@ -158,6 +160,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 		Model:     svc.model,
 		Prepend:   prompt,
 		Steps:     svc.minifySteps,
+		Force:     svc.forceMinify,
 	}.Minify(code)
 
 	if err != nil {

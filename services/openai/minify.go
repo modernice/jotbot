@@ -69,6 +69,7 @@ type MinifyOptions struct {
 	MaxTokens int
 	Model     string
 	Prepend   string
+	Force     bool
 	Steps     []nodes.MinifyOptions
 }
 
@@ -133,8 +134,7 @@ func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, err
 	}
 
 	total := prependLen + len(ids)
-
-	if total <= opts.MaxTokens {
+	if !opts.Force && total <= opts.MaxTokens {
 		min := Minification{
 			Input:    code,
 			Minified: code,
@@ -171,7 +171,7 @@ func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, err
 
 		msteps = append(msteps, min)
 
-		if len(ids) <= opts.MaxTokens {
+		if !opts.Force && len(ids) <= opts.MaxTokens {
 			return min, msteps, nil
 		}
 	}

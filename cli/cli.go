@@ -71,7 +71,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	}
 
 	if cfg.Generate.Clear {
-		openaiOpts = append(openaiOpts, openai.MinifyWith(nodes.MinifyComments))
+		openaiOpts = append(openaiOpts, openai.MinifyWith([]nodes.MinifyOptions{nodes.MinifyComments}, true))
 	}
 
 	svc := openai.New(cfg.APIKey, openaiOpts...)
