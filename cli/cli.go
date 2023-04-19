@@ -33,6 +33,7 @@ type CLI struct {
 		FileLimit int      `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
 		DryRun    bool     `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
 		Model     string   `default:"gpt-3.5-turbo" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
+		Override  bool     `name:"override" short:"o" env:"OPENDOCS_OVERRIDE" help:"Override existing documentation."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
