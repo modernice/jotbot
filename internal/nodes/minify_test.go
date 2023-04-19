@@ -15,6 +15,7 @@ func Foo() error {
 	return foo()
 }
 
+// X is a struct.
 type X struct{}
 
 // Bar is a method.
@@ -31,6 +32,9 @@ func foo() error {
 func bar() error {
 	return errors.New("bar")
 }
+
+// y is a struct.
+type y struct{}
 `
 
 var wantUnexportedFuncBody = `// Package foo is super nice.
@@ -41,6 +45,7 @@ func Foo() error {
 	return foo()
 }
 
+// X is a struct.
 type X struct{}
 
 // Bar is a method.
@@ -53,6 +58,9 @@ func foo() error
 
 // bar is a function, too.
 func bar() error
+
+// y is a struct.
+type y struct{}
 `
 
 var wantUnexportedFuncComment = `// Package foo is super nice.
@@ -63,6 +71,7 @@ func Foo() error {
 	return foo()
 }
 
+// X is a struct.
 type X struct{}
 
 // Bar is a method.
@@ -77,6 +86,9 @@ func foo() error {
 func bar() error {
 	return errors.New("bar")
 }
+
+// y is a struct.
+type y struct{}
 `
 
 var wantUnexportedFunc = `// Package foo is super nice.
@@ -87,6 +99,7 @@ func Foo() error {
 	return foo()
 }
 
+// X is a struct.
 type X struct{}
 
 // Bar is a method.
@@ -97,6 +110,38 @@ func (X) Bar() error {
 func foo() error
 
 func bar() error
+
+// y is a struct.
+type y struct{}
+`
+
+var wantUnexportedStructComment = `// Package foo is super nice.
+package foo
+
+// Foo is a function.
+func Foo() error {
+	return foo()
+}
+
+// X is a struct.
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
+
+type y struct{}
 `
 
 var wantExportedFuncBody = `// Package foo is super nice.
@@ -105,6 +150,7 @@ package foo
 // Foo is a function.
 func Foo() error
 
+// X is a struct.
 type X struct{}
 
 // Bar is a method.
@@ -115,6 +161,9 @@ func foo() error
 
 // bar is a function, too.
 func bar() error
+
+// y is a struct.
+type y struct{}
 `
 
 var wantExportedFuncComment = `// Package foo is super nice.
@@ -124,6 +173,7 @@ func Foo() error {
 	return foo()
 }
 
+// X is a struct.
 type X struct{}
 
 func (X) Bar() error {
@@ -137,13 +187,17 @@ func foo() error {
 func bar() error {
 	return errors.New("bar")
 }
+
+// y is a struct.
+type y struct{}
 `
 
-var wantExportedFuncAll = `// Package foo is super nice.
+var wantExportedFunc = `// Package foo is super nice.
 package foo
 
 func Foo() error
 
+// X is a struct.
 type X struct{}
 
 func (X) Bar() error
@@ -151,9 +205,13 @@ func (X) Bar() error
 func foo() error
 
 func bar() error
+
+// y is a struct.
+type y struct{}
 `
 
-var wantPackageComment = `package foo
+var wantExportedStructComment = `// Package foo is super nice.
+package foo
 
 // Foo is a function.
 func Foo() error {
@@ -176,6 +234,37 @@ func foo() error {
 func bar() error {
 	return errors.New("bar")
 }
+
+type y struct{}
+`
+
+var wantPackageComment = `package foo
+
+// Foo is a function.
+func Foo() error {
+	return foo()
+}
+
+// X is a struct.
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
+
+// y is a struct.
+type y struct{}
 `
 
 var wantAll = `package foo
@@ -189,6 +278,8 @@ func (X) Bar() error
 func foo() error
 
 func bar() error
+
+type y struct{}
 `
 
 func TestMinify(t *testing.T) {
@@ -198,14 +289,14 @@ func TestMinify(t *testing.T) {
 		want string
 	}{
 		{
-			name: "Unexported.Body",
+			name: "Unexported.FuncBody",
 			opts: nodes.MinifyOptions{
 				FuncBody: true,
 			},
 			want: wantUnexportedFuncBody,
 		},
 		{
-			name: "Unexported.Comment",
+			name: "Unexported.FuncComment",
 			opts: nodes.MinifyOptions{
 				FuncComment: true,
 			},
@@ -220,7 +311,14 @@ func TestMinify(t *testing.T) {
 			want: wantUnexportedFunc,
 		},
 		{
-			name: "Exported.Body",
+			name: "Unexported.StructComment",
+			opts: nodes.MinifyOptions{
+				StructComment: true,
+			},
+			want: wantUnexportedStructComment,
+		},
+		{
+			name: "Exported.FuncBody",
 			opts: nodes.MinifyOptions{
 				FuncBody: true,
 				Exported: true,
@@ -228,7 +326,7 @@ func TestMinify(t *testing.T) {
 			want: wantExportedFuncBody,
 		},
 		{
-			name: "Exported.Comment",
+			name: "Exported.FuncComment",
 			opts: nodes.MinifyOptions{
 				FuncComment: true,
 				Exported:    true,
@@ -242,7 +340,15 @@ func TestMinify(t *testing.T) {
 				FuncBody:    true,
 				Exported:    true,
 			},
-			want: wantExportedFuncAll,
+			want: wantExportedFunc,
+		},
+		{
+			name: "Exported.StructComment",
+			opts: nodes.MinifyOptions{
+				StructComment: true,
+				Exported:      true,
+			},
+			want: wantExportedStructComment,
 		},
 		{
 			name: "PackageComment",
@@ -257,6 +363,7 @@ func TestMinify(t *testing.T) {
 				PackageComment: true,
 				FuncComment:    true,
 				FuncBody:       true,
+				StructComment:  true,
 				Exported:       true,
 			},
 			want: wantAll,
