@@ -1,4 +1,4 @@
-package fixuture
+package fixture
 
 const Foo = "foo"
 

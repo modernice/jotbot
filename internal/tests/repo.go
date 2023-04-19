@@ -20,12 +20,15 @@ var (
 	calculatorFS embed.FS
 	//go:embed testdata/fixtures/minify
 	minifyFS embed.FS
+	//go:embed testdata/fixtures/glob
+	globFS embed.FS
 
-	fixtures = map[string]embed.FS{
-		"basic":         basicFS,
-		"only-go-files": onlyGoFilesFS,
-		"calculator":    calculatorFS,
-		"minify":        minifyFS,
+	fixtures = map[string]fs.FS{
+		"basic":         Must(fs.Sub(basicFS, "testdata/fixtures/basic")),
+		"only-go-files": Must(fs.Sub(onlyGoFilesFS, "testdata/fixtures/only-go-files")),
+		"calculator":    Must(fs.Sub(calculatorFS, "testdata/fixtures/calculator")),
+		"minify":        Must(fs.Sub(minifyFS, "testdata/fixtures/minify")),
+		"glob":          Must(fs.Sub(globFS, "testdata/fixtures/glob")),
 	}
 )
 
@@ -70,9 +73,15 @@ func InitRepo(name, root string) error {
 			return nil
 		}
 
-		copy, err := os.Create(filepath.Join(root, entry.Name()))
+		targetPath := filepath.Join(root, path)
+		targetDir := filepath.Dir(targetPath)
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return fmt.Errorf("create directory %q: %w", targetDir, err)
+		}
+
+		copy, err := os.Create(targetPath)
 		if err != nil {
-			return fmt.Errorf("create file %q: %w", entry.Name(), err)
+			return fmt.Errorf("create %q: %w", targetPath, err)
 		}
 		defer copy.Close()
 
