@@ -18,17 +18,20 @@ var (
 	onlyGoFilesFS embed.FS
 	//go:embed testdata/fixtures/calculator
 	calculatorFS embed.FS
+	//go:embed testdata/fixtures/duplicate-name
+	duplicateNameFS embed.FS
 	//go:embed testdata/fixtures/minify
 	minifyFS embed.FS
 	//go:embed testdata/fixtures/glob
 	globFS embed.FS
 
 	fixtures = map[string]fs.FS{
-		"basic":         Must(fs.Sub(basicFS, "testdata/fixtures/basic")),
-		"only-go-files": Must(fs.Sub(onlyGoFilesFS, "testdata/fixtures/only-go-files")),
-		"calculator":    Must(fs.Sub(calculatorFS, "testdata/fixtures/calculator")),
-		"minify":        Must(fs.Sub(minifyFS, "testdata/fixtures/minify")),
-		"glob":          Must(fs.Sub(globFS, "testdata/fixtures/glob")),
+		"basic":          Must(fs.Sub(basicFS, "testdata/fixtures/basic")),
+		"only-go-files":  Must(fs.Sub(onlyGoFilesFS, "testdata/fixtures/only-go-files")),
+		"calculator":     Must(fs.Sub(calculatorFS, "testdata/fixtures/calculator")),
+		"duplicate-name": Must(fs.Sub(duplicateNameFS, "testdata/fixtures/duplicate-name")),
+		"minify":         Must(fs.Sub(minifyFS, "testdata/fixtures/minify")),
+		"glob":           Must(fs.Sub(globFS, "testdata/fixtures/glob")),
 	}
 )
 

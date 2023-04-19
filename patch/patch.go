@@ -101,7 +101,19 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 		return nil
 	}
 
-	p.log.Debug("Adding comment ...", "identifier", identifier, "file", file)
+	p.log.Debug("Adding comment ...", "file", file, "identifier", identifier)
+
+	if recv, method, isMethod := splitMethodIdentifier(identifier); isMethod {
+		decl, ok, err := p.findMethod(file, recv, method)
+		if err != nil {
+			return fmt.Errorf("look for method %s in %s: %w", identifier, file, err)
+		}
+		if !ok {
+			return fmt.Errorf("could not find method %s in %s", identifier, file)
+		}
+
+		return p.commentFunction(file, decl, comment)
+	}
 
 	{
 		spec, decl, ok, err := p.findType(file, identifier)
@@ -133,17 +145,15 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 		}
 	}
 
-	{
-		decl, ok, err := p.findMethod(file, identifier)
-		if err != nil {
-			return fmt.Errorf("look for method %s in %s: %w", identifier, file, err)
-		}
-		if ok {
-			return p.commentFunction(file, decl, comment)
-		}
-	}
-
 	return fmt.Errorf("could not find %s in %s", identifier, file)
+}
+
+func splitMethodIdentifier(identifier string) (recv, method string, ok bool) {
+	parts := strings.Split(identifier, ".")
+	if len(parts) != 2 {
+		return "", "", false
+	}
+	return parts[0], parts[1], true
 }
 
 func (p *Patch) parseFile(path string) (*dst.File, error) {
@@ -217,7 +227,7 @@ func (p *Patch) findFunction(file, identifier string) (*dst.FuncDecl, bool, erro
 	}
 
 	for _, astDecl := range node.Decls {
-		if fd, ok := astDecl.(*dst.FuncDecl); ok && fd.Name.Name == identifier {
+		if fd, ok := astDecl.(*dst.FuncDecl); ok && fd.Name.Name == identifier && fd.Recv == nil {
 			return fd, true, nil
 		}
 	}
@@ -238,19 +248,16 @@ func (p *Patch) commentFunction(file string, decl *dst.FuncDecl, comment string)
 	return nil
 }
 
-func (p *Patch) findMethod(file, identifier string) (*dst.FuncDecl, bool, error) {
-	parts := strings.Split(identifier, ".")
-	if len(parts) != 2 {
-		return nil, false, nil
-	}
-
+func (p *Patch) findMethod(file, name, method string) (*dst.FuncDecl, bool, error) {
 	node, err := p.parseFile(file)
 	if err != nil {
 		return nil, false, nil
 	}
 
-	name, method := parts[0], parts[1]
 	name = strings.TrimPrefix(name, "*")
+	if name == "" {
+		return nil, false, fmt.Errorf("empty struct name")
+	}
 
 	for _, decl := range node.Decls {
 		funcDecl, ok := decl.(*dst.FuncDecl)

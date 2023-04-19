@@ -207,3 +207,31 @@ func TestPatch_Comment_splitString(t *testing.T) {
 		tests.ExpectComment(t, "Foo", splitStringWant, strings.NewReader(string(b)))
 	})
 }
+
+func TestPatch_Comment_duplicateName(t *testing.T) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "duplicate-name")
+	tests.WithRepo("duplicate-name", root, func(repoFS fs.FS) {
+		p := patch.New(repoFS)
+
+		if err := p.Comment("foo.go", "Foo", "Foo is a function."); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := p.Comment("foo.go", "X.Foo", "Foo is a method of X."); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := p.Comment("foo.go", "*Y.Foo", "Foo is a method of *Y."); err != nil {
+			t.Fatal(err)
+		}
+
+		b, err := p.File("foo.go")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tests.ExpectComment(t, "Foo", "Foo is a function.", strings.NewReader(string(b)))
+		tests.ExpectComment(t, "X.Foo", "Foo is a method of X.", strings.NewReader(string(b)))
+		tests.ExpectComment(t, "*Y.Foo", "Foo is a method of *Y.", strings.NewReader(string(b)))
+	})
+}

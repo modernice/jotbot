@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultModel     = openai.GPT3TextDavinci003
+	DefaultModel     = openai.GPT3Dot5Turbo
 	DefaultMaxTokens = 512
 )
 

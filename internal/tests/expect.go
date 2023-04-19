@@ -14,11 +14,30 @@ import (
 	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/modernice/opendocs/internal/slice"
 	"github.com/modernice/opendocs/patch"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
 func ExpectFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
+
+	want = maps.Clone(want)
+	got = maps.Clone(got)
+
+	sort := func(findings []find.Finding) {
+		slices.SortFunc(findings, func(a, b find.Finding) bool {
+			return a.Identifier <= b.Identifier
+		})
+	}
+
+	for file, findings := range want {
+		sort(findings)
+		want[file] = findings
+	}
+	for file, findings := range got {
+		sort(findings)
+		got[file] = findings
+	}
 
 	if !cmp.Equal(want, got) {
 		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))

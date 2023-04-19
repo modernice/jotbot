@@ -61,6 +61,30 @@ func TestGenerator_Generate(t *testing.T) {
 	})
 }
 
+func TestGenerator_Generate_duplicateName(t *testing.T) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "duplicate-name")
+
+	tests.WithRepo("duplicate-name", root, func(repoFS fs.FS) {
+		svc := igen.MockService()
+		svc.WithDoc("foo.go", "Foo", "Foo is a function.")
+		svc.WithDoc("foo.go", "X", "X is a struct.")
+		svc.WithDoc("foo.go", "X.Foo", "Foo is a method of X.")
+		svc.WithDoc("foo.go", "Y", "Y is a struct.")
+		svc.WithDoc("foo.go", "*Y.Foo", "Foo is a method of *Y.")
+
+		g := generate.New(svc)
+
+		gens, errs, err := g.Generate(context.Background(), repoFS)
+		if err != nil {
+			t.Fatalf("Generate() should not return an error; got %q", err)
+		}
+
+		result := generate.Flatten(drain(t, gens, errs))
+
+		tests.ExpectGenerations(t, svc.Generations(), result)
+	})
+}
+
 func TestFooter(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "footer")
 	tests.WithRepo("calculator", root, func(repoFS fs.FS) {
@@ -85,6 +109,8 @@ func TestFooter(t *testing.T) {
 }
 
 func drain[T any](t *testing.T, vals <-chan T, errs <-chan error) []T {
+	t.Helper()
+
 	out, err := internal.Drain(vals, errs)
 	if err != nil {
 		t.Fatalf("drain generations: %v", err)
