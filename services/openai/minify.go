@@ -8,6 +8,16 @@ import (
 	"github.com/tiktoken-go/tokenizer"
 )
 
+var DefaultMinification = [...]nodes.MinifyOptions{
+	nodes.MinifyUnexported,
+	{
+		FuncBody: true,
+		Exported: true,
+	},
+	nodes.MinifyExported,
+	nodes.MinifyAll,
+}
+
 type SourceTooLarge struct {
 	MaxTokens      uint
 	MinifiedTokens uint
@@ -26,15 +36,9 @@ type Minification struct {
 	Options nodes.MinifyOptions
 }
 
-var minificationSteps = [...]nodes.MinifyOptions{
-	nodes.MinifyUnexported,
-	nodes.MinifyExported,
-	nodes.MinifyAll,
-}
-
 func Minify(code []byte, maxTokens uint, steps ...nodes.MinifyOptions) (Minification, []Minification, error) {
 	if len(steps) == 0 {
-		steps = minificationSteps[:]
+		steps = DefaultMinification[:]
 	}
 
 	var msteps []Minification
@@ -64,7 +68,7 @@ func Minify(code []byte, maxTokens uint, steps ...nodes.MinifyOptions) (Minifica
 		return min, []Minification{min}, nil
 	}
 
-	for _, s := range minificationSteps {
+	for _, s := range DefaultMinification {
 		input, err := nodes.Format(node)
 		if err != nil {
 			return Minification{}, nil, fmt.Errorf("format code: %w", err)
