@@ -38,6 +38,7 @@ type Minification struct {
 
 type MinifyOptions struct {
 	MaxTokens int
+	Model     string
 	Prepend   string
 	Steps     []nodes.MinifyOptions
 }
@@ -51,6 +52,10 @@ func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, err
 		opts.Steps = DefaultMinification[:]
 	}
 
+	if opts.Model == "" {
+		opts.Model = string(DefaultModel)
+	}
+
 	var msteps []Minification
 
 	node, err := decorator.Parse(code)
@@ -58,7 +63,7 @@ func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, err
 		return Minification{}, nil, fmt.Errorf("parse code: %w", err)
 	}
 
-	codec, err := tokenizer.Get(tokenizer.Cl100kBase)
+	codec, err := tokenizer.ForModel(tokenizer.Model(opts.Model))
 	if err != nil {
 		return Minification{}, nil, fmt.Errorf("get tokenizer: %w", err)
 	}
