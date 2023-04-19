@@ -27,11 +27,12 @@ type CLI struct {
 	Generate struct {
 		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
 		Filter    []string `name:"filter" short:"f" env:"OPENDOCS_FILTER" help:"Glob pattern(s) to filter files."`
-		Branch    string   `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
+		Commit    bool     `name:"commit" short:"c" default:"true" env:"OPENDOCS_COMMIT" help:"Commit changes to Git."`
+		Branch    string   `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to."`
 		Limit     int      `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
 		FileLimit int      `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
 		DryRun    bool     `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
-		Model     string   `default:"text-davinci-003" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
+		Model     string   `default:"gpt-3.5-turbo" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -86,7 +87,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		return nil
 	}
 
-	if cfg.Generate.Branch != "" {
+	if cfg.Generate.Commit {
 		grepo := git.Repo(cfg.Generate.Root, git.WithLogger(logHandler))
 		if err := grepo.Commit(patch, git.Branch(cfg.Generate.Branch)); err != nil {
 			return fmt.Errorf("commit patch: %w", err)
