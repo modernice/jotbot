@@ -1,3 +1,0 @@
-# To-Do
-
-- Parallelize generations
