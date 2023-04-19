@@ -7,7 +7,5 @@ if [ "$BRANCH" != "main" ]; then
 	git checkout main
 fi
 
-if [ "$BRANCH" = "opendocs-patch" ]; then
-	echo "Deleting opendocs-patch branch ..."
-	git branch -D opendocs-patch
-fi
+echo "Deleting opendocs-patch branches ..."
+git branch -D `git branch | grep opendocs-patch`
