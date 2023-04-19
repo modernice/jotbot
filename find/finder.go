@@ -107,11 +107,23 @@ func New(repo fs.FS, opts ...Option) *Finder {
 	return f
 }
 
+func (f *Finder) All() (Findings, error) {
+	return f.find(true)
+}
+
 // Uncommented returns a map of [Finding](#Finding) slices, where each slice
 // contains the identifiers of all exported types and functions in a Go file
 // that have no associated documentation comments.
 func (f *Finder) Uncommented() (Findings, error) {
-	f.log.Info("Searching for uncommented code in repository ...", "repo", f.repo)
+	return f.find(false)
+}
+
+func (f *Finder) find(all bool) (Findings, error) {
+	if all {
+		f.log.Info("Searching for code in repository ...", "repo", f.repo)
+	} else {
+		f.log.Info("Searching for uncommented code in repository ...", "repo", f.repo)
+	}
 
 	allFindings := make(Findings)
 
@@ -157,9 +169,14 @@ func (f *Finder) Uncommented() (Findings, error) {
 			return nil
 		}
 
-		findings, err := f.findUncommented(path)
+		var findings []Finding
+		if all {
+			findings, err = f.findInFile(path, true)
+		} else {
+			findings, err = f.findInFile(path, false)
+		}
 		if err != nil {
-			return fmt.Errorf("find uncommented code in %s: %w", path, err)
+			return fmt.Errorf("find code in %s: %w", path, err)
 		}
 
 		allFindings[path] = append(allFindings[path], findings...)
@@ -192,7 +209,7 @@ func (f *Finder) parseGlobOptions() (func(string) bool, error) {
 	}, nil
 }
 
-func (f *Finder) findUncommented(path string) ([]Finding, error) {
+func (f *Finder) findInFile(path string, all bool) ([]Finding, error) {
 	f.log.Info(fmt.Sprintf("Searching for uncommented code in %s ...", path))
 
 	var findings []Finding
@@ -222,13 +239,13 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 
 		switch node := node.(type) {
 		case *dst.FuncDecl:
-			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
+			if !all && nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
 			}
 
 			identifier, exported = nodes.Identifier(node)
 		case *dst.GenDecl:
-			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
+			if !all && nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
 			}
 
@@ -240,11 +257,11 @@ func (f *Finder) findUncommented(path string) ([]Finding, error) {
 
 			switch spec := spec.(type) {
 			case *dst.TypeSpec:
-				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+				if all || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
 					identifier, exported = nodes.Identifier(spec)
 				}
 			case *dst.ValueSpec:
-				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+				if all || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
 					identifier, exported = nodes.Identifier(spec)
 				}
 			}
