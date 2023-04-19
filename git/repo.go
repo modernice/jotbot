@@ -82,8 +82,8 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 
 	r.log.Info("[git] Committing patch ...", "branch", cfg.branch)
 
-	if _, _, err := r.git.Cmd("checkout", "-b", cfg.branch); err != nil {
-		return fmt.Errorf("checkout branch: %w", err)
+	if _, output, err := r.git.Cmd("checkout", "-b", cfg.branch); err != nil {
+		return fmt.Errorf("checkout branch: %w: %s", err, string(output))
 	}
 
 	if err := p.Apply(r.root); err != nil {
