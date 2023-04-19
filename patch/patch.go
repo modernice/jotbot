@@ -239,6 +239,7 @@ func (p *Patch) commentGenDecl(file, identifier string, comment string, decl *ds
 		return fmt.Errorf("%s already has documentation", identifier)
 	}
 
+	decl.Decs.Start.Clear()
 	decl.Decs.Start.Append(formatComment(comment))
 
 	return nil
@@ -267,6 +268,7 @@ func (p *Patch) commentFunction(file string, decl *dst.FuncDecl, comment string)
 		return fmt.Errorf("function %s already has documentation", decl.Name.Name)
 	}
 
+	decl.Decs.Start.Clear()
 	decl.Decs.Start.Append(formatComment(comment))
 
 	return nil
