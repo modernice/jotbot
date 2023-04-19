@@ -181,8 +181,13 @@ func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, err
 		min = msteps[len(opts.Steps)-1]
 	}
 
-	return min, msteps, &SourceTooLarge{
-		MaxTokens:      opts.MaxTokens,
-		MinifiedTokens: len(min.Tokens),
+	err = nil
+	if !opts.Force {
+		err = &SourceTooLarge{
+			MaxTokens:      opts.MaxTokens,
+			MinifiedTokens: len(min.Tokens),
+		}
 	}
+
+	return min, msteps, err
 }
