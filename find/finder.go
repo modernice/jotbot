@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"strings"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
@@ -18,9 +19,10 @@ import (
 )
 
 type Finder struct {
-	repo fs.FS
-	skip *Skip
-	log  *slog.Logger
+	repo  fs.FS
+	skip  *Skip
+	globs []string
+	log   *slog.Logger
 }
 
 type Finding struct {
@@ -28,9 +30,9 @@ type Finding struct {
 	Identifier string
 }
 
-// func (f Finding) String() string {
-// 	return fmt.Sprintf("%s@%s", f.Path, f.Identifier)
-// }
+func (f Finding) String() string {
+	return fmt.Sprintf("%s@%s", f.Path, f.Identifier)
+}
 
 type Findings map[string][]Finding
 
@@ -47,6 +49,14 @@ func (opt optionFunc) apply(f *Finder) {
 func WithLogger(h slog.Handler) Option {
 	return optionFunc(func(f *Finder) {
 		f.log = slog.New(h)
+	})
+}
+
+func Glob(pattern ...string) Option {
+	pattern = slice.Map(pattern, strings.TrimSpace)
+	pattern = slice.NoZero(pattern)
+	return optionFunc(func(f *Finder) {
+		f.globs = append(f.globs, pattern...)
 	})
 }
 
@@ -69,6 +79,11 @@ func (f *Finder) Uncommented() (Findings, error) {
 	f.log.Info("Searching for uncommented code in repository ...", "repo", f.repo)
 
 	allFindings := make(Findings)
+
+	globExclude, err := f.parseGlobOptions()
+	if err != nil {
+		return nil, fmt.Errorf("parse glob options: %w", err)
+	}
 
 	if err := fs.WalkDir(f.repo, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -97,6 +112,11 @@ func (f *Finder) Uncommented() (Findings, error) {
 			return nil
 		}
 
+		if globExclude(path) {
+			f.log.Debug("Skipping file", "path", path, "reason", "glob")
+			return nil
+		}
+
 		if f.skip != nil && f.skip.ExcludeFile(exclude) {
 			f.log.Debug("Skipping file", "path", path)
 			return nil
@@ -115,6 +135,26 @@ func (f *Finder) Uncommented() (Findings, error) {
 	}
 
 	return allFindings, nil
+}
+
+func (f *Finder) parseGlobOptions() (func(string) bool, error) {
+	if enabled := len(f.globs) > 0; !enabled {
+		return func(string) bool { return false }, nil
+	}
+
+	var globAllow []string
+	for _, pattern := range f.globs {
+		globFiles, err := fs.Glob(f.repo, pattern)
+		if err != nil {
+			return nil, fmt.Errorf("glob %q: %w", pattern, err)
+		}
+		globAllow = append(globAllow, globFiles...)
+	}
+	globAllow = slice.Unique(globAllow)
+
+	return func(path string) bool {
+		return slices.Contains(globAllow, filepath.Clean(path))
+	}, nil
 }
 
 func (f *Finder) findUncommented(path string) ([]Finding, error) {
