@@ -9,6 +9,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/modernice/opendocs"
+	"github.com/modernice/opendocs/find"
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/git"
 	"github.com/modernice/opendocs/services/openai"
@@ -17,12 +18,13 @@ import (
 
 type CLI struct {
 	Generate struct {
-		Root      string `arg:"" default:"." help:"Root directory of the repository."`
-		Branch    string `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
-		Limit     int    `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
-		FileLimit int    `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
-		DryRun    bool   `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
-		Model     string `default:"text-davinci-003" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
+		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
+		Filter    []string `name:"filter" short:"f" env:"OPENDOCS_FILTER" help:"Glob pattern(s) to filter files."`
+		Branch    string   `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to. (set to empty string to disable committing)"`
+		Limit     int      `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
+		FileLimit int      `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
+		DryRun    bool     `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
+		Model     string   `default:"text-davinci-003" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -51,6 +53,9 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	opts := []generate.Option{
 		generate.Limit(cfg.Generate.Limit),
 		generate.FileLimit(cfg.Generate.FileLimit),
+	}
+	if len(cfg.Generate.Filter) > 0 {
+		opts = append(opts, generate.FindWith(find.Glob(cfg.Generate.Filter...)))
 	}
 
 	docs := opendocs.New(svc, opendocs.WithLogger(logHandler))

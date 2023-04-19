@@ -71,10 +71,17 @@ func Footer(msg string) Option {
 	}
 }
 
+func FindWith(opts ...find.Option) Option {
+	return func(g *generation) {
+		g.findOpts = append(g.findOpts, opts...)
+	}
+}
+
 type generation struct {
 	limit     int
 	fileLimit int
 	footer    string
+	findOpts  []find.Option
 	log       *slog.Logger
 }
 
@@ -87,7 +94,9 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		cfg.log = internal.NopLogger()
 	}
 
-	result, err := find.New(repo, find.WithLogger(cfg.log.Handler())).Uncommented()
+	findOpts := append([]find.Option{find.WithLogger(cfg.log.Handler())}, cfg.findOpts...)
+
+	result, err := find.New(repo, findOpts...).Uncommented()
 	if err != nil {
 		return nil, nil, fmt.Errorf("find uncommented code: %w", err)
 	}
