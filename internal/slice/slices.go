@@ -1,8 +1,10 @@
 package slice
 
-// Map applies a function [fn] to each element of a slice [s] and returns a new 
-// slice of the resulting values. The input slice [s] can be of any type [In], 
-// and the output slice will be of type [Out].
+// Map applies a function to each element of a slice and returns a new slice 
+// containing the transformed elements. The input slice can contain any type of 
+// element, and the output slice can have a different type. The function to be 
+// applied must take an input element and return an output element of a possibly 
+// different type.
 func Map[In, Out any](s []In, fn func(In) Out) []Out {
 	if s == nil {
 		return nil
@@ -15,9 +17,8 @@ func Map[In, Out any](s []In, fn func(In) Out) []Out {
 	return out
 }
 
-// Filter returns a new slice containing all elements of the input slice s that 
-// satisfy the predicate function fn. The input slice s and the output slice 
-// have the same type.
+// Filter returns a new slice containing all elements of the input slice that 
+// satisfy the provided boolean function.
 func Filter[S ~[]T, T any](s S, fn func(T) bool) S {
 	if s == nil {
 		return nil
@@ -32,8 +33,9 @@ func Filter[S ~[]T, T any](s S, fn func(T) bool) S {
 	return out
 }
 
-// Unique returns a new slice containing only the unique elements of the input 
-// slice. The input slice must be comparable.
+// Unique returns a new slice containing all the unique elements of the input 
+// slice, in the order in which they first appear. The input slice must be 
+// sorted or comparable.
 func Unique[S ~[]T, T comparable](s S) S {
 	if s == nil {
 		return nil
@@ -51,9 +53,7 @@ func Unique[S ~[]T, T comparable](s S) S {
 }
 
 // NoZero returns a new slice with all zero values removed from the input slice 
-// [S]. The input slice [S] must be a slice of a comparable type [T]. The 
-// returned slice [S] has the same type as the input slice [S]. If the input 
-// slice [S] is nil, NoZero returns nil.
+// [S]. The input slice must be comparable.
 func NoZero[S ~[]T, T comparable](s S) S {
 	if s == nil {
 		return nil

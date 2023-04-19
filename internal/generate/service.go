@@ -8,20 +8,23 @@ import (
 
 var _ generate.Service = (*Service)(nil)
 
-// Service is a type that implements the generate.Service interface. It
-// represents a service that generates documentation for Go code. It has a map
-// of maps that stores documentation for each file and identifier. It provides
-// methods to add documentation for a file and identifier, generate
-// documentation for a given context, and get all generations of documentation.
+// Service represents a service that generates documentation for code. It
+// implements the generate.Service interface. It contains a map of
+// documentations for each file and identifier. Use WithDoc to add
+// documentations to the service. Use Generations to return all generations of
+// documentations. Use GenerateDoc to generate documentation for a given file
+// and identifier in a given context.
 type Service struct {
 	Fallbacks bool
 	docs      map[string]map[string]string // map[file]map[identifier]doc
 }
 
-// MockService is a function that returns a pointer to a Service. Service is a
-// struct that implements the generate.Service interface. It has a map of maps
-// that stores documentation for each identifier in each file. MockService
-// returns an empty Service with an empty map of maps.
+// MockService provides a mock implementation of generate.Service. It allows you
+// to generate documentation for Go source code files by providing the path,
+// identifier, and documentation. You can use Generations to retrieve all the
+// generations of the provided path and identifier. WithDoc allows you to add
+// documentation for a given path and identifier. GenerateDoc generates the
+// documentation for the given path and identifier.
 func MockService() *Service {
 	return &Service{
 		docs: make(map[string]map[string]string),
@@ -29,8 +32,9 @@ func MockService() *Service {
 }
 
 // Generations returns a slice of
-// [generate.Generation](https://pkg.go.dev/github.com/modernice/opendocs/generate#Generation)
-// values, each representing a documented identifier in a file.
+// [generate.Generation](https://godoc.org/github.com/modernice/opendocs/generate#Generation)
+// values. These describe the file, identifier, and documentation for each
+// identifier registered with the Service.
 func (svc *Service) Generations() []generate.Generation {
 	generations := make([]generate.Generation, 0, len(svc.docs))
 	for file, identifiers := range svc.docs {
@@ -45,9 +49,8 @@ func (svc *Service) Generations() []generate.Generation {
 	return generations
 }
 
-// WithDoc adds documentation for an identifier in a file to the Service. It
-// takes in three string arguments: the path of the file, the identifier, and
-// the documentation. It returns a pointer to the Service.
+// WithDoc adds documentation for a given identifier in a file to the Service.
+// It returns a pointer to the modified Service.
 func (svc *Service) WithDoc(path, identifier, doc string) *Service {
 	if _, ok := svc.docs[path]; !ok {
 		svc.docs[path] = make(map[string]string)
@@ -56,9 +59,8 @@ func (svc *Service) WithDoc(path, identifier, doc string) *Service {
 	return svc
 }
 
-// GenerateDoc returns the documentation for a given file and identifier. It
-// takes a generate.Context as input and returns a string and an error. If the
-// documentation is not found, it returns an empty string and an error.
+// GenerateDoc generates the documentation for a given identifier in a file
+// using the internal storage of documentation in the *Service type.
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	file := ctx.File()
 	id := ctx.Identifier()

@@ -10,21 +10,19 @@ import (
 	igit "github.com/modernice/opendocs/internal/git"
 )
 
-// Git is a type that represents a Git repository. It has methods to execute Git
-// commands and assert the current branch and commit.
+// Git represents a Git repository, and provides methods to assert the current
+// branch and latest commit.
 type Git igit.Git
 
-// Cmd returns a pointer to an exec.Cmd struct, the output of the command as a
-// byte slice, and an error. It takes a variadic argument of strings that
-// represent the command and its arguments.
+// Cmd returns a pointer to an exec.Cmd, the output of that command as []byte,
+// and an error. It executes the provided arguments as a git command. [exec.Cmd]
 func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 	return igit.Git(g).Cmd(args...)
 }
 
-// AssertBranch asserts that the current branch of a Git repository is equal to
-// the given branch name. If the current branch is not equal to the given branch
-// name, it will fail the test with a message indicating the expected and actual
-// branch names.
+// AssertBranch asserts that the current Git branch is the specified branch. It
+// takes a testing.T and a string representing the expected branch name. If the
+// current branch is not the expected branch, AssertBranch will fail the test.
 func (g Git) AssertBranch(t *testing.T, branch string) {
 	t.Helper()
 
@@ -39,10 +37,8 @@ func (g Git) AssertBranch(t *testing.T, branch string) {
 	}
 }
 
-// AssertBranchPrefix asserts that the current branch of a Git repository has a
-// prefix equal to the given string. If the current branch does not have the
-// given prefix, it will fail the test with a message indicating the expected
-// and actual branch names.
+// AssertBranchPrefix asserts that the current Git branch has a specific prefix.
+// The method takes a testing instance and a string prefix as arguments.
 func (g Git) AssertBranchPrefix(t *testing.T, prefix string) {
 	t.Helper()
 
@@ -57,9 +53,8 @@ func (g Git) AssertBranchPrefix(t *testing.T, prefix string) {
 	}
 }
 
-// AssertCommit asserts that the latest commit message in the current branch of
-// a Git repository matches the commit message of the given [git.Commit]. If the
-// commit messages do not match, AssertCommit will fail the test.
+// AssertCommit asserts that the latest commit message matches the commit
+// message of the given git.Commit.
 func (g Git) AssertCommit(t *testing.T, c git.Commit) {
 	t.Helper()
 

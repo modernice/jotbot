@@ -18,13 +18,12 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// CLI is a type that represents a command-line interface for generating missing
-// documentation. It has a Run method that executes the generation process. The
-// CLI type also has a Generate field that contains options for the generation
-// process, such as the root directory of the repository, filters for files, and
-// limits for the number of documentations and files to generate. Additionally,
-// the CLI type has an APIKey field for the OpenAI API key and a Verbose field
-// for enabling verbose logging.
+// CLI is a command-line interface that generates missing documentation. It uses
+// OpenAI to generate documentation for functions and types that lack
+// documentation. CLI takes in options such as the root directory of the
+// repository, a filter for files, the number of documentations to generate, and
+// more. It provides options to override or clear existing documentation, and
+// can commit changes to Git.
 type CLI struct {
 	Generate struct {
 		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
@@ -43,10 +42,11 @@ type CLI struct {
 	Verbose bool   `name:"verbose" short:"v" env:"OPENDOCS_VERBOSE" help:"Enable verbose logging."`
 }
 
-// Run executes the CLI command specified by the user. It generates missing
-// documentation using the OpenAI GPT-3 language model and commits the changes
-// to a specified branch, or applies the changes to the repository if in dry run
-// mode.
+// Run executes the CLI application with the given configuration. It generates
+// missing documentation for a repository by using OpenAI's GPT-3 model to write
+// documentation for functions and types in GoDoc format. It takes into account
+// various configuration options such as filtering files, committing changes to
+// Git, limiting the number of documentations to generate, and more.
 func (cfg *CLI) Run(ctx *kong.Context) error {
 	if cfg.Generate.Root != "." {
 		if !filepath.IsAbs(cfg.Generate.Root) {
@@ -124,8 +124,9 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	return nil
 }
 
-// New returns a new *kong.Context that is parsed from the command-line
-// arguments.
+// New returns a new *kong.Context for parsing command line arguments. It
+// creates a CLI object, which can be used to generate or apply documentation
+// patches.
 func New() *kong.Context {
 	if len(os.Args) < 1 {
 		os.Args = append(os.Args, "generate")

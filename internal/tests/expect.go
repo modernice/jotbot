@@ -18,11 +18,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// ExpectFindings compares two sets of findings and fails the test if they are
-// not equal. It takes in three arguments: a testing.T instance, the expected
-// findings, and the actual findings. If the expected and actual findings are
-// not equal, the function fails the test with a message indicating the
-// difference between the two sets of findings.
+// ExpectFindings checks if the given findings match the expected findings. If
+// the findings don't match, it will fail the test with a diff of the expected
+// and actual findings.
 func ExpectFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
 
@@ -49,8 +47,8 @@ func ExpectFindings(t *testing.T, want, got find.Findings) {
 	}
 }
 
-// ExpectPatch tests whether two *patch.Patch values are equal. If they are not
-// equal, it fails the test.
+// ExpectPatch compares two *patch.Patch values and fails the test if they don't
+// match.
 func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	t.Helper()
 
@@ -69,8 +67,8 @@ func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	}
 }
 
-// ExpectGenerations compares two slices of generate.Generation and fails the
-// test if they are not equal.
+// ExpectGenerations compares two slices of generate.Generation structs and
+// reports a test failure if they are not equal.
 func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
 	t.Helper()
 
@@ -86,12 +84,13 @@ func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
 	}
 }
 
-// ExpectComment verifies that the comment for the given identifier in the
-// provided file matches the expected comment. It parses the file using
-// decorator.Parse, finds the node with the given identifier using nodes.Find,
-// and extracts the comments using slice.Map. It then compares the extracted
-// comment with the expected comment using diff.LineDiff and fails the test if
-// they do not match.
+// ExpectComment checks that the comment for the identifier in the given file
+// matches the expected comment. It takes a testing.T, an identifier string, an
+// expected comment string, and a file io.Reader. It parses the file using
+// dst/decorator, finds the node for the given identifier, extracts the comments
+// from that node's decorations, joins them into a single string, and compares
+// that string to the expected comment. If the comments do not match, it fails
+// the test with a message that includes a diff of the two comments.
 func ExpectComment(t *testing.T, identifier, comment string, file io.Reader) {
 	root, err := decorator.Parse(file)
 	if err != nil {

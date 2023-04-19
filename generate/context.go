@@ -53,26 +53,26 @@ func (ctx *genCtx) new(parent context.Context, file, identifier string) *genCtx 
 	}
 }
 
-// File returns the name of the file associated with the current context
-// [*genCtx.file].
+// File returns the name of the file being processed by the generator's context
+// [*genCtx.File].
 func (ctx *genCtx) File() string {
 	return ctx.file
 }
 
-// Files returns a slice of strings representing the file paths of all files in
-// the file system wrapped by the genCtx struct.
+// Files returns a list of file names, including their paths relative to the
+// root directory, that can be accessed by the context.
 func (ctx *genCtx) Files() []string {
 	return ctx.files
 }
 
-// Identifier returns the identifier of the current context.
+// Identifier returns the identifier of the current genCtx instance.
 func (ctx *genCtx) Identifier() string {
 	return ctx.identifier
 }
 
 // Read reads the contents of a file from the file system and returns it as a
-// byte slice. If the file has been previously read, it returns the cached
-// contents. If the file does not exist or cannot be read, it returns an error.
+// byte slice. If the file has already been read, it returns the cached result.
+// If the file does not exist or cannot be read, an error is returned.
 func (ctx *genCtx) Read(file string) ([]byte, error) {
 	if b, ok := ctx.cached(file); ok {
 		return b, nil

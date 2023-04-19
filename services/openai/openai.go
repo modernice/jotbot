@@ -38,11 +38,9 @@ var modelMaxTokens = map[string]int{
 	openai.GPT3TextDavinci002: 4097,
 }
 
-// Service represents a service that generates documentation for Go code using
-// OpenAI's GPT-3 language model. It provides a GenerateDoc method that takes a
-// generate.Context and returns the generated documentation as a string. The
-// service can be configured with options such as WithLogger, WithClient, Model,
-// and MaxTokens.
+// Service is a type that generates GoDoc documentation using OpenAI's GPT
+// language model. It takes a file name and an identifier as input, and returns
+// the documentation for the identified symbol in GoDoc format.
 type Service struct {
 	client       *openai.Client
 	model        string
@@ -54,47 +52,49 @@ type Service struct {
 	log          *slog.Logger
 }
 
-// Option is a type that represents a configuration option for the Service type.
-// It is a function that takes a pointer to a Service and modifies its fields.
-// The available options are WithLogger, WithClient, Model, and MaxTokens.
+// Option represents a function that sets configuration options for a Service
+// type. Use WithLogger to set a logger for the service, WithClient to set an
+// openai.Client, Model to set the OpenAI model to use, MaxTokens to set the
+// maximum number of tokens to use for the generated documentation, and
+// MinifyWith to set options for code minification.
 type Option func(*Service)
 
-// WithLogger is an Option for the Service type that sets the logger for the
-// OpenAI service. The logger is used to output debug information during the
-// generation of documentation.
+// WithLogger returns an Option that sets the logger for a Service. This logger
+// is used to log debug information during documentation generation.
 func WithLogger(h slog.Handler) Option {
 	return func(s *Service) {
 		s.log = slog.New(h)
 	}
 }
 
-// WithClient sets the OpenAI client for the Service.
+// WithClient creates a new Option that sets the Service's OpenAI client.
 func WithClient(c *openai.Client) Option {
 	return func(s *Service) {
 		s.client = c
 	}
 }
 
-// Model represents a service that generates documentation for a given code file
-// and identifier. It uses the OpenAI GPT-3 language model to generate the
-// documentation. The model can be set using the Model option, and the maximum
-// number of tokens used by the model can be set using the MaxTokens option. The
-// GenerateDoc method takes a generate.Context and returns the generated
-// documentation as a string in GoDoc format.
+// Model represents an OpenAI language model used by the Service type. It
+// contains a string identifying the model to be used, as well as maximum token
+// limits for documentation generation. DefaultModel is a constant that
+// represents the default OpenAI model used by the Service type.
 func Model(model string) Option {
 	return func(s *Service) {
 		s.model = model
 	}
 }
 
-// MaxTokens sets the maximum number of tokens to be used in generating the
-// documentation. The default value is 512.
+// MaxTokens represents the default maximum number of tokens used by the Service
+// type for generating documentation.
 func MaxTokens(maxTokens int) Option {
 	return func(s *Service) {
 		s.maxDocTokens = maxTokens
 	}
 }
 
+// MinifyWith minifies the source code by applying the MinifyOptions specified
+// as argument, and returns the resulting code. If force is set to true,
+// MinifyWith will always minify the code.
 func MinifyWith(steps []nodes.MinifyOptions, force bool) Option {
 	return func(s *Service) {
 		s.minifySteps = steps
@@ -102,16 +102,20 @@ func MinifyWith(steps []nodes.MinifyOptions, force bool) Option {
 	}
 }
 
-// New creates a new instance of Service with the given API key and options. It
-// returns a pointer to the new Service. If no options are provided, it uses the
-// default model and max tokens.
+// New creates a new instance of the Service type, which provides a function for
+// generating documentation for Go code using the OpenAI API. It takes an API
+// key as a string and zero or more Option functions that configure the Service
+// instance.
 func New(apiKey string, opts ...Option) *Service {
 	client := openai.NewClient(apiKey)
 	return NewFrom(append([]Option{WithClient(client)}, opts...)...)
 }
 
-// NewFrom creates a new instance of Service with the given options. It returns
-// a pointer to the new Service.
+// NewFrom creates a new Service with the given options. It takes a variadic
+// list of Options that can be used to set the Service's client, model,
+// maxTokens, maxDocTokens, minifySteps, and forceMinify. If no model is
+// specified, the Service will use DefaultModel. If no maxDocTokens is
+// specified, the Service will use DefaultMaxTokens.
 func NewFrom(opts ...Option) *Service {
 	var svc Service
 	for _, opt := range opts {
@@ -139,10 +143,9 @@ func NewFrom(opts ...Option) *Service {
 	return &svc
 }
 
-// GenerateDoc generates documentation for a given type or function identified
-// by the input identifier. The documentation is written in GoDoc format and
-// excludes input code and examples. The first sentence of the documentation
-// begins with the identifier.
+// GenerateDoc generates the documentation for a Go type or function using
+// OpenAI's GPT-3 language model. It accepts a generate.Context and returns the
+// resulting documentation as a string.
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	file := ctx.File()
 	longIdentifier := ctx.Identifier()

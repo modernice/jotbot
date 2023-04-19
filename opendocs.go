@@ -12,35 +12,37 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Repository represents a repository of source code files that can be used to
-// generate documentation. It provides methods for generating a patch file
-// containing comments for the identified functions or types, and for retrieving
-// the files and errors generated during the process. It can be configured with
-// a logger using the WithLogger option.
+// Repository represents a repository of code that can be used to generate
+// documentation. It contains a generate.Service and a logger. Use New to create
+// a new instance of Repository. Call Generate to generate a patch for the
+// repository. Call Files to get a channel of files that can be used to generate
+// documentation. Call Patch to add comments to the source code files.
 type Repository struct {
 	svc generate.Service
 	log *slog.Logger
 }
 
-// Option is a type that represents a configuration option for a Repository. It
-// is a function that takes a pointer to a Repository and modifies it. The New
-// function takes an optional list of Option functions that are applied to the
-// new Repository. The WithLogger function returns an Option that sets the
-// logger for the Repository.
+// Option represents an optional parameter for a Repository. Options can be used
+// to configure the behavior of a Repository during generation and patching. An
+// Option is a function that receives a pointer to a Repository and modifies it.
+// The New function creates a new Repository with the given generate.Service and
+// applies the provided Options. The GenerateOption type is an alias for either
+// generate.Option or patch.Option, and is used to pass options to the Generate
+// function.
 type Option func(*Repository)
 
 // WithLogger returns an Option that sets the logger for a Repository. The
-// logger is used to log messages during the generation and patching of files.
-// The logger must implement the slog.Handler interface from the
-// golang.org/x/exp/slog package.
+// logger is used to log errors and debug information during generation and
+// patching.
 func WithLogger(h slog.Handler) Option {
 	return func(g *Repository) {
 		g.log = slog.New(h)
 	}
 }
 
-// New creates a new *Repository with the given generate.Service and options. If
-// no options are provided, a default logger is used.
+// New returns a new Repository that generates documentation for a given
+// repository using the provided generate.Service. If WithLogger is passed as an
+// Option, it sets the logger of the Repository.
 func New(svc generate.Service, opts ...Option) *Repository {
 	g := &Repository{svc: svc}
 	for _, opt := range opts {
@@ -52,14 +54,23 @@ func New(svc generate.Service, opts ...Option) *Repository {
 	return g
 }
 
+// GenerateOption is a type that represents an option for generating
+// documentation. It is a function that takes a *generation and modifies it
+// using generate.Option values. This type has two implementations:
+// GenerateWith, which sets generate.Options, and PatchWith, which sets
+// patch.Options.
 type GenerateOption func(*generation)
 
+// GenerateWith returns a GenerateOption that appends the given generate.Options
+// to the slice of generate.Options passed to Repository.Generate.
 func GenerateWith(opts ...generate.Option) GenerateOption {
 	return func(g *generation) {
 		g.genOpts = append(g.genOpts, opts...)
 	}
 }
 
+// PatchWith returns a GenerateOption that appends patch options to the
+// generation.
 func PatchWith(opts ...patch.Option) GenerateOption {
 	return func(g *generation) {
 		g.patchOpts = append(g.patchOpts, opts...)
@@ -71,8 +82,9 @@ type generation struct {
 	patchOpts []patch.Option
 }
 
-// Generate generates a patch for the Go source code repository located at repo.
-// It returns the generated patch or an error.
+// Generate generates a patch for a repository by generating documentation for
+// its files and applying patches to them. It returns the generated patch or an
+// error if the generation or patching fails.
 func (g *Repository) Generate(ctx context.Context, repo string, opts ...GenerateOption) (*patch.Patch, error) {
 	var cfg generation
 	for _, opt := range opts {
@@ -124,13 +136,9 @@ func (g *Repository) Generate(ctx context.Context, repo string, opts ...Generate
 	}
 }
 
-// Files returns a channel of
-// [generate.File](https://pkg.go.dev/github.com/modernice/opendocs/generate#File)
-// and a channel of errors that occur during generation. It generates
-// documentation files for the repository located at the given path, using the
-// [generate.Service](https://pkg.go.dev/github.com/modernice/opendocs/generate#Service)
-// specified in the Repository. Additional options can be passed to the
-// generate.Service using the variadic `opts` parameter.
+// Files retrieves the list of files in a given repository and returns a channel
+// of generate.File and a channel of error. It takes a context.Context, a string
+// representing the repository path, and optional generate.Options.
 func (g *Repository) Files(ctx context.Context, repo string, opts ...generate.Option) (<-chan generate.File, <-chan error, error) {
 	opts = append([]generate.Option{generate.WithLogger(g.log.Handler())}, opts...)
 
@@ -145,9 +153,8 @@ func (g *Repository) Files(ctx context.Context, repo string, opts ...generate.Op
 	return files, errs, nil
 }
 
-// Patch applies comments to a file system [fs.FS] using the comments generated
-// by Generate. It returns a *patch.Patch that represents the changes made to
-// the file system.
+// Patch applies comments to a file in a file system using the provided options
+// [patch.Option]. It returns a *patch.Patch with the applied comments.
 func (g *Repository) Patch(ctx context.Context, repo fs.FS, files <-chan generate.File, opts ...patch.Option) (*patch.Patch, error) {
 	opts = append([]patch.Option{patch.WithLogger(g.log.Handler())}, opts...)
 	p := patch.New(repo, opts...)

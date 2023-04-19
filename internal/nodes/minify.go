@@ -6,9 +6,9 @@ import (
 	"github.com/dave/dst"
 )
 
-// MinifyNone is a variable of type MinifyOptions that represents the option to
-// not minify any part of the code. It is one of the four predefined
-// MinifyOptions variables in the package nodes/internal/nodes/minify.go.
+// MinifyNone is a predefined variable of type MinifyOptions that represents the
+// option to not minify any part of the code. It is one of the four options
+// available in the package nodes/internal/nodes/minify.go.
 var (
 	MinifyNone MinifyOptions
 
@@ -41,13 +41,14 @@ var (
 	}
 )
 
-// MinifyOptions is a struct that contains boolean fields that determine which
-// parts of a given dst.Node should be minified. The fields include
-// PackageComment, FuncComment, FuncBody, StructComment, and Exported. The
-// Minify method takes a dst.Node and returns a minified version of it based on
-// the options specified in the MinifyOptions struct. The Minify function takes
-// a dst.Node and a MinifyOptions struct and returns the minified version of the
-// node.
+// MinifyOptions represents the options for minifying Go code. It is a struct
+// type that contains boolean fields for PackageComment, FuncComment, FuncBody,
+// StructComment, and Exported. The Minify method of MinifyOptions receives a
+// dst.Node and returns a minified dst.Node according to the options specified.
+// The function Minify[Node dst.Node] takes a Node and MinifyOptions as
+// arguments and returns a minified Node. MinifyNone, MinifyUnexported,
+// MinifyExported, MinifyComments, and MinifyAll are predefined MinifyOptions
+// variables in the package nodes/internal/nodes/minify.go.
 type MinifyOptions struct {
 	PackageComment bool
 	FuncComment    bool
@@ -56,14 +57,13 @@ type MinifyOptions struct {
 	Exported       bool
 }
 
-// MinifyOptions.Minify is a method that takes a dst.Node and returns a minified
-// version of it based on the MinifyOptions struct. The MinifyOptions struct
-// contains boolean fields that determine which parts of the node should be
-// minified. If the Exported field is true, only exported identifiers will be
-// minified. If the PackageComment field is true, the package comment will be
-// removed. If the FuncComment field is true, function comments will be removed.
-// If the FuncBody field is true, function bodies will be removed. If the
-// StructComment field is true, struct comments will be removed.
+// Minify[Node dst.Node] minifies a given AST (abstract syntax tree) node
+// according to the specified MinifyOptions. It returns the resulting AST node
+// of the same type as the input. The MinifyOptions control which parts of the
+// code are minified, including package comments, function comments, function
+// bodies, and struct comments. The MinifyAll, MinifyExported, MinifyUnexported,
+// and MinifyNone variables in this package are predefined options for common
+// use cases.
 func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
 	out := dst.Clone(node)
 
@@ -103,12 +103,13 @@ func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
 	return out
 }
 
-// Minify is a function that takes a dst.Node and MinifyOptions as input, and
-// returns a dst.Node. It removes unnecessary comments and function bodies from
-// the input node based on the options specified in MinifyOptions. The
-// MinifyOptions struct contains boolean fields that determine which parts of
-// the node to minify. The Minify function uses the MinifyOptions to patch the
-// input node and return the minified version.
+// Minify is a function that takes a Node and MinifyOptions as input, and
+// returns a minified version of the Node according to the specified options.
+// The MinifyOptions struct specifies which parts of the code to minify,
+// including package comments, function comments, function bodies, and struct
+// comments. The MinifyNone variable represents an option to not minify any part
+// of the code, and there are three other predefined MinifyOptions variables
+// with different levels of minification.
 func Minify[Node dst.Node](node Node, opts MinifyOptions) Node {
 	return opts.Minify(node).(Node)
 }

@@ -35,8 +35,9 @@ var (
 	}
 )
 
-// Must is a function that takes a value and an error and returns the value. If
-// the error is not nil, Must panics with the error.
+// Must is a function that panics if the given error is not nil, and returns the
+// given value otherwise. It is commonly used to simplify error handling in code
+// that must not fail.
 func Must[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
@@ -44,10 +45,8 @@ func Must[T any](v T, err error) T {
 	return v
 }
 
-// WithRepo initializes a Git repository in the given directory [root] and
-// populates it with files from a fixture [name]. It then calls the provided
-// function [fn] with a filesystem interface to the repository. If any errors
-// occur during initialization, WithRepo panics.
+// WithRepo initializes a Git repository with test fixtures and executes a
+// function with the created repository as its file system.
 func WithRepo(name string, root string, fn func(fs.FS)) {
 	if err := InitRepo(name, root); err != nil {
 		panic(err)
@@ -55,12 +54,9 @@ func WithRepo(name string, root string, fn func(fs.FS)) {
 	fn(os.DirFS(root))
 }
 
-// InitRepo initializes a new Git repository at the specified root directory and
-// populates it with files from a fixture. The name of the fixture is specified
-// as the first argument and must be one of the fixtures defined in the
-// "fixtures" map. The second argument specifies the root directory of the new
-// repository. If a directory already exists at the root, it will be removed
-// before creating the new repository.
+// InitRepo initializes a new Git repository at the specified root directory,
+// populating it with the files of the fixture identified by name. It removes
+// any existing directory at the root path before creating a new one.
 func InitRepo(name, root string) error {
 	if _, err := os.Stat(root); !os.IsNotExist(err) {
 		if err := os.RemoveAll(root); err != nil {

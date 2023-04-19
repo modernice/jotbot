@@ -1,8 +1,8 @@
 package generate
 
-// Flatten takes in a slice of [File] and returns a slice of [Generation]. It 
-// flattens the slice of files by appending all the generations from each file 
-// into a single slice.
+// Flatten takes a slice of Files and returns a flattened slice of Generations. 
+// It appends all Generations from each File in the input slice to the output 
+// slice.
 func Flatten(files []File) []Generation {
 	var all []Generation
 	for _, file := range files {

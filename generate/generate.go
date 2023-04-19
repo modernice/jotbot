@@ -13,18 +13,19 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Service represents a service that can generate documentation for a given
-// identifier. It has a single method, GenerateDoc, which takes a Context and
-// returns the generated documentation as a string or an error. The Context
-// interface provides methods to retrieve information about the identifier and
-// the file(s) being documented.
+// Service represents a code documentation generator. It defines a single
+// method, GenerateDoc, which takes a Context and returns a string of generated
+// documentation or an error. The Context interface provides methods for
+// retrieving information about the code being documented, including the
+// identifier and file path.
 type Service interface {
 	GenerateDoc(Context) (string, error)
 }
 
-// Context is an interface that extends the context.Context interface. It
-// provides additional methods for generating documentation, including
-// Identifier, File, Files, and Read.
+// Context defines the interface for a context used in generating documentation.
+// It extends the standard library's context.Context interface and adds methods
+// for retrieving the identifier and file associated with the context, as well
+// as methods for reading the contents of a file.
 type Context interface {
 	context.Context
 
@@ -34,94 +35,92 @@ type Context interface {
 	Read(file string) ([]byte, error)
 }
 
-// File represents a file and its generated documentation. It contains the
-// file's path and a slice of Generations, which represent the documentation
-// generated for each identifier found in the file.
+// File represents a file and its generated documentation.
 type File struct {
 	Path        string
 	Generations []Generation
 }
 
-// Generation is a package that provides a Generator type for generating
-// documentation for Go code. The Generator type has a Generate method that
-// takes a context, a file system, and options. It returns two channels: one for
-// File objects and one for errors. The File object represents a file that was
-// processed and contains a slice of Generation objects. The Generation object
-// represents a generated documentation for a specific identifier in a file. The
-// Generator type also has several Option functions that can be used to
-// configure the generation process, such as Limit, FileLimit, WithLogger,
-// Footer, and FindWith.
+// Generation represents a code generation service. It provides a Generate
+// method that generates documentation for a given repository, and returns a
+// channel of generated files and errors. It also provides options to limit the
+// number of files or generations that are generated, to override existing
+// documentation, to add a footer to each generated document, and to configure
+// the logger.
 type Generation struct {
 	File       string
 	Identifier string
 	Doc        string
 }
 
-// Generator is a type that generates documentation for Go code. It has a
-// Generate method that takes a context, a file system, and options. The
-// Generate method returns two channels: one for the generated files and one for
-// errors. The Generator type also has a New function that creates a new
-// instance of the type. The Generator type uses a Service interface to generate
-// documentation.
+// Generator generates documentation for code identified by an identifier in a
+// given file. It takes a Service, which defines how to generate documentation
+// for a given identifier, and produces a channel of Files and errors. The
+// generator can be configured with various Options, such as a limit on the
+// number of generated files, a limit on the number of workers, and a custom
+// footer to append to each generated doc.
 type Generator struct {
 	svc Service
 }
 
-// New returns a new *Generator that uses the given Service to generate
-// documentation.
+// New creates a new Generator that generates documentation using a Service.
 func New(svc Service) *Generator {
 	return &Generator{svc: svc}
 }
 
-// Option is a type that represents a configuration option for a Generator. It
-// is used to modify the behavior of the Generator when generating
-// documentation. Option is implemented as a function that takes a pointer to a
-// generation struct and modifies its fields. The available options are Limit,
-// FileLimit, WithLogger, Footer, and FindWith.
+// Option is a function type that modifies the behavior of a Generator. It is
+// used as an argument to the Generate method of a Generator to customize the
+// generation process. A few predefined Options are available, such as Limit,
+// FileLimit, WithLogger, Footer, Override, and FindWith. The Limit option
+// limits the number of generated files, while the FileLimit option limits the
+// number of concurrently processed files. The WithLogger option sets a logger
+// for the generator, while the Footer option adds a footer to each generated
+// file. The Override option determines whether to generate documentation for
+// commented and uncommented identifiers, and the FindWith option is used to
+// pass options to the find package that is used in the generation process.
 type Option func(*generation)
 
-// Limit sets the maximum number of generated files. It returns an Option.
+// Limit sets the maximum number of Generations to generate per worker.
 func Limit(n int) Option {
 	return func(g *generation) {
 		g.limit = n
 	}
 }
 
-// FileLimit is an Option that sets the maximum number of files to generate
-// documentation for. It is used with the Generator type to limit the number of
-// files that are processed during documentation generation.
+// FileLimit specifies the maximum number of files that should be processed
+// during code generation for a given identifier.
 func FileLimit(n int) Option {
 	return func(g *generation) {
 		g.fileLimit = n
 	}
 }
 
-// WithLogger is an Option for Generator that sets the logger for the generation
-// process. The logger is used to log debug, info, and error messages during the
-// generation process. The logger must implement the slog.Handler interface.
+// WithLogger sets the logger for the Generator. It returns an Option that can
+// be passed to New or Generate methods.
 func WithLogger(h slog.Handler) Option {
 	return func(g *generation) {
 		g.log = slog.New(h)
 	}
 }
 
-// Footer is an Option for Generator that sets a message to be appended to the
-// end of each generated documentation. It takes a string as its argument.
+// Footer adds a footer message to the generated documentation. It is an Option
+// for the Generator type.
 func Footer(msg string) Option {
 	return func(g *generation) {
 		g.footer = msg
 	}
 }
 
+// Override sets the override flag to either true or false.
 func Override(override bool) Option {
 	return func(g *generation) {
 		g.override = override
 	}
 }
 
-// FindWith adds options to a Generator that are used to configure the search
-// for code to generate documentation for. It takes one or more find.Options and
-// returns an Option that can be passed to a Generator.
+// FindWith returns an Option that appends find.Options to the generation's
+// findOpts slice. This slice is used in the Generation's GenerateFile method to
+// configure Findings with identifiers and files to generate documentation for.
 func FindWith(opts ...find.Option) Option {
 	return func(g *generation) {
 		g.findOpts = append(g.findOpts, opts...)
@@ -137,12 +136,11 @@ type generation struct {
 	log       *slog.Logger
 }
 
-// Generate generates documentation for the code found in a file system. It
-// takes a context, a file system, and options. It returns two channels: one for
-// the generated files and one for errors. The generated files are of type File,
-// which contains the path to the file and a slice of Generations. Each
-// Generation contains the file name, identifier, and documentation. The options
-// include Limit, FileLimit, WithLogger, Footer, and FindWith.
+// Generate generates documentation for the given identifier. It takes a
+// context, a file system, and options as input. It returns a channel of Files
+// and a channel of errors. Use the File struct to access the Path and
+// Generations of the generated documentation. Use the Generation struct to
+// access the File, Identifier, and Doc of each generated documentation.
 func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<-chan File, <-chan error, error) {
 	var cfg generation
 	for _, opt := range opts {

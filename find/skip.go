@@ -5,15 +5,12 @@ import (
 	"strings"
 )
 
-// Skip represents a set of rules for excluding directories and files during a
-// file search. It contains fields for excluding hidden files, dotfiles,
-// testdata directories, test files, and directories and files specified by
-// custom functions. The SkipNone function returns an empty Skip struct, while
-// the SkipDefault function returns a Skip struct with default exclusion rules.
-// The apply method applies the Skip rules to a Finder struct. The ExcludeDir
-// method returns true if the directory should be excluded based on the Skip
-// rules, and the ExcludeFile method returns true if the file should be excluded
-// based on the Skip rules.
+// Skip represents a set of criteria for excluding directories and files from a
+// search. It contains fields for excluding hidden files and directories,
+// dotfiles, testdata, test files, and directories matching a custom function.
+// The Dir and File fields can be set to custom functions for excluding
+// directories and files respectively. The ExcludeDir and ExcludeFile methods
+// use the Skip criteria to determine whether to exclude a directory or file.
 type Skip struct {
 	Hidden    bool
 	Dotfiles  bool
@@ -25,26 +22,23 @@ type Skip struct {
 	File func(Exclude) bool
 }
 
-// Exclude represents a struct that can be used to exclude directories and files
-// from a search. It contains methods to exclude directories and files based on
-// various criteria such as hidden files, test data, and custom functions. It is
-// used in conjunction with the Skip struct, which contains options for
-// excluding directories and files.
+// Exclude represents a set of exclusion rules for file and directory names. It
+// contains methods to exclude directories and files based on certain criteria
+// such as hidden files, test data, and custom rules. The Exclude struct is used
+// by the Skip struct to apply exclusion rules to a Finder.
 type Exclude struct {
 	fs.DirEntry
 	Path string
 }
 
 // SkipNone returns a Skip struct with all fields set to their zero values. It
-// is used to indicate that no files or directories should be skipped during a
-// search.
+// can be used as a default Skip value if no exclusions are needed.
 func SkipNone() Skip {
 	return Skip{}
 }
 
-// SkipDefault returns a Skip struct with default values for excluding files and
-// directories. It excludes hidden files and directories, dotfiles, testdata
-// directories, and test files.
+// SkipDefault returns a Skip value with the default values set for skipping
+// hidden files and directories, dotfiles, testdata directories, and test files.
 func SkipDefault() Skip {
 	return Skip{
 		Hidden:    true,
@@ -58,13 +52,9 @@ func (s Skip) apply(f *Finder) {
 	f.skip = &s
 }
 
-// ExcludeDir returns a boolean indicating whether a directory should be
+// ExcludeDir returns a boolean value indicating whether a directory should be
 // excluded from the search. It takes an Exclude struct as input, which contains
-// information about the directory being evaluated. The Skip struct that calls
-// this method contains several boolean fields that determine whether certain
-// types of directories should be excluded, such as hidden directories and
-// testdata directories. If the Skip struct also contains a Dir function, it
-// will be called to determine whether the directory should be excluded.
+// information about the directory being evaluated.
 func (s Skip) ExcludeDir(e Exclude) bool {
 	if s.Hidden && strings.HasPrefix(e.Name(), ".") {
 		return true
@@ -81,11 +71,9 @@ func (s Skip) ExcludeDir(e Exclude) bool {
 	return false
 }
 
-// ExcludeFile returns a boolean indicating whether the given file should be
-// excluded based on the Skip configuration. If Dotfiles is true and the file
-// name starts with a ".", it will be excluded. If Testfiles is true and the
-// file name ends with "_test.go", it will be excluded. If File is not nil, it
-// will be called with the given Exclude and its result will be returned.
+// ExcludeFile returns a boolean value indicating whether the given file should
+// be excluded from the search based on Skip's Dotfiles, Testfiles, and File
+// fields.
 func (s Skip) ExcludeFile(f Exclude) bool {
 	if s.Dotfiles && strings.HasPrefix(f.Name(), ".") {
 		return true

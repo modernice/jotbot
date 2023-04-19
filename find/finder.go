@@ -19,12 +19,10 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Finder is a type that searches for uncommented code in a file system. It has
-// a method, Uncommented, that returns a map of file paths to slices of
-// Findings. A Finding is a struct that contains the path to a file and the
-// identifier of an uncommented type or function. Finder can be configured with
-// options, such as WithLogger and Glob, which respectively set a logger and add
-// glob patterns to exclude files from the search.
+// Finder represents a code finder that searches for Go types and functions in a
+// file system. It provides methods to search for all types/functions or only
+// those without comments. To create a new Finder, use the New function with an
+// fs.FS and optional Options.
 type Finder struct {
 	repo  fs.FS
 	skip  *Skip
@@ -32,31 +30,27 @@ type Finder struct {
 	log   *slog.Logger
 }
 
-// Finding represents a type or function that has been found in a repository. It
-// contains the path to the file in which the type or function was found and the
-// identifier of the type or function. The String method returns a string
-// representation of the Finding in the format "path@identifier".
+// Finding represents a code finder that searches for types and functions. It
+// has methods to find all types/functions or only those without comments. It
+// can also exclude files and directories based on glob patterns.
 type Finding struct {
 	Path       string
 	Identifier string
 }
 
-// String returns a string representation of a Finding in the format
+// String returns a string representation of the Finding in the format
 // "Path@Identifier".
 func (f Finding) String() string {
 	return fmt.Sprintf("%s@%s", f.Path, f.Identifier)
 }
 
-// Findings represents a map of file paths to slices of Finding structs. A
-// Finding struct represents an identifier and its location in a Go source file.
-// The Finder type provides a method, Uncommented, which searches for
-// uncommented types and functions in a repository and returns a Findings map.
-// The Finder type can be configured with options such as WithLogger and Glob.
+// Findings represents a map of string slices containing the path and identifier
+// of types and functions found in a repository.
 type Findings map[string][]Finding
 
-// Option is an interface that defines an option for a Finder. An option is a
-// function that modifies a Finder. An option must implement the apply method,
-// which takes a *Finder and applies the option to it.
+// Option is an interface that allows for optional configuration of a Finder
+// instance. An Option is implemented as a function that modifies a *Finder
+// instance.
 type Option interface {
 	apply(*Finder)
 }
@@ -68,16 +62,15 @@ func (opt optionFunc) apply(f *Finder) {
 }
 
 // WithLogger returns an Option that sets the logger for a Finder. The logger is
-// used to log messages during the search for uncommented code. The logger must
-// implement the slog.Handler interface [slog.Handler].
+// used to log information about the search performed by the Finder.
 func WithLogger(h slog.Handler) Option {
 	return optionFunc(func(f *Finder) {
 		f.log = slog.New(h)
 	})
 }
 
-// Glob adds a glob pattern to the Finder. The Finder will exclude files that
-// match the glob pattern when searching for uncommented code.
+// Glob adds a file glob pattern to the Finder options. The Finder will only
+// search files that match the glob pattern(s) specified.
 func Glob(pattern ...string) Option {
 	pattern = slice.Map(pattern, strings.TrimSpace)
 	pattern = slice.NoZero(pattern)
@@ -86,12 +79,8 @@ func Glob(pattern ...string) Option {
 	})
 }
 
-// New returns a new *Finder that searches for uncommented code in a given
-// repository. It takes an fs.FS as its first argument and accepts optional
-// Option arguments to configure the search. The returned *Finder has a default
-// Skip configuration and a default logger that discards all log output. Use
-// WithLogger to set a logger and Glob to add glob patterns to exclude files
-// from the search.
+// New creates a new Finder with the given fs.FS and Option(s). It returns the
+// new Finder.
 func New(repo fs.FS, opts ...Option) *Finder {
 	f := &Finder{repo: repo}
 	for _, opt := range opts {
@@ -107,13 +96,14 @@ func New(repo fs.FS, opts ...Option) *Finder {
 	return f
 }
 
+// All returns a map of Findings for all types and functions in the repository
+// that match the Finder's globs.
 func (f *Finder) All() (Findings, error) {
 	return f.find(true)
 }
 
-// Uncommented returns a map of [Finding](#Finding) slices, where each slice
-// contains the identifiers of all exported types and functions in a Go file
-// that have no associated documentation comments.
+// Uncommented returns the uncommented types and functions found in the source
+// files.
 func (f *Finder) Uncommented() (Findings, error) {
 	return f.find(false)
 }
