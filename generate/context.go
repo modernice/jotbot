@@ -53,18 +53,26 @@ func (ctx *genCtx) new(parent context.Context, file, identifier string) *genCtx 
 	}
 }
 
+// File returns the name of the file associated with the current context
+// [*genCtx.file].
 func (ctx *genCtx) File() string {
 	return ctx.file
 }
 
+// Files returns a slice of strings representing the file paths of all files in
+// the file system wrapped by the genCtx struct.
 func (ctx *genCtx) Files() []string {
 	return ctx.files
 }
 
+// Identifier returns the identifier of the current context.
 func (ctx *genCtx) Identifier() string {
 	return ctx.identifier
 }
 
+// Read reads the contents of a file from the file system and returns it as a
+// byte slice. If the file has been previously read, it returns the cached
+// contents. If the file does not exist or cannot be read, it returns an error.
 func (ctx *genCtx) Read(file string) ([]byte, error) {
 	if b, ok := ctx.cached(file); ok {
 		return b, nil

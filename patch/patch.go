@@ -21,6 +21,10 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// Patch represents a set of changes to apply to Go source code files. It
+// provides methods to add comments to functions, types, and variables, and to
+// apply the changes to a repository. The changes are stored in memory until
+// they are committed to the repository. Use New to create a new Patch instance.
 type Patch struct {
 	mux         sync.RWMutex
 	repo        fs.FS
@@ -31,14 +35,24 @@ type Patch struct {
 	log         *slog.Logger
 }
 
+// Option is a type that represents a configuration option for Patch. It is a
+// function that takes a pointer to a Patch and modifies it. The available
+// options are WithLogger, which sets the logger for Patch. New creates a new
+// Patch with the given options. Identifiers returns a map of all the
+// identifiers that have been commented on in Patch. Comment adds a comment to
+// the specified identifier in the specified file.
 type Option func(*Patch)
 
+// WithLogger is an Option for creating a new Patch. It sets the logger for the
+// Patch to the provided slog.Handler.
 func WithLogger(h slog.Handler) Option {
 	return func(p *Patch) {
 		p.log = slog.New(h)
 	}
 }
 
+// New creates a new *Patch for the given file system. Options can be passed to
+// configure the Patch. Use WithLogger to set a logger.
 func New(repo fs.FS, opts ...Option) *Patch {
 	p := &Patch{
 		repo:        repo,
@@ -56,6 +70,9 @@ func New(repo fs.FS, opts ...Option) *Patch {
 	return p
 }
 
+// Identifiers returns a map of all the identifiers that have been documented in
+// the patch. The keys of the map are file names and the values are slices of
+// strings representing the documented identifiers in that file.
 func (p *Patch) Identifiers() map[string][]string {
 	p.mux.RLock()
 	defer p.mux.RUnlock()
@@ -341,6 +358,8 @@ func (p *Patch) findVarOrConst(file, identifier string) (*dst.ValueSpec, *dst.Ge
 	return spec, decl, spec != nil, nil
 }
 
+// Commit returns a git.Commit that represents the changes made to the
+// documentation.
 func (p *Patch) Commit() git.Commit {
 	c := git.DefaultCommit()
 	if len(p.files) == 0 {
@@ -358,6 +377,8 @@ func (p *Patch) Commit() git.Commit {
 	return c
 }
 
+// Apply applies the documentation patches to the source code files in the
+// repository. It updates the files with the new documentation.
 func (p *Patch) Apply(repo string) error {
 	p.log.Info("Applying patches ...", "files", len(p.files))
 
@@ -395,6 +416,8 @@ func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
 	return err
 }
 
+// File method returns the source code of the file identified by the given file
+// name.
 func (p *Patch) File(file string) ([]byte, error) {
 	p.mux.RLock()
 	defer p.mux.RUnlock()
@@ -418,6 +441,8 @@ func (p *Patch) printFile(file string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// DryRun returns a map of file paths to their contents as they would appear
+// after applying the patch. The patch is not actually applied.
 func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 

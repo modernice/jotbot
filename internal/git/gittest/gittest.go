@@ -10,12 +10,21 @@ import (
 	igit "github.com/modernice/opendocs/internal/git"
 )
 
+// Git is a type that represents a Git repository. It has methods to execute Git
+// commands and assert the current branch and commit.
 type Git igit.Git
 
+// Cmd returns a pointer to an exec.Cmd struct, the output of the command as a
+// byte slice, and an error. It takes a variadic argument of strings that
+// represent the command and its arguments.
 func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 	return igit.Git(g).Cmd(args...)
 }
 
+// AssertBranch asserts that the current branch of a Git repository is equal to
+// the given branch name. If the current branch is not equal to the given branch
+// name, it will fail the test with a message indicating the expected and actual
+// branch names.
 func (g Git) AssertBranch(t *testing.T, branch string) {
 	t.Helper()
 
@@ -30,6 +39,9 @@ func (g Git) AssertBranch(t *testing.T, branch string) {
 	}
 }
 
+// AssertCommit asserts that the latest commit message in the current branch of
+// a Git repository matches the commit message of the given [git.Commit]. If the
+// commit messages do not match, AssertCommit will fail the test.
 func (g Git) AssertCommit(t *testing.T, c git.Commit) {
 	t.Helper()
 
