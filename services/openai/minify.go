@@ -72,7 +72,6 @@ type MinifyOptions struct {
 	Steps     []nodes.MinifyOptions
 }
 
-<<<<<<< Updated upstream
 // Minify is a function that takes a byte slice of code and a maximum number of
 // tokens, and returns a Minification struct, a slice of Minification structs,
 // and an error. The Minification struct contains the input code, the minified
@@ -87,19 +86,6 @@ type MinifyOptions struct {
 // maximum number of tokens. If no MinifyOptions in the slice result in a
 // minified code with fewer tokens than the maximum number of tokens, Minify
 // returns an error of type *SourceTooLarge.
-=======
-// Minify minifies a byte slice of source code to a specified number of tokens.
-// It takes a byte slice of code and a maximum number of tokens as input, and
-// returns a Minification struct, a slice of Minification structs, and an error.
-// The Minification struct contains the input code, the minified code, the
-// number of tokens in the minified code, and the
-// [MinifyOptions](#MinifyOptions) used to minify the code. The MinifyOptions
-// struct allows for customization of the minification process, including
-// setting a maximum number of tokens, specifying a model for tokenization, and
-// providing text to prepend to the source code when counting tokens. If the
-// source code cannot be minified to the specified number of tokens, an error of
-// type *SourceTooLarge is returned.
->>>>>>> Stashed changes
 func Minify(code []byte, maxTokens int) (Minification, []Minification, error) {
 	return MinifyOptions{MaxTokens: maxTokens}.Minify(code)
 }
