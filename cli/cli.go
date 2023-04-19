@@ -75,7 +75,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	}
 
 	if cfg.Generate.Branch != "" {
-		grepo := git.Repo(cfg.Generate.Root)
+		grepo := git.Repo(cfg.Generate.Root, git.WithLogger(logHandler))
 		if err := grepo.Commit(patch, git.Branch(cfg.Generate.Branch)); err != nil {
 			return fmt.Errorf("commit patch: %w", err)
 		}
