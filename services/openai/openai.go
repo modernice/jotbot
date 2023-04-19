@@ -23,7 +23,7 @@ var systemPrompt = `You are DocGPT, a code documentation writer.` +
 	`Using these, you will write the documentation for the type or function identified by the identifier. ` +
 	`You will write the documentation in GoDoc format.`
 
-var modelMaxTokens = map[string]uint{
+var modelMaxTokens = map[string]int{
 	"default":                 2049,
 	openai.GPT432K0314:        32768,
 	openai.GPT432K:            32768,
@@ -38,9 +38,9 @@ var modelMaxTokens = map[string]uint{
 type Service struct {
 	client       *openai.Client
 	model        string
-	maxTokens    uint
-	maxDocTokens uint
-	minifyTokens uint
+	maxTokens    int
+	maxDocTokens int
+	minifyTokens int
 	log          *slog.Logger
 }
 
@@ -64,7 +64,7 @@ func Model(model string) Option {
 	}
 }
 
-func MaxTokens(maxTokens uint) Option {
+func MaxTokens(maxTokens int) Option {
 	return func(s *Service) {
 		s.maxDocTokens = maxTokens
 	}
@@ -103,20 +103,28 @@ func NewFrom(opts ...Option) *Service {
 }
 
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
-	files := ctx.Files()
 	file := ctx.File()
-	identifier := ctx.Identifier()
+	longIdentifier := ctx.Identifier()
 
 	code, err := ctx.Read(file)
 	if err != nil {
 		return "", err
 	}
 
-	result, steps, err := Minify(code, svc.minifyTokens)
+	identifier := normalizeIdentifier(longIdentifier)
+	prompt := promptWithoutCode(file, identifier, longIdentifier)
+
+	result, steps, err := MinifyOptions{
+		MaxTokens: svc.minifyTokens,
+		Prepend:   prompt,
+	}.Minify(code)
+
 	if err != nil {
 		return "", fmt.Errorf("minify code: %w", err)
 	}
+
 	code = result.Minified
+	prompt = prompt + string(code)
 
 	if len(steps) > 1 {
 		svc.log.Debug(fmt.Sprintf("[OpenAI] Minified code to %d tokens in %d step(s)", len(result.Tokens), len(steps)))
@@ -124,24 +132,19 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 		svc.log.Debug(fmt.Sprintf("[OpenAI] Code has %d tokens. Not minified.", len(result.Tokens)))
 	}
 
-	answer, err := svc.createCompletion(ctx, files, file, identifier, code)
+	svc.log.Debug("[OpenAI] Generating documentation ...", "file", file, "identifier", identifier, "model", svc.model)
+
+	answer, err := svc.createCompletion(ctx, prompt)
 	if err != nil {
 		return "", fmt.Errorf("create completion: %w", err)
 	}
 
+	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", answer)
+
 	return answer, nil
 }
 
-func (svc *Service) createCompletion(
-	ctx context.Context,
-	files []string,
-	file,
-	longIdentifier string,
-	code []byte,
-) (string, error) {
-	identifier := normalizeIdentifier(longIdentifier)
-	msg := prompt(file, identifier, longIdentifier, code)
-
+func (svc *Service) createCompletion(ctx context.Context, prompt string) (string, error) {
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:            svc.model,
@@ -150,10 +153,8 @@ func (svc *Service) createCompletion(
 		MaxTokens:        512,
 		PresencePenalty:  0.1,
 		FrequencyPenalty: 0.1,
-		Prompt:           msg,
+		Prompt:           prompt,
 	}
-
-	svc.log.Debug("[OpenAI] Generating documentation ...", "file", file, "identifier", identifier, "model", req.Model)
 
 	generate := svc.useModel(req.Model)
 	result, err := generate(ctx, req)
@@ -161,8 +162,6 @@ func (svc *Service) createCompletion(
 		return "", err
 	}
 	result.normalize()
-
-	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", result.text)
 
 	return result.text, nil
 }
@@ -253,13 +252,12 @@ func normalizeIdentifier(identifier string) string {
 	return parts[1]
 }
 
-func prompt(file, identifier, longIdentifier string, code []byte) string {
+func promptWithoutCode(file, identifier, longIdentifier string) string {
 	return fmt.Sprintf(
-		"Write the documentation for %q in GoDoc format, with references to exported symbols wrapped within brackets. Provide only the documentation, excluding the input code and examples. Begin the first sentence with %q. Maintain brevity without sacrificing specificity. Write in the style of the Go library documentations. Do not link to any websites. Here is the source code for %q:\n%s",
+		"Write the documentation for %q in GoDoc format, with references to exported symbols wrapped within brackets. Provide only the documentation, excluding the input code and examples. Begin the first sentence with %q. Maintain brevity without sacrificing specificity. Write in the style of the Go library documentations. Do not link to any websites. Here is the source code for %q:\n",
 		longIdentifier,
 		fmt.Sprintf("%s ", identifier),
 		file,
-		string(code),
 	)
 }
 

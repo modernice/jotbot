@@ -19,8 +19,8 @@ var DefaultMinification = [...]nodes.MinifyOptions{
 }
 
 type SourceTooLarge struct {
-	MaxTokens      uint
-	MinifiedTokens uint
+	MaxTokens      int
+	MinifiedTokens int
 }
 
 func (err *SourceTooLarge) Error() string {
@@ -36,9 +36,19 @@ type Minification struct {
 	Options nodes.MinifyOptions
 }
 
-func Minify(code []byte, maxTokens uint, steps ...nodes.MinifyOptions) (Minification, []Minification, error) {
-	if len(steps) == 0 {
-		steps = DefaultMinification[:]
+type MinifyOptions struct {
+	MaxTokens int
+	Prepend   string
+	Steps     []nodes.MinifyOptions
+}
+
+func Minify(code []byte, maxTokens int) (Minification, []Minification, error) {
+	return MinifyOptions{MaxTokens: maxTokens}.Minify(code)
+}
+
+func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, error) {
+	if len(opts.Steps) == 0 {
+		opts.Steps = DefaultMinification[:]
 	}
 
 	var msteps []Minification
@@ -53,12 +63,23 @@ func Minify(code []byte, maxTokens uint, steps ...nodes.MinifyOptions) (Minifica
 		return Minification{}, nil, fmt.Errorf("get tokenizer: %w", err)
 	}
 
+	var prependLen int
+	if opts.Prepend != "" {
+		ids, _, err := codec.Encode(string(opts.Prepend))
+		if err != nil {
+			return Minification{}, nil, fmt.Errorf("tiktoken: encode prepended text: %w", err)
+		}
+		prependLen = len(ids)
+	}
+
 	ids, _, err := codec.Encode(string(code))
 	if err != nil {
 		return Minification{}, nil, fmt.Errorf("tiktoken: encode code: %w", err)
 	}
 
-	if uint(len(ids)) <= maxTokens {
+	total := prependLen + len(ids)
+
+	if total <= opts.MaxTokens {
 		min := Minification{
 			Input:    code,
 			Minified: code,
@@ -95,18 +116,18 @@ func Minify(code []byte, maxTokens uint, steps ...nodes.MinifyOptions) (Minifica
 
 		msteps = append(msteps, min)
 
-		if uint(len(ids)) <= maxTokens {
+		if len(ids) <= opts.MaxTokens {
 			return min, msteps, nil
 		}
 	}
 
 	var min Minification
-	if len(steps) > 0 {
-		min = msteps[len(steps)-1]
+	if len(opts.Steps) > 0 {
+		min = msteps[len(opts.Steps)-1]
 	}
 
 	return min, msteps, &SourceTooLarge{
-		MaxTokens:      maxTokens,
-		MinifiedTokens: uint(len(min.Tokens)),
+		MaxTokens:      opts.MaxTokens,
+		MinifiedTokens: len(min.Tokens),
 	}
 }
