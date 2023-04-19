@@ -189,6 +189,8 @@ func (svc *Service) createWithGPT(ctx context.Context, req openai.CompletionRequ
 		return result{}, fmt.Errorf("openai: no choices returned")
 	}
 
+	svc.printUsage(resp.Usage)
+
 	choice := resp.Choices[0]
 
 	return result{
@@ -219,6 +221,8 @@ func (svc *Service) createWithChat(ctx context.Context, req openai.CompletionReq
 		return result{}, err
 	}
 
+	svc.printUsage(resp.Usage)
+
 	choice := resp.Choices[0]
 	res := result{
 		finishReason: choice.FinishReason,
@@ -230,6 +234,10 @@ func (svc *Service) createWithChat(ctx context.Context, req openai.CompletionReq
 	}
 
 	return res, nil
+}
+
+func (svc *Service) printUsage(usage openai.Usage) {
+	svc.log.Debug("[OpenAI] Usage info", "prompt", usage.PromptTokens, "completion", usage.CompletionTokens, "total", usage.TotalTokens)
 }
 
 var chatModels = map[string]bool{
