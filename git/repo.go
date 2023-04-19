@@ -72,12 +72,8 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 		cfg.branch = "opendocs-patch"
 	}
 
-	_, current, err := r.git.Cmd("branch", "--show-current")
-	if err != nil {
-		return fmt.Errorf("get current branch: %w", err)
-	}
-
-	if strings.TrimSpace(string(current)) == cfg.branch {
+	_, output, err := r.git.Cmd("rev-parse", "--verify", cfg.branch)
+	if err == nil || strings.TrimSpace(string(output)) == "" {
 		cfg.branch = fmt.Sprintf("%s_%d", cfg.branch, time.Now().UnixMilli())
 	}
 
