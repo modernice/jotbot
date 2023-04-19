@@ -18,6 +18,7 @@ import "errors"
 
 type Foo struct{}
 
+// Foo is a method.
 func (f *Foo) Foo() error {
 	return f.foo()
 }

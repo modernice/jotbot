@@ -27,6 +27,7 @@ func Minify[Node dst.Node](in Node) Node {
 		switch node := node.(type) {
 		case *dst.FuncDecl:
 			node.Body = nil
+			node.Decs.Start = nil
 		}
 
 		return true

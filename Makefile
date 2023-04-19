@@ -1,6 +1,7 @@
 .PHONY: test
 test:
 	@go test ./...
+	@find . -type d -name gen -delete
 
 .PHONY: clear
 clear:
