@@ -32,6 +32,7 @@ type Patch struct {
 	files       map[string]*dst.File
 	fileLocks   map[string]*sync.Mutex
 	identifiers map[string][]string
+	override    bool
 	log         *slog.Logger
 }
 
@@ -48,6 +49,12 @@ type Option func(*Patch)
 func WithLogger(h slog.Handler) Option {
 	return func(p *Patch) {
 		p.log = slog.New(h)
+	}
+}
+
+func Override(override bool) Option {
+	return func(p *Patch) {
+		p.override = override
 	}
 }
 
@@ -228,7 +235,7 @@ func (p *Patch) commentGenDecl(file, identifier string, comment string, decl *ds
 	_, unlock := p.acquireFile(file)
 	defer unlock()
 
-	if len(decl.Decs.Start.All()) > 0 {
+	if !p.override && len(decl.Decs.Start.All()) > 0 {
 		return fmt.Errorf("%s already has documentation", identifier)
 	}
 
@@ -256,7 +263,7 @@ func (p *Patch) commentFunction(file string, decl *dst.FuncDecl, comment string)
 	_, unlock := p.acquireFile(file)
 	defer unlock()
 
-	if len(decl.Decs.Start.All()) > 0 {
+	if !p.override && len(decl.Decs.Start.All()) > 0 {
 		return fmt.Errorf("function %s already has documentation", decl.Name.Name)
 	}
 
