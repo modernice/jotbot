@@ -111,14 +111,10 @@ type X struct{}
 func (X) Bar() error
 
 // foo is a function.
-func foo() error {
-	return bar()
-}
+func foo() error
 
 // bar is a function, too.
-func bar() error {
-	return errors.New("bar")
-}
+func bar() error
 `
 
 var wantExportedFuncComment = `// Package foo is super nice.
@@ -134,12 +130,10 @@ func (X) Bar() error {
 	return bar()
 }
 
-// foo is a function.
 func foo() error {
 	return bar()
 }
 
-// bar is a function, too.
 func bar() error {
 	return errors.New("bar")
 }
@@ -154,15 +148,9 @@ type X struct{}
 
 func (X) Bar() error
 
-// foo is a function.
-func foo() error {
-	return bar()
-}
+func foo() error
 
-// bar is a function, too.
-func bar() error {
-	return errors.New("bar")
-}
+func bar() error
 `
 
 var wantPackageComment = `package foo
@@ -190,6 +178,19 @@ func bar() error {
 }
 `
 
+var wantAll = `package foo
+
+func Foo() error
+
+type X struct{}
+
+func (X) Bar() error
+
+func foo() error
+
+func bar() error
+`
+
 func TestMinify(t *testing.T) {
 	tests := []struct {
 		name string
@@ -199,42 +200,47 @@ func TestMinify(t *testing.T) {
 		{
 			name: "Unexported.Body",
 			opts: nodes.MinifyOptions{
-				Unexported: nodes.MinifyFuncBody,
+				FuncBody: true,
 			},
 			want: wantUnexportedFuncBody,
 		},
 		{
 			name: "Unexported.Comment",
 			opts: nodes.MinifyOptions{
-				Unexported: nodes.MinifyFuncComment,
+				FuncComment: true,
 			},
 			want: wantUnexportedFuncComment,
 		},
 		{
-			name: "Unexported.All",
+			name: "Unexported.Func",
 			opts: nodes.MinifyOptions{
-				Unexported: nodes.MinifyFuncComment | nodes.MinifyFuncBody,
+				FuncComment: true,
+				FuncBody:    true,
 			},
 			want: wantUnexportedFunc,
 		},
 		{
 			name: "Exported.Body",
 			opts: nodes.MinifyOptions{
-				Exported: nodes.MinifyFuncBody,
+				FuncBody: true,
+				Exported: true,
 			},
 			want: wantExportedFuncBody,
 		},
 		{
 			name: "Exported.Comment",
 			opts: nodes.MinifyOptions{
-				Exported: nodes.MinifyFuncComment,
+				FuncComment: true,
+				Exported:    true,
 			},
 			want: wantExportedFuncComment,
 		},
 		{
-			name: "Exported.All",
+			name: "Exported.Func",
 			opts: nodes.MinifyOptions{
-				Exported: nodes.MinifyFuncComment | nodes.MinifyFuncBody,
+				FuncComment: true,
+				FuncBody:    true,
+				Exported:    true,
 			},
 			want: wantExportedFuncAll,
 		},
@@ -244,6 +250,16 @@ func TestMinify(t *testing.T) {
 				PackageComment: true,
 			},
 			want: wantPackageComment,
+		},
+		{
+			name: "All",
+			opts: nodes.MinifyOptions{
+				PackageComment: true,
+				FuncComment:    true,
+				FuncBody:       true,
+				Exported:       true,
+			},
+			want: wantAll,
 		},
 	}
 
