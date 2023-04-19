@@ -71,6 +71,24 @@ var dryRunTests = []struct {
 			return f.GoString()
 		},
 	},
+	{
+		name:       "const",
+		comment:    `Foo is a constant that is used to do things.`,
+		identifier: "Foo",
+		input: func(f *jen.File) string {
+			f.Const().Id("Foo").Op("=").Lit("foo")
+			return f.GoString()
+		},
+	},
+	{
+		name:       "var",
+		comment:    `Foo is a variable that is used to do things.`,
+		identifier: "Foo",
+		input: func(f *jen.File) string {
+			f.Var().Id("Foo").Op("=").Lit("foo")
+			return f.GoString()
+		},
+	},
 }
 
 func TestPatch_DryRun(t *testing.T) {
@@ -91,6 +109,7 @@ func TestPatch_DryRun(t *testing.T) {
 			p := patch.New(sourceFS)
 
 			if err := p.Comment("foo.go", tt.identifier, tt.comment); err != nil {
+				t.Log(input)
 				t.Fatal(err)
 			}
 

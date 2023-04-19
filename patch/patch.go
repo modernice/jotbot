@@ -109,7 +109,17 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 			return fmt.Errorf("look for type %s in %s: %w", identifier, file, err)
 		}
 		if ok {
-			return p.commentType(file, decl, spec, comment)
+			return p.commentGenDecl(file, spec.Name.Name, comment, decl)
+		}
+	}
+
+	{
+		spec, decl, ok, err := p.findVarOrConst(file, identifier)
+		if err != nil {
+			return fmt.Errorf("look for var/const %s in %s: %w", identifier, file, err)
+		}
+		if ok {
+			return p.commentGenDecl(file, spec.Names[0].Name, comment, decl)
 		}
 	}
 
@@ -185,6 +195,19 @@ func (p *Patch) acquireFile(file string) (*dst.File, func()) {
 
 	p.fileLocks[file].Lock()
 	return p.files[file], p.fileLocks[file].Unlock
+}
+
+func (p *Patch) commentGenDecl(file, identifier string, comment string, decl *dst.GenDecl) error {
+	_, unlock := p.acquireFile(file)
+	defer unlock()
+
+	if len(decl.Decs.Start.All()) > 0 {
+		return fmt.Errorf("%s already has documentation", identifier)
+	}
+
+	decl.Decs.Start.Append(formatComment(comment))
+
+	return nil
 }
 
 func (p *Patch) findFunction(file, identifier string) (*dst.FuncDecl, bool, error) {
@@ -278,17 +301,37 @@ func (p *Patch) findType(file, identifier string) (*dst.TypeSpec, *dst.GenDecl, 
 	return nil, nil, false, nil
 }
 
-func (p *Patch) commentType(file string, decl *dst.GenDecl, spec *dst.TypeSpec, comment string) error {
-	_, unlock := p.acquireFile(file)
-	defer unlock()
-
-	if len(decl.Decs.Start.All()) > 0 {
-		return fmt.Errorf("type %s already has documentation", spec.Name.Name)
+func (p *Patch) findVarOrConst(file, identifier string) (*dst.ValueSpec, *dst.GenDecl, bool, error) {
+	node, err := p.parseFile(file)
+	if err != nil {
+		return nil, nil, false, err
 	}
 
-	decl.Decs.Start.Append(formatComment(comment))
+	var (
+		spec *dst.ValueSpec
+		decl *dst.GenDecl
+	)
 
-	return nil
+	dst.Inspect(node, func(node dst.Node) bool {
+		switch node := node.(type) {
+		case *dst.GenDecl:
+			for _, sp := range node.Specs {
+				if vs, ok := sp.(*dst.ValueSpec); ok {
+					for _, ident := range vs.Names {
+						if ident.Name == identifier {
+							spec = vs
+							decl = node
+							return false
+						}
+					}
+				}
+			}
+		}
+
+		return true
+	})
+
+	return spec, decl, spec != nil, nil
 }
 
 func (p *Patch) Commit() git.Commit {
