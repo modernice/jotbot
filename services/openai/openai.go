@@ -2,19 +2,19 @@ package openai
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/exp/slog"
 )
 
-const DefaultModel = openai.GPT3TextDavinci003
+const (
+	DefaultModel     = openai.GPT3TextDavinci003
+	DefaultMaxTokens = 512
+)
 
 var _ generate.Service = (*Service)(nil)
 
@@ -23,10 +23,26 @@ var systemPrompt = `You are DocGPT, a code documentation writer.` +
 	`Using these, you will write the documentation for the type or function identified by the identifier. ` +
 	`You will write the documentation in GoDoc format.`
 
+var modelMaxTokens = map[string]uint{
+	"default":                  2049,
+	openai.GPT432K0314:         32768,
+	openai.GPT432K:             32768,
+	openai.GPT40314:            8192,
+	openai.GPT4:                8192,
+	openai.GPT3Dot5Turbo0301:   4096,
+	openai.GPT3Dot5Turbo:       4096,
+	openai.GPT3TextDavinci003:  4097,
+	openai.GPT3TextDavinci002:  4097,
+	openai.CodexCodeDavinci002: 8001,
+}
+
 type Service struct {
-	client *openai.Client
-	model  string
-	log    *slog.Logger
+	client       *openai.Client
+	model        string
+	maxTokens    uint
+	maxDocTokens uint
+	minifyTokens uint
+	log          *slog.Logger
 }
 
 type Option func(*Service)
@@ -49,6 +65,12 @@ func Model(model string) Option {
 	}
 }
 
+func MaxTokens(maxTokens uint) Option {
+	return func(s *Service) {
+		s.maxDocTokens = maxTokens
+	}
+}
+
 func New(apiKey string, opts ...Option) *Service {
 	client := openai.NewClient(apiKey)
 	return NewFrom(append([]Option{WithClient(client)}, opts...)...)
@@ -59,12 +81,25 @@ func NewFrom(opts ...Option) *Service {
 	for _, opt := range opts {
 		opt(&svc)
 	}
+
 	if svc.model == "" {
 		svc.model = DefaultModel
 	}
+
 	if svc.log == nil {
 		svc.log = internal.NopLogger()
 	}
+
+	if svc.maxDocTokens == 0 {
+		svc.maxDocTokens = DefaultMaxTokens
+	}
+
+	svc.maxTokens = modelMaxTokens[svc.model]
+	if svc.maxTokens == 0 {
+		svc.maxTokens = modelMaxTokens["default"]
+	}
+	svc.minifyTokens = svc.maxTokens - svc.maxDocTokens
+
 	return &svc
 }
 
@@ -72,12 +107,21 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	files := ctx.Files()
 	file := ctx.File()
 	identifier := ctx.Identifier()
+
 	code, err := ctx.Read(file)
 	if err != nil {
 		return "", err
 	}
 
-	answer, err := svc.createCompletion(ctx, files, file, identifier, code, 0)
+	result, steps, err := Minify(code, svc.minifyTokens)
+	if err != nil {
+		return "", fmt.Errorf("minify code: %w", err)
+	}
+	code = result.Minified
+
+	svc.log.Debug(fmt.Sprintf("[OpenAI] Minified code to %d tokens in %d step(s)", len(result.Tokens), len(steps)))
+
+	answer, err := svc.createCompletion(ctx, files, file, identifier, code)
 	if err != nil {
 		return "", fmt.Errorf("create completion: %w", err)
 	}
@@ -91,10 +135,7 @@ func (svc *Service) createCompletion(
 	file,
 	longIdentifier string,
 	code []byte,
-	tries int,
 ) (string, error) {
-	tries++
-
 	identifier := normalizeIdentifier(longIdentifier)
 	msg := prompt(file, identifier, longIdentifier, code)
 
@@ -118,60 +159,9 @@ func (svc *Service) createCompletion(
 	}
 	result.normalize()
 
-	if isMaxTokensError(err, result.finishReason) {
-		if tries > 1 {
-			svc.log.Warn("[OpenAI] Source file has too many tokens, and cannot be further minified. Giving up.", "file", file)
-			return "", nil
-		}
-
-		svc.log.Debug("[OpenAI] Source file has too many tokens. Retrying with minified code ...", "file", file, "identifier", identifier, "reason", "length")
-
-		return svc.retryMinified(ctx, files, file, longIdentifier, code, tries)
-	}
-
 	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", result.text)
 
 	return result.text, nil
-}
-
-func isMaxTokensError(err error, finishReason string) bool {
-	// TODO(bounoable): Should retry with increased max_tokens setting instead.
-	if finishReason == "length" {
-		return true
-	}
-
-	if err == nil {
-		return false
-	}
-
-	var apiErr *openai.APIError
-	if errors.As(err, &apiErr) {
-		// TODO(bounoable): Not a good way to check for a maximum tokens error
-		// but the API doesn't provide a better way to do it.
-		// Error 400 is immediately returned when the max_tokens configuration is
-		// too low. We can simply retry with a higher max_tokens setting in this
-		// case. When finishReason is "length", OpenAI started to write the
-		// answer but couldn't finish because the max_tokens were exceeded.
-		// In this case we need to minify the source code to fit in the request.
-		return apiErr.Code != nil && *apiErr.Code == "400"
-	}
-
-	return false
-}
-
-func (svc *Service) retryMinified(ctx context.Context, files []string, file, identifier string, code []byte, tries int) (string, error) {
-	node, err := decorator.Parse(code)
-	if err != nil {
-		return "", fmt.Errorf("parse code: %w", err)
-	}
-
-	node = nodes.MinifyUnexported(node)
-
-	if code, err = nodes.Format(node); err != nil {
-		return "", fmt.Errorf("format minified code: %w", err)
-	}
-
-	return svc.createCompletion(ctx, files, file, identifier, code, tries)
 }
 
 func (svc *Service) useModel(model string) func(context.Context, openai.CompletionRequest) (result, error) {

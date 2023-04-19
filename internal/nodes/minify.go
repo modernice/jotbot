@@ -7,6 +7,8 @@ import (
 )
 
 var (
+	MinifyNone MinifyOptions
+
 	MinifyUnexported = MinifyOptions{
 		FuncComment:   true,
 		FuncBody:      true,

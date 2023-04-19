@@ -17,9 +17,11 @@ require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/dave/dst v0.27.2
 	github.com/sashabaranov/go-openai v1.7.0
+	github.com/tiktoken-go/tokenizer v0.1.0
 )
 
 require (
+	github.com/dlclark/regexp2 v1.9.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	golang.org/x/mod v0.6.0 // indirect
 	golang.org/x/sys v0.1.0 // indirect
