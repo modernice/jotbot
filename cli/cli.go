@@ -28,13 +28,14 @@ type CLI struct {
 	Generate struct {
 		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
 		Filter    []string `name:"filter" short:"f" env:"OPENDOCS_FILTER" help:"Glob pattern(s) to filter files."`
-		Commit    bool     `name:"commit" short:"c" default:"true" env:"OPENDOCS_COMMIT" help:"Commit changes to Git."`
+		Commit    bool     `name:"commit" default:"true" env:"OPENDOCS_COMMIT" help:"Commit changes to Git."`
 		Branch    string   `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to."`
 		Limit     int      `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
 		FileLimit int      `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
 		DryRun    bool     `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Just print the changes without applying them."`
 		Model     string   `default:"gpt-3.5-turbo" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
 		Override  bool     `name:"override" short:"o" env:"OPENDOCS_OVERRIDE" help:"Override existing documentation."`
+		Clear     bool     `name:"clear" short:"c" env:"OPENDOCS_CLEAR" help:"Clear existing documentation."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -69,6 +70,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		generate.Limit(cfg.Generate.Limit),
 		generate.FileLimit(cfg.Generate.FileLimit),
 		generate.Override(cfg.Generate.Override),
+		generate.FindWith(find.ResetComments(cfg.Generate.Clear)),
 	}
 	if len(cfg.Generate.Filter) > 0 {
 		opts = append(opts, generate.FindWith(find.Glob(cfg.Generate.Filter...)))
