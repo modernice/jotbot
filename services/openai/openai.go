@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/internal"
 	"github.com/modernice/opendocs/internal/nodes"
@@ -159,10 +160,12 @@ func isMaxTokensError(err error, finishReason string) bool {
 }
 
 func (svc *Service) retryMinified(ctx context.Context, files []string, file, identifier string, code []byte, tries int) (string, error) {
-	node, err := nodes.MinifyCode(code)
+	node, err := decorator.Parse(code)
 	if err != nil {
-		return "", fmt.Errorf("minify code: %w", err)
+		return "", fmt.Errorf("parse code: %w", err)
 	}
+
+	node = nodes.MinifyUnexported(node)
 
 	if code, err = nodes.Format(node); err != nil {
 		return "", fmt.Errorf("format minified code: %w", err)

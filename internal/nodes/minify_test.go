@@ -1,58 +1,269 @@
 package nodes_test
 
 import (
-	"bytes"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/internal/nodes"
-	"github.com/modernice/opendocs/internal/tests"
 )
 
-var wantMinified = `package fixture
+var minifyInput = `// Package foo is super nice.
+package foo
 
-import "errors"
-
-type Foo struct{}
-
-// Foo is a method.
-func (f *Foo) Foo() error {
-	return f.foo()
+// Foo is a function.
+func Foo() error {
+	return foo()
 }
 
-func (f *Foo) foo() error
+type X struct{}
 
-func (f *Foo) bar() error
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
+`
+
+var wantUnexportedFuncBody = `// Package foo is super nice.
+package foo
+
+// Foo is a function.
+func Foo() error {
+	return foo()
+}
+
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+// foo is a function.
+func foo() error
+
+// bar is a function, too.
+func bar() error
+`
+
+var wantUnexportedFuncComment = `// Package foo is super nice.
+package foo
+
+// Foo is a function.
+func Foo() error {
+	return foo()
+}
+
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+func foo() error {
+	return bar()
+}
+
+func bar() error {
+	return errors.New("bar")
+}
+`
+
+var wantUnexportedFunc = `// Package foo is super nice.
+package foo
+
+// Foo is a function.
+func Foo() error {
+	return foo()
+}
+
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+func foo() error
+
+func bar() error
+`
+
+var wantExportedFuncBody = `// Package foo is super nice.
+package foo
+
+// Foo is a function.
+func Foo() error
+
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
+`
+
+var wantExportedFuncComment = `// Package foo is super nice.
+package foo
+
+func Foo() error {
+	return foo()
+}
+
+type X struct{}
+
+func (X) Bar() error {
+	return bar()
+}
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
+`
+
+var wantExportedFuncAll = `// Package foo is super nice.
+package foo
+
+func Foo() error
+
+type X struct{}
+
+func (X) Bar() error
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
+`
+
+var wantPackageComment = `package foo
+
+// Foo is a function.
+func Foo() error {
+	return foo()
+}
+
+type X struct{}
+
+// Bar is a method.
+func (X) Bar() error {
+	return bar()
+}
+
+// foo is a function.
+func foo() error {
+	return bar()
+}
+
+// bar is a function, too.
+func bar() error {
+	return errors.New("bar")
+}
 `
 
 func TestMinify(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "minify")
-	tests.WithRepo("minify", root, func(repo fs.FS) {
-		f, err := repo.Open("foo.go")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
+	tests := []struct {
+		name string
+		opts nodes.MinifyOptions
+		want string
+	}{
+		{
+			name: "Unexported.Body",
+			opts: nodes.MinifyOptions{
+				Unexported: nodes.MinifyFuncBody,
+			},
+			want: wantUnexportedFuncBody,
+		},
+		{
+			name: "Unexported.Comment",
+			opts: nodes.MinifyOptions{
+				Unexported: nodes.MinifyFuncComment,
+			},
+			want: wantUnexportedFuncComment,
+		},
+		{
+			name: "Unexported.All",
+			opts: nodes.MinifyOptions{
+				Unexported: nodes.MinifyFuncComment | nodes.MinifyFuncBody,
+			},
+			want: wantUnexportedFunc,
+		},
+		{
+			name: "Exported.Body",
+			opts: nodes.MinifyOptions{
+				Exported: nodes.MinifyFuncBody,
+			},
+			want: wantExportedFuncBody,
+		},
+		{
+			name: "Exported.Comment",
+			opts: nodes.MinifyOptions{
+				Exported: nodes.MinifyFuncComment,
+			},
+			want: wantExportedFuncComment,
+		},
+		{
+			name: "Exported.All",
+			opts: nodes.MinifyOptions{
+				Exported: nodes.MinifyFuncComment | nodes.MinifyFuncBody,
+			},
+			want: wantExportedFuncAll,
+		},
+		{
+			name: "PackageComment",
+			opts: nodes.MinifyOptions{
+				PackageComment: true,
+			},
+			want: wantPackageComment,
+		},
+	}
 
-		node, err := decorator.Parse(f)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			node, err := decorator.Parse([]byte(minifyInput))
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		node = nodes.Minify(node)
+			minified := nodes.Minify(node, tt.opts)
 
-		var buf bytes.Buffer
-		if err := decorator.Fprint(&buf, node); err != nil {
-			t.Fatal(err)
-		}
+			code, err := nodes.Format(minified)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		got := buf.String()
-
-		if got != wantMinified {
-			t.Fatalf("unpected minified code\n\nwant:\n%s\n\ngot:\n%s", wantMinified, got)
-		}
-	})
+			if string(code) != tt.want {
+				t.Fatalf("unexpected minified code\n\nwant:\n%s\n\ngot:\n%s", tt.want, string(code))
+			}
+		})
+	}
 }

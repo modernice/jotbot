@@ -2,36 +2,94 @@ package nodes
 
 import (
 	"github.com/dave/dst"
-	"github.com/dave/dst/decorator"
 )
 
-func MinifyCode(code []byte) (*dst.File, error) {
-	node, err := decorator.Parse(code)
-	if err != nil {
-		return nil, err
-	}
-	return Minify(node), nil
+const (
+	MinifyFuncBody MinifyFlags = 1 << iota
+	MinifyFuncComment
+)
+
+type MinifyFlags uint
+
+type MinifyOptions struct {
+	Exported, Unexported MinifyFlags
+	PackageComment       bool
 }
 
-func Minify[Node dst.Node](in Node) Node {
-	out := dst.Clone(in)
-	if _, ok := out.(Node); !ok {
-		panic("dst.Clone() returned a wrong type. this should be impossible")
+func (flags MinifyFlags) FuncBody() bool {
+	return flags&MinifyFuncBody != 0
+}
+
+func (flags MinifyFlags) Comment() bool {
+	return flags&MinifyFuncComment != 0
+}
+
+func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
+	out := dst.Clone(node)
+
+	patch := func(node dst.Node, flags MinifyFlags) {
+		switch node := node.(type) {
+		case *dst.FuncDecl:
+			if flags.FuncBody() {
+				node.Body = nil
+			}
+
+			if flags.Comment() {
+				node.Decs.Start.Clear()
+			}
+		}
 	}
 
 	dst.Inspect(out, func(node dst.Node) bool {
 		if _, exported := Identifier(node); exported {
-			return true
+			patch(node, opts.Exported)
+		} else {
+			patch(node, opts.Unexported)
 		}
-
-		switch node := node.(type) {
-		case *dst.FuncDecl:
-			node.Body = nil
-			node.Decs.Start = nil
-		}
-
 		return true
 	})
 
-	return out.(Node)
+	if opts.PackageComment {
+		if file, ok := out.(*dst.File); ok {
+			file.Decs.Package.Clear()
+			file.Decs.Start.Clear()
+		}
+	}
+
+	return out
+}
+
+func Minify[Node dst.Node](node Node, opts MinifyOptions) Node {
+	return opts.Minify(node).(Node)
+}
+
+func MinifyUnexported[Node dst.Node](node Node, flags ...MinifyFlags) Node {
+	f := MinifyFuncBody | MinifyFuncComment
+	for _, flag := range flags {
+		f |= flag
+	}
+	return Minify(node, MinifyOptions{Unexported: f})
+}
+
+func MinifyExported[Node dst.Node](node Node, flags ...MinifyFlags) Node {
+	f := MinifyFuncBody | MinifyFuncComment
+	for _, flag := range flags {
+		f |= flag
+	}
+	return Minify(node, MinifyOptions{
+		Exported:   f,
+		Unexported: f,
+	})
+}
+
+func MinifyAll[Node dst.Node](node Node, flags ...MinifyFlags) Node {
+	f := MinifyFuncBody | MinifyFuncComment
+	for _, flag := range flags {
+		f |= flag
+	}
+	return Minify(node, MinifyOptions{
+		Exported:       f,
+		Unexported:     f,
+		PackageComment: true,
+	})
 }
