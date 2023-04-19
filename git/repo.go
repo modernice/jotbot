@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/modernice/opendocs/internal"
 	"github.com/modernice/opendocs/internal/git"
@@ -68,6 +69,15 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 
 	if cfg.branch == "" {
 		cfg.branch = "opendocs-patch"
+	}
+
+	_, current, err := r.git.Cmd("branch", "--show-current")
+	if err != nil {
+		return fmt.Errorf("get current branch: %w", err)
+	}
+
+	if string(current) == cfg.branch {
+		cfg.branch = fmt.Sprintf("%s_%d", cfg.branch, time.Now().UnixMilli())
 	}
 
 	r.log.Info("[git] Committing patch ...", "branch", cfg.branch)
