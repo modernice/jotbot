@@ -192,7 +192,7 @@ func (svc *Service) createCompletion(ctx context.Context, prompt string) (string
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:            svc.model,
-		Temperature:      0.1,
+		Temperature:      0.5,
 		TopP:             0.3,
 		MaxTokens:        512,
 		PresencePenalty:  0.1,
@@ -306,7 +306,7 @@ func normalizeIdentifier(identifier string) string {
 
 func promptWithoutCode(file, identifier, longIdentifier string) string {
 	return fmt.Sprintf(
-		"Write a concise documentation for %q in GoDoc format, with references to symbols wrapped within brackets. Provide only the documentation, excluding input code and examples. Do not link to any websites. Write in the style of the Go library documentations. Begin exactly with %q. This is the source code for %q:\n",
+		"Write a concise documentation for %q in GoDoc format, with references to symbols wrapped within brackets. Provide only the documentation, excluding input code and examples. Do not link to any websites. Write in the style of the Go library documentations. Begin the comment with %q. This is the source code for %q:\n",
 		longIdentifier,
 		fmt.Sprintf("%s ", identifier),
 		file,
