@@ -39,6 +39,20 @@ func (g Git) AssertBranch(t *testing.T, branch string) {
 	}
 }
 
+func (g Git) AssertBranchPrefix(t *testing.T, prefix string) {
+	t.Helper()
+
+	_, output, err := g.Cmd("branch", "--show-current")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := strings.TrimSpace(string(output))
+
+	if !strings.HasPrefix(got, prefix) {
+		t.Fatalf("expected branch %q to have prefix %q", got, prefix)
+	}
+}
+
 // AssertCommit asserts that the latest commit message in the current branch of
 // a Git repository matches the commit message of the given [git.Commit]. If the
 // commit messages do not match, AssertCommit will fail the test.

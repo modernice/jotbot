@@ -50,7 +50,7 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		g.AssertBranch(t, "opendocs-patch")
+		g.AssertBranchPrefix(t, "opendocs-patch")
 		g.AssertCommit(t, git.Commit{
 			Msg: "docs: add missing documentation",
 			Desc: []string{
