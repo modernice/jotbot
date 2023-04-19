@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/modernice/opendocs/internal"
@@ -138,22 +139,22 @@ func (f *Finder) Uncommented() (Findings, error) {
 }
 
 func (f *Finder) parseGlobOptions() (func(string) bool, error) {
-	if enabled := len(f.globs) > 0; !enabled {
+	if len(f.globs) == 0 {
 		return func(string) bool { return false }, nil
 	}
 
-	var globAllow []string
+	var allowed []string
 	for _, pattern := range f.globs {
-		globFiles, err := fs.Glob(f.repo, pattern)
+		files, err := doublestar.Glob(f.repo, pattern)
 		if err != nil {
 			return nil, fmt.Errorf("glob %q: %w", pattern, err)
 		}
-		globAllow = append(globAllow, globFiles...)
+		allowed = append(allowed, files...)
 	}
-	globAllow = slice.Unique(globAllow)
+	allowed = slice.Unique(allowed)
 
 	return func(path string) bool {
-		return slices.Contains(globAllow, filepath.Clean(path))
+		return !slices.Contains(allowed, filepath.Clean(path))
 	}, nil
 }
 

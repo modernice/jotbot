@@ -84,9 +84,9 @@ func TestGlob(t *testing.T) {
 	onlyFoo := slice.Filter(all, func(file string) bool {
 		return filepath.Base(file) == "foo.go"
 	})
-	// onlyBar := slice.Filter(all, func(file string) bool {
-	// 	return filepath.Base(file) == "bar.go"
-	// })
+	onlyBar := slice.Filter(all, func(file string) bool {
+		return filepath.Base(file) == "bar.go"
+	})
 	// onlyBaz := slice.Filter(all, func(file string) bool {
 	// 	return filepath.Base(file) == "baz.go"
 	// })
@@ -103,8 +103,27 @@ func TestGlob(t *testing.T) {
 		},
 		{
 			name:    "only foo.go",
-			pattern: "foo.go",
+			pattern: "**/foo.go",
 			want:    onlyFoo,
+		},
+		{
+			name:    "only bar.go",
+			pattern: "**/bar.go",
+			want:    onlyBar,
+		},
+		{
+			name:    "everything within foo/",
+			pattern: "foo/*",
+			want:    []string{"foo/foo.go", "foo/bar.go", "foo/baz.go"},
+		},
+		{
+			name:    "all ba*.go",
+			pattern: "**/ba*.go",
+			want: []string{
+				"bar.go", "baz.go",
+				"foo/bar.go", "foo/baz.go",
+				"bar/bar.go", "bar/baz.go",
+				"baz/bar.go", "baz/baz.go"},
 		},
 	}
 
@@ -125,7 +144,7 @@ func TestGlob(t *testing.T) {
 				slices.Sort(tt.want)
 
 				if len(got) != len(tt.want) {
-					t.Fatalf("got findings for %d files; want %d\nfound files: %v", len(got), len(tt.want), got)
+					t.Fatalf("got findings for %d files; want %d\nwant files: %v\nfound files: %v", len(got), len(tt.want), tt.want, got)
 				}
 
 				for _, wantFile := range tt.want {

@@ -15,6 +15,7 @@ require (
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
+	github.com/bmatcuk/doublestar/v4 v4.6.0
 	github.com/dave/dst v0.27.2
 	github.com/sashabaranov/go-openai v1.7.0
 	github.com/tiktoken-go/tokenizer v0.1.0
