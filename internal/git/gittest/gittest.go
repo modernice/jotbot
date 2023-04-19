@@ -39,6 +39,10 @@ func (g Git) AssertBranch(t *testing.T, branch string) {
 	}
 }
 
+// AssertBranchPrefix asserts that the current branch of a Git repository has a
+// prefix equal to the given string. If the current branch does not have the
+// given prefix, it will fail the test with a message indicating the expected
+// and actual branch names.
 func (g Git) AssertBranchPrefix(t *testing.T, prefix string) {
 	t.Helper()
 
