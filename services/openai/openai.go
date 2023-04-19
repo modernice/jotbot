@@ -119,7 +119,11 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	}
 	code = result.Minified
 
-	svc.log.Debug(fmt.Sprintf("[OpenAI] Minified code to %d tokens in %d step(s)", len(result.Tokens), len(steps)))
+	if len(steps) > 1 {
+		svc.log.Debug(fmt.Sprintf("[OpenAI] Minified code to %d tokens in %d step(s)", len(result.Tokens), len(steps)))
+	} else {
+		svc.log.Debug(fmt.Sprintf("[OpenAI] Code has %d tokens. Not minified.", len(result.Tokens)))
+	}
 
 	answer, err := svc.createCompletion(ctx, files, file, identifier, code)
 	if err != nil {
