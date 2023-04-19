@@ -102,16 +102,10 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 	)
 
 	canGenerate := func() bool {
-		nf := atomic.LoadInt64(&nFiles)
-		if cfg.fileLimit > 0 && nf >= int64(cfg.fileLimit) {
-			return false
-		}
-
 		ng := atomic.LoadInt64(&nGenerated)
 		if cfg.limit > 0 && ng >= int64(cfg.limit) {
 			return false
 		}
-
 		return true
 	}
 
@@ -181,6 +175,10 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 				}
 
 				if !push(file, gens) {
+					return
+				}
+
+				if n := atomic.LoadInt64(&nFiles); cfg.fileLimit > 0 && n >= int64(cfg.fileLimit) {
 					return
 				}
 			}

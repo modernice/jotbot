@@ -24,16 +24,15 @@ var systemPrompt = `You are DocGPT, a code documentation writer.` +
 	`You will write the documentation in GoDoc format.`
 
 var modelMaxTokens = map[string]uint{
-	"default":                  2049,
-	openai.GPT432K0314:         32768,
-	openai.GPT432K:             32768,
-	openai.GPT40314:            8192,
-	openai.GPT4:                8192,
-	openai.GPT3Dot5Turbo0301:   4096,
-	openai.GPT3Dot5Turbo:       4096,
-	openai.GPT3TextDavinci003:  4097,
-	openai.GPT3TextDavinci002:  4097,
-	openai.CodexCodeDavinci002: 8001,
+	"default":                 2049,
+	openai.GPT432K0314:        32768,
+	openai.GPT432K:            32768,
+	openai.GPT40314:           8192,
+	openai.GPT4:               8192,
+	openai.GPT3Dot5Turbo0301:  4096,
+	openai.GPT3Dot5Turbo:      4096,
+	openai.GPT3TextDavinci003: 4097,
+	openai.GPT3TextDavinci002: 4097,
 }
 
 type Service struct {
