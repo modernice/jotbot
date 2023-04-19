@@ -15,7 +15,6 @@ import (
 	"github.com/modernice/opendocs/internal"
 	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/modernice/opendocs/internal/slice"
-	"github.com/modernice/opendocs/tools/reset"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
@@ -30,7 +29,6 @@ type Finder struct {
 	repo  fs.FS
 	skip  *Skip
 	globs []string
-	reset bool
 	log   *slog.Logger
 }
 
@@ -85,12 +83,6 @@ func Glob(pattern ...string) Option {
 	pattern = slice.NoZero(pattern)
 	return optionFunc(func(f *Finder) {
 		f.globs = append(f.globs, pattern...)
-	})
-}
-
-func ResetComments(reset bool) Option {
-	return optionFunc(func(f *Finder) {
-		f.reset = reset
 	})
 }
 
@@ -237,10 +229,6 @@ func (f *Finder) findInFile(path string, all bool) ([]Finding, error) {
 	node, err := decorator.ParseFile(fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
 	if err != nil {
 		return nil, fmt.Errorf("parse code: %w", err)
-	}
-
-	if f.reset {
-		reset.Comments(node)
 	}
 
 	for _, node := range node.Decls {

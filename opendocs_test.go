@@ -19,7 +19,8 @@ func TestRepository_Generate(t *testing.T) {
 	tests.WithRepo("basic", root, func(repoFS fs.FS) {
 		svc := igen.MockService().
 			WithDoc("foo.go", "Foo", "Foo is a function that returns a \"foo\" error.").
-			WithDoc("bar.go", "Bar", "Bar is an empty struct.")
+			WithDoc("bar.go", "Bar", "Bar is an empty struct.").
+			WithDoc("baz.go", "Y.Foo", "Foo is a method of Y.")
 		svc.Fallbacks = true
 
 		repo := opendocs.New(svc)

@@ -122,10 +122,10 @@ func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	}()
 
 	if comment == "" {
-		return nil
+		p.log.Debug("Removing comment ...", "file", file, "identifier", identifier)
+	} else {
+		p.log.Debug("Adding comment ...", "file", file, "identifier", identifier, "comment", comment)
 	}
-
-	p.log.Debug("Adding comment ...", "file", file, "identifier", identifier)
 
 	if recv, method, isMethod := splitMethodIdentifier(identifier); isMethod {
 		decl, ok, err := p.findMethod(file, recv, method)
@@ -240,7 +240,9 @@ func (p *Patch) commentGenDecl(file, identifier string, comment string, decl *ds
 	}
 
 	decl.Decs.Start.Clear()
-	decl.Decs.Start.Append(formatComment(comment))
+	if comment != "" {
+		decl.Decs.Start.Append(formatComment(comment))
+	}
 
 	return nil
 }
@@ -269,7 +271,9 @@ func (p *Patch) commentFunction(file string, decl *dst.FuncDecl, comment string)
 	}
 
 	decl.Decs.Start.Clear()
-	decl.Decs.Start.Append(formatComment(comment))
+	if comment != "" {
+		decl.Decs.Start.Append(formatComment(comment))
+	}
 
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/modernice/opendocs/find"
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/git"
+	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/modernice/opendocs/patch"
 	"github.com/modernice/opendocs/services/openai"
 	"golang.org/x/exp/slog"
@@ -64,13 +65,21 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	logHandler := slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)
 	log := slog.New(logHandler)
 
-	svc := openai.New(cfg.APIKey, openai.WithLogger(logHandler), openai.Model(cfg.Generate.Model))
+	openaiOpts := []openai.Option{
+		openai.WithLogger(logHandler),
+		openai.Model(cfg.Generate.Model),
+	}
+
+	if cfg.Generate.Clear {
+		openaiOpts = append(openaiOpts, openai.MinifyWith(nodes.MinifyComments))
+	}
+
+	svc := openai.New(cfg.APIKey, openaiOpts...)
 
 	opts := []generate.Option{
 		generate.Limit(cfg.Generate.Limit),
 		generate.FileLimit(cfg.Generate.FileLimit),
 		generate.Override(cfg.Generate.Override),
-		generate.FindWith(find.ResetComments(cfg.Generate.Clear)),
 	}
 	if len(cfg.Generate.Filter) > 0 {
 		opts = append(opts, generate.FindWith(find.Glob(cfg.Generate.Filter...)))

@@ -25,6 +25,13 @@ var (
 		Exported:      true,
 	}
 
+	MinifyComments = MinifyOptions{
+		PackageComment: true,
+		FuncComment:    true,
+		StructComment:  true,
+		Exported:       true,
+	}
+
 	MinifyAll = MinifyOptions{
 		PackageComment: true,
 		FuncComment:    true,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/modernice/opendocs/generate"
 	"github.com/modernice/opendocs/internal"
+	"github.com/modernice/opendocs/internal/nodes"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/exp/slog"
 )
@@ -48,6 +49,7 @@ type Service struct {
 	maxTokens    int
 	maxDocTokens int
 	minifyTokens int
+	minifySteps  []nodes.MinifyOptions
 	log          *slog.Logger
 }
 
@@ -89,6 +91,12 @@ func Model(model string) Option {
 func MaxTokens(maxTokens int) Option {
 	return func(s *Service) {
 		s.maxDocTokens = maxTokens
+	}
+}
+
+func MinifyWith(steps ...nodes.MinifyOptions) Option {
+	return func(s *Service) {
+		s.minifySteps = steps
 	}
 }
 
@@ -149,6 +157,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 		MaxTokens: svc.minifyTokens,
 		Model:     svc.model,
 		Prepend:   prompt,
+		Steps:     svc.minifySteps,
 	}.Minify(code)
 
 	if err != nil {
