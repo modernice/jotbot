@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/modernice/opendocs/internal"
@@ -76,7 +77,7 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 		return fmt.Errorf("get current branch: %w", err)
 	}
 
-	if string(current) == cfg.branch {
+	if strings.TrimSpace(string(current)) == cfg.branch {
 		cfg.branch = fmt.Sprintf("%s_%d", cfg.branch, time.Now().UnixMilli())
 	}
 
