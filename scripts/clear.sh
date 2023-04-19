@@ -8,4 +8,12 @@ if [ "$BRANCH" != "main" ]; then
 fi
 
 echo "Deleting opendocs-patch branches ..."
-git branch -D `git branch | grep opendocs-patch`
+BRANCHES=$(git branch | grep opendocs-patch)
+
+# check if there are any branches to delete
+if [ -z "$BRANCHES" ]; then
+	echo "No branches to delete"
+	exit 0
+fi
+
+git branch -D "$BRANCHES"
