@@ -144,7 +144,7 @@ func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, err
 		return min, []Minification{min}, nil
 	}
 
-	for _, s := range DefaultMinification {
+	for _, s := range opts.Steps {
 		input, err := nodes.Format(node)
 		if err != nil {
 			return Minification{}, nil, fmt.Errorf("format code: %w", err)
