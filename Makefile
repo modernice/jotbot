@@ -8,5 +8,5 @@ clear:
 	@./scripts/clear.sh
 
 .PHONY: docs
-docs:
+docs: clear
 	@./scripts/dogfood.sh
