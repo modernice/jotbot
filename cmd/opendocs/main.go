@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/modernice/opendocs/cli"
 )
@@ -14,4 +15,6 @@ func main() {
 	if err := app.Run(); err != nil {
 		app.FatalIfErrorf(err)
 	}
+
+	os.Exit(0)
 }

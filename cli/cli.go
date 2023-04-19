@@ -47,6 +47,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		level = slog.LevelDebug
 	}
 	logHandler := slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)
+	log := slog.New(logHandler)
 
 	svc := openai.New(cfg.APIKey, openai.WithLogger(logHandler), openai.Model(cfg.Generate.Model))
 
@@ -79,6 +80,9 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		if err := grepo.Commit(patch, git.Branch(cfg.Generate.Branch)); err != nil {
 			return fmt.Errorf("commit patch: %w", err)
 		}
+
+		log.Info("Done.")
+
 		return nil
 	}
 
