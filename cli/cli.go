@@ -26,7 +26,7 @@ import (
 // instance and Run() to execute it.
 type CLI struct {
 	Generate struct {
-		Root      string   `arg:"" help:"Root directory of the repository."`
+		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
 		Filter    []string `name:"filter" short:"f" env:"JOTBOT_FILTER" help:"Glob pattern(s) to filter files."`
 		Commit    bool     `name:"commit" default:"true" env:"JOTBOT_COMMIT" help:"Commit changes to Git."`
 		Branch    string   `default:"jotbot-patch" env:"JOTBOT_BRANCH" help:"Branch name to commit changes to."`
@@ -36,7 +36,7 @@ type CLI struct {
 		Model     string   `default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model to use."`
 		Override  bool     `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
 		Clear     bool     `name:"clear" short:"c" env:"JOTBOT_CLEAR" help:"Clear existing documentation."`
-	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
+	} `cmd:"" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
 	Verbose bool   `name:"verbose" short:"v" env:"JOTBOT_VERBOSE" help:"Enable verbose logging."`
