@@ -58,9 +58,9 @@ jotbot generate --key <OPENAI_API_KEY>
 - `--file-limit`: Limit the number of files to generate documentations for (default: 0, no limit)
 - `--dry`: Print the changes without applying them (default: false)
 - `--model`: OpenAI model to use (default: "gpt-3.5-turbo")
-- `-o, `--override`: Override existing documentation (default: false)
-- `-c, `--clear`: Clear existing documentation (default: false)
-- `-v, `--verbose`: Enable verbose logging (default: false)
+- `-o`, `--override`: Override existing documentation (default: false)
+- `-c`, `--clear`: Clear existing documentation (default: false)
+- `-v`, `--verbose`: Enable verbose logging (default: false)
 
 ## License
 
