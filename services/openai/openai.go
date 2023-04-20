@@ -3,6 +3,7 @@ package openai
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/modernice/jotbot/generate"
@@ -202,6 +203,8 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 }
 
 func (svc *Service) createCompletion(ctx context.Context, prompt string, maxTokens int) (string, error) {
+	maxTokens = int(math.Min(float64(svc.maxDocTokens), float64(maxTokens)))
+
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:       svc.model,
