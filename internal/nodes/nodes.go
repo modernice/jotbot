@@ -8,17 +8,20 @@ import (
 	"github.com/modernice/jotbot/internal/slice"
 )
 
-// HasDoc checks if a Go syntax tree node has any associated comments in its
-// Decorations [Decorations]. It returns true if the node has comments and false
-// otherwise.
+// HasDoc [func] returns a boolean indicating whether a given Go AST node has
+// any associated documentation comments. It takes the Decorations of the node
+// as input.
 func HasDoc(decs dst.Decorations) bool {
 	return len(decs.All()) > 0
 }
 
-// Doc package provides utility functions for working with Go AST nodes'
-// documentation. It includes functions for detecting if a node has any
-// associated documentation, retrieving the documentation for a node, and
-// finding a node by its identifier within an AST.
+// Doc package provides functions for working with Go code documentation. The
+// `HasDoc` function checks whether a node has any associated comments. The
+// `Doc` function retrieves the comment text associated with a node. The
+// `Identifier` function returns the identifier and export status of a node. The
+// `Find` function finds the first node with a matching identifier in the AST
+// rooted at the given node. The `FindT` function is a type-safe version of
+// `Find`.
 func Doc(n dst.Node, removeSlash bool) string {
 	lines := n.Decorations().Start.All()
 	if removeSlash {
@@ -31,13 +34,10 @@ func trimSlash(s string) string {
 	return strings.TrimLeft(strings.TrimPrefix(s, "//"), " ")
 }
 
-// Identifier provides a way to extract the identifier and exported status of a
-// given Go AST node. The function returns the node's identifier as a string and
-// a boolean indicating if the identifier is exported (starts with an uppercase
-// letter). The input node can be any of the following types: *dst.FuncDecl,
-// *dst.GenDecl, *dst.TypeSpec, or *dst.ValueSpec. If the input node is a
-// function with a receiver, the returned identifier will include the receiver's
-// type name.
+// Identifier function in the nodes package returns the identifier and export
+// status of a Go AST node. It takes a dst.Node as input and returns the
+// identifier string and a boolean indicating whether the identifier is exported
+// or not.
 func Identifier(node dst.Node) (identifier string, exported bool) {
 	switch node := node.(type) {
 	case *dst.FuncDecl:
@@ -73,16 +73,16 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 	return
 }
 
-// Find searches a given [identifier] in the AST rooted at [root] and returns
-// the first node that has a matching identifier along with a boolean indicating
-// whether it was found or not.
+// Find searches for a Go AST [dst.Node] with the given identifier in the root
+// node and its children. If found, it returns the first matching node and true;
+// otherwise, it returns nil and false.
 func Find(identifier string, root dst.Node) (dst.Node, bool) {
 	return FindT[dst.Node](identifier, root)
 }
 
-// FindT searches a DST (Go AST) tree for a node of type Node with the given
-// identifier. It returns the found node and a boolean indicating whether it was
-// found or not.
+// FindT[Node dst.Node] searches for the first node in the AST rooted at root
+// with an identifier that matches the given identifier, and returns it as a
+// Node of type Node. If no such node is found, it returns nil and false.
 func FindT[Node dst.Node](identifier string, root dst.Node) (Node, bool) {
 	var (
 		found Node

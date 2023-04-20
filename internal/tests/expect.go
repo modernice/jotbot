@@ -18,9 +18,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// ExpectFindings checks if the given findings match the expected findings. If
-// the findings don't match, it will fail the test with a diff of the expected
-// and actual findings.
+// ExpectFindings tests if two find.Findings are equal. It sorts the findings by
+// identifier, then compares the sorted findings using go-cmp/cmp.
 func ExpectFindings(t *testing.T, want, got find.Findings) {
 	t.Helper()
 
@@ -47,8 +46,8 @@ func ExpectFindings(t *testing.T, want, got find.Findings) {
 	}
 }
 
-// ExpectPatch compares two *patch.Patch values and fails the test if they don't
-// match.
+// ExpectPatch compares two *patch.Patch structs and fails the test if their
+// DryRun output differs.
 func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	t.Helper()
 
@@ -67,8 +66,8 @@ func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
 	}
 }
 
-// ExpectGenerations compares two slices of generate.Generation structs and
-// reports a test failure if they are not equal.
+// ExpectGenerations compares two slices of generate.Generation and fails the
+// test if they are not equal.
 func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
 	t.Helper()
 
@@ -84,13 +83,10 @@ func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
 	}
 }
 
-// ExpectComment checks that the comment for the identifier in the given file
-// matches the expected comment. It takes a testing.T, an identifier string, an
-// expected comment string, and a file io.Reader. It parses the file using
-// dst/decorator, finds the node for the given identifier, extracts the comments
-// from that node's decorations, joins them into a single string, and compares
-// that string to the expected comment. If the comments do not match, it fails
-// the test with a message that includes a diff of the two comments.
+// ExpectComment verifies that the comment for the specified identifier in the
+// provided file matches the expected comment. If the comments do not match,
+// ExpectComment will fail the test with a detailed diff of the expected and
+// found comments.
 func ExpectComment(t *testing.T, identifier, comment string, file io.Reader) {
 	root, err := decorator.Parse(file)
 	if err != nil {

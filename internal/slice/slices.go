@@ -1,10 +1,8 @@
 package slice
 
-// Map applies a function to each element of a slice and returns a new slice
-// containing the transformed elements. The input slice can contain any type of
-// element, and the output slice can have a different type. The function to be
-// applied must take an input element and return an output element of a possibly
-// different type.
+// Map applies a given function to each element of a slice[[]], returning a new 
+// slice[] with the results. The function takes an element of the input slice as 
+// its argument and returns the corresponding element of the output slice[].
 func Map[In, Out any](s []In, fn func(In) Out) []Out {
 	if s == nil {
 		return nil
@@ -17,8 +15,10 @@ func Map[In, Out any](s []In, fn func(In) Out) []Out {
 	return out
 }
 
-// Filter returns a new slice containing all elements of the input slice that
-// satisfy the provided boolean function.
+// Filter [Filter[T]] is a function that takes a slice of type T and a function 
+// that takes a value of type T and returns a boolean. It returns a new slice 
+// containing only the elements of the input slice for which the function 
+// returns true.
 func Filter[S ~[]T, T any](s S, fn func(T) bool) S {
 	if s == nil {
 		return nil
@@ -33,9 +33,10 @@ func Filter[S ~[]T, T any](s S, fn func(T) bool) S {
 	return out
 }
 
-// Unique returns a new slice containing all the unique elements of the input
-// slice, in the order in which they first appear. The input slice must be
-// sorted or comparable.
+// Unique returns a new slice with only the unique elements of the input slice. 
+// The function accepts a slice of type [S ~[]T, T comparable](S), where T is a 
+// comparable type. The resulting slice has the same underlying type as the 
+// input slice.
 func Unique[S ~[]T, T comparable](s S) S {
 	if s == nil {
 		return nil
@@ -52,8 +53,8 @@ func Unique[S ~[]T, T comparable](s S) S {
 	return out
 }
 
-// NoZero returns a new slice with all zero values removed from the input slice
-// [S]. The input slice must be comparable.
+// NoZero removes all zero values from a given slice [S] of comparable type [T]. 
+// It returns a new slice with only the non-zero values.
 func NoZero[S ~[]T, T comparable](s S) S {
 	if s == nil {
 		return nil

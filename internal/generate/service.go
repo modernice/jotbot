@@ -8,23 +8,23 @@ import (
 
 var _ generate.Service = (*Service)(nil)
 
-// Service represents a service that generates documentation for code. It
-// implements the generate.Service interface. It contains a map of
-// documentations for each file and identifier. Use WithDoc to add
-// documentations to the service. Use Generations to return all generations of
-// documentations. Use GenerateDoc to generate documentation for a given file
-// and identifier in a given context.
+// Service [generate.Service] is a type that represents a service for generating
+// documentation. It implements the generate.Service interface. Service stores
+// documentation for code identifiers in each file and can generate
+// documentation for specific identifiers. It has methods to add documentation
+// to a file, get all generations of stored documentation, and generate
+// documentation for a given identifier.
 type Service struct {
 	Fallbacks bool
 	docs      map[string]map[string]string // map[file]map[identifier]doc
 }
 
-// MockService provides a mock implementation of generate.Service. It allows you
-// to generate documentation for Go source code files by providing the path,
-// identifier, and documentation. You can use Generations to retrieve all the
-// generations of the provided path and identifier. WithDoc allows you to add
-// documentation for a given path and identifier. GenerateDoc generates the
-// documentation for the given path and identifier.
+// MockService is a type that implements the generate.Service interface. It
+// provides functionality for generating documentation for Go code. This type
+// can be used to mock the Service interface and generate documentation in
+// tests. Additionally, it provides methods to add documentation for a given
+// file and identifier, retrieve all generations of documentation, and generate
+// documentation for a given context.
 func MockService() *Service {
 	return &Service{
 		docs: make(map[string]map[string]string),
@@ -32,9 +32,10 @@ func MockService() *Service {
 }
 
 // Generations returns a slice of
-// [generate.Generation](https://godoc.org/github.com/modernice/jotbot/generate#Generation)
-// values. These describe the file, identifier, and documentation for each
-// identifier registered with the Service.
+// [generate.Generation](https://pkg.go.dev/github.com/modernice/jotbot/generate#Generation)
+// that represents all the documented identifiers in the Service. Each
+// Generation has its file path, identifier name, and its corresponding
+// documentation.
 func (svc *Service) Generations() []generate.Generation {
 	generations := make([]generate.Generation, 0, len(svc.docs))
 	for file, identifiers := range svc.docs {
@@ -49,8 +50,9 @@ func (svc *Service) Generations() []generate.Generation {
 	return generations
 }
 
-// WithDoc adds documentation for a given identifier in a file to the Service.
-// It returns a pointer to the modified Service.
+// WithDoc sets the documentation for a given identifier in a specific file. It
+// returns a pointer to the Service to allow for method chaining. This method
+// belongs to the generate.Service interface [generate.Service].
 func (svc *Service) WithDoc(path, identifier, doc string) *Service {
 	if _, ok := svc.docs[path]; !ok {
 		svc.docs[path] = make(map[string]string)
@@ -59,8 +61,13 @@ func (svc *Service) WithDoc(path, identifier, doc string) *Service {
 	return svc
 }
 
-// GenerateDoc generates the documentation for a given identifier in a file
-// using the internal storage of documentation in the *Service type.
+// GenerateDoc returns the documentation for the identifier specified in a given
+// file. It takes a generate.Context as an argument and returns the
+// documentation as a string and an error. If there is no documentation for the
+// identifier or file, it will return an empty string and an error. If Fallbacks
+// is set to true, it will return an empty string instead of an error for
+// missing documentation. This function implements the Service interface
+// [generate.Service].
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	file := ctx.File()
 	id := ctx.Identifier()

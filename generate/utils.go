@@ -1,8 +1,7 @@
 package generate
 
-// Flatten takes a slice of Files and returns a flattened slice of Generations.
-// It appends all Generations from each File in the input slice to the output
-// slice.
+// Flatten returns a flattened slice of [Generation](#Generation) structs 
+// generated from the input slice of [File](#File) structs.
 func Flatten(files []File) []Generation {
 	var all []Generation
 	for _, file := range files {

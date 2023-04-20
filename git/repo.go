@@ -11,45 +11,53 @@ import (
 )
 
 // Patch represents a patch that can be applied to a Git repository. It is an
-// interface with a single method, Apply, which applies the patch to the
-// repository.
+// interface that defines the Apply method. The Apply method takes a root string
+// as argument, which specifies the root directory of the Git repository, and
+// returns an error if the patch application fails.
 type Patch interface {
 	Apply(root string) error
 }
 
-// Committer represents an interface for a type that can return a Commit. The
-// Commit method signature is not defined in this interface, but it is expected
-// to be implemented by types that satisfy it.
+// Committer represents an interface for a type that can commit changes to a Git
+// repository. Any type implementing this interface must have a Commit method
+// which returns a Commit. The Repository type has a Commit method which takes a
+// Patch and optional CommitOptions and applies the patch to the repository,
+// creates a new branch if necessary, adds the changes to the index, and commits
+// them with the specified commit message. If the provided patch implements the
+// Committer interface, its Commit method will be used to create the commit
+// message.
 type Committer interface {
 	Commit() Commit
 }
 
 // Repository represents a Git repository. It provides methods for committing
-// patches to the repository. Use Repo to create a new Repository.
+// patches and accessing the root directory of the repository. The Repository
+// type implements the Patch and Committer interfaces, allowing for patches to
+// be applied to the repository and commits to be made on behalf of the
+// repository, respectively. It can be initialized with options using Repo
+// function.
 type Repository struct {
 	root string
 	git  git.Git
 	log  *slog.Logger
 }
 
-// Option is a function type that takes a pointer to a Repository and applies an
-// option to it. The Repo function creates a new Repository with the given root
-// directory and applies the given options. The WithLogger option sets the
-// logger for the Repository. The Branch option sets the branch name for a
-// Commit operation.
+// Option is a type that represents an option for a Repository. It is used to
+// configure Repository instances with optional parameters. Option functions
+// modify the Repository instance passed to them.
 type Option func(*Repository)
 
-// WithLogger returns an Option that sets the logger of a Repository to the
-// provided slog.Handler.
+// WithLogger returns an Option that sets the logger for a Repository. The
+// logger is used to log information about the git commands that are run during
+// patching.
 func WithLogger(h slog.Handler) Option {
 	return func(repo *Repository) {
 		repo.log = slog.New(h)
 	}
 }
 
-// Repo represents a Git repository. It provides methods to commit a patch and
-// to get the root directory of the repository. It also accepts options, such as
-// logging, that can be used to customize its behavior.
+// Repo represents a Git repository. It provides methods for committing patches
+// to the repository. Use the Repo function to create a new Repository.
 func Repo(root string, opts ...Option) *Repository {
 	repo := &Repository{
 		root: root,
@@ -64,19 +72,21 @@ func Repo(root string, opts ...Option) *Repository {
 	return repo
 }
 
-// Root returns the root directory of the git repository.
+// Root returns the root directory of the Repository [Repository].
 func (repo *Repository) Root() string {
 	return repo.root
 }
 
-// CommitOption is a type that represents an option for the Commit method of
-// Repository. It is a function that takes a pointer to a commit struct and
-// modifies its fields. The Branch function returns a CommitOption that sets the
-// branch field of the commit struct.
+// CommitOption is a type representing a function that modifies the behavior of
+// the Commit function in Repository. It can be used as an optional argument in
+// the Commit function to specify additional options such as the branch to
+// commit to. The Branch function returns a CommitOption that sets the branch
+// name for the commit.
 type CommitOption func(*commit)
 
-// Branch returns a CommitOption that sets the branch to commit to. It takes a
-// string argument representing the branch name.
+// Branch is a function that returns a CommitOption. The returned option sets
+// the name of the branch to commit to when committing a patch. If not set, the
+// branch name defaults to "jotbot-patch".
 func Branch(branch string) CommitOption {
 	return func(c *commit) {
 		c.branch = branch
@@ -87,12 +97,12 @@ type commit struct {
 	branch string
 }
 
-// Commit creates a new commit in the repository. It takes a Patch and optional
-// CommitOptions. If the CommitOption Branch is not provided, it defaults to
-// "jotbot-patch". If a branch with that name already exists, it appends the
-// current Unix timestamp to the branch name. If Patch implements the Committer
-// interface, its Commit method is used to generate the commit message.
-// Otherwise, DefaultCommit is used.
+// Commit commits a patch to the repository. It takes a Patch and optional
+// CommitOptions. If no branch is specified in the options, "jotbot-patch" is
+// used. If the branch already exists, the name will be suffixed with the
+// current Unix timestamp in milliseconds. The patch is applied to the
+// repository, and all changes are added and committed. If the Patch implements
+// Committer, its Commit method will be called to obtain commit information.
 func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 	var cfg commit
 	for _, opt := range opts {

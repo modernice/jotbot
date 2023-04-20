@@ -15,7 +15,8 @@ import (
 // input code, the minified code, the number of tokens in the minified code, and
 // the MinifyOptions used to minify the code. The MinifyOptions struct contains
 // the maximum number of tokens, a model string, a prepend string, and a slice
-// of MinifyOptions.
+// of
+// [MinifyOptions](https://pkg.go.dev/github.com/modernice/jotbot/internal/nodes#MinifyOptions).
 var DefaultMinification = [...]nodes.MinifyOptions{
 	nodes.MinifyUnexported,
 	{
@@ -26,32 +27,33 @@ var DefaultMinification = [...]nodes.MinifyOptions{
 	nodes.MinifyAll,
 }
 
-// SourceTooLarge represents an error returned by the Minify function if the
-// input source code is too large to be minified to the specified maximum number
-// of tokens. The error message contains the maximum number of tokens and the
-// number of tokens in the minified code.
+// SourceTooLarge is a type that represents an error when the provided source
+// code is too large to be minified to a specified number of tokens. The error
+// message includes the maximum number of tokens and the number of tokens in the
+// resulting minified code.
 type SourceTooLarge struct {
 	MaxTokens      int
 	MinifiedTokens int
 }
 
-// Error *SourceTooLarge is an error type that represents when the source code
-// is too large to be minified to the specified maximum number of tokens. The
-// error message includes the maximum number of tokens and the number of tokens
-// in the minified code.
+// Error SourceTooLarge is a struct that represents an error returned by the
+// Minify function when the input source code is too large to be minified to the
+// specified maximum number of tokens. It contains two fields: MaxTokens and
+// MinifiedTokens, which are the maximum number of tokens and the actual number
+// of tokens in the minified code, respectively. The Error method of this type
+// returns a string that describes the error.
 func (err *SourceTooLarge) Error() string {
 	return fmt.Sprintf("source code is too large to be minified to %d tokens. minified code has %d tokens", err.MaxTokens, err.MinifiedTokens)
 }
 
-// Minification provides functions and types for minifying source code. The
-// Minify function takes a byte slice of code and a maximum number of tokens as
-// input, and returns a Minification struct, a slice of Minification structs,
-// and an error. The Minification struct contains the input code, the minified
-// code, the number of tokens in the minified code, and the MinifyOptions used
-// to minify the code. The MinifyOptions struct contains the maximum number of
-// tokens, a model string, a prepend string, and a slice of MinifyOptions.
-// DefaultMinification is a variable that contains an array of MinifyOptions
-// used as the default steps for the Minify function.
+// Minification package provides functions and options to minify code using
+// tiktoken-go/tokenizer library. The Minify function takes a byte slice of code
+// and a maximum number of tokens as input, and returns a Minification struct, a
+// slice of Minification structs, and an error. The Minification struct contains
+// the input code, the minified code, the number of tokens in the minified code,
+// and the MinifyOptions used to minify the code. The MinifyOptions struct
+// contains the maximum number of tokens, a model string, a prepend string, and
+// a slice of MinifyOptions.
 type Minification struct {
 	Input    []byte
 	Minified []byte
@@ -61,9 +63,11 @@ type Minification struct {
 	Options nodes.MinifyOptions
 }
 
-// MinifyOptions is a struct that contains options for the Minify function.
-// These options include the maximum number of tokens, a model string, a prepend
-// string, a force flag, and a slice of MinifyOptions.
+// MinifyOptions represents the options for the minification process. It
+// contains the maximum number of tokens, a model string, a prepend string, a
+// boolean to force minification even if it exceeds the maximum number of
+// tokens, and a slice of MinifyOptions that defines the steps to be taken
+// during minification.
 type MinifyOptions struct {
 	MaxTokens int
 	Model     string
@@ -72,28 +76,27 @@ type MinifyOptions struct {
 	Steps     []nodes.MinifyOptions
 }
 
-// Minify is a function that takes a byte slice of code and a maximum number of
-// tokens as input, and returns a Minification struct, a slice of Minification
-// structs, and an error. The Minification struct contains the input code, the
-// minified code, the number of tokens in the minified code, and the
-// MinifyOptions used to minify the code. The MinifyOptions struct contains the
-// maximum number of tokens, a model string, a prepend string, and a slice of
-// MinifyOptions. DefaultMinification is a variable that contains an array of
-// MinifyOptions. These options are used as the default steps for the Minify
-// function.
+// Minify function in the openai package minifies a given byte slice of code to
+// a specified maximum number of tokens. It returns a Minification struct which
+// contains the input code, the minified code, the number of tokens in the
+// minified code, and the MinifyOptions used to minify the code. The function
+// can also return a slice of Minification structs and an error. The
+// MinifyOptions struct contains the maximum number of tokens, a model string, a
+// prepend string, and a slice of MinifyOptions.
 func Minify(code []byte, maxTokens int) (Minification, []Minification, error) {
 	return MinifyOptions{MaxTokens: maxTokens}.Minify(code)
 }
 
-// MinifyOptions.Minify minifies a given byte slice of code using the
-// MinifyOptions struct. It returns a Minification struct, a slice of
-// Minification structs, and an error. The Minification struct contains the
-// input code, the minified code, the number of tokens in the minified code, and
-// the MinifyOptions used to minify the code. The MinifyOptions struct contains
-// the maximum number of tokens, a model string, a prepend string, and a slice
-// of MinifyOptions. If the minified code has more tokens than the maximum
-// number specified in the MinifyOptions struct, it returns an error of type
-// SourceTooLarge.
+// MinifyOptions.Minify takes a byte slice of code and returns a Minification
+// struct, a slice of Minification structs, and an error. The Minification
+// struct contains the input code, the minified code, the number of tokens in
+// the minified code, and the MinifyOptions used to minify the code. The slice
+// of Minification structs contains each step of the minification process. If
+// the total number of tokens in the minified code is less than or equal to
+// MaxTokens, no further minification steps are performed and only one
+// Minification struct is returned. Otherwise, multiple Minification structs are
+// returned for each step in opts.Steps until either MaxTokens is reached or all
+// steps have been taken.
 func (opts MinifyOptions) Minify(code []byte) (Minification, []Minification, error) {
 	if len(opts.Steps) == 0 {
 		opts.Steps = DefaultMinification[:]

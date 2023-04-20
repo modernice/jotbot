@@ -6,9 +6,9 @@ import (
 	"github.com/modernice/jotbot/patch"
 )
 
-// Patch returns a new *patch.Patch that generates documentation patches for the
-// given repo and Generation slices, with the given patch.Options applied. It
-// comments each generation's file, identifier, and doc using p.Comment.
+// Patch creates a new [Patch] that applies [Generation]s to the specified file
+// system. It takes a file system object, a slice of [Generation]s, and optional
+// [Option]s as input. It returns a pointer to the created [Patch].
 func Patch(repo fs.FS, gens []Generation, opts ...patch.Option) *patch.Patch {
 	p := patch.New(repo, opts...)
 	for _, gen := range gens {

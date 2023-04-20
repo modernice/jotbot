@@ -8,15 +8,16 @@ import (
 	"github.com/dave/dst/decorator"
 )
 
-// Fprint formats and writes the source code of a given *dst.File to an
-// io.Writer, using Go syntax. It is a convenience wrapper around
-// decorator.Fprint.
+// Fprint formats a *dst.File and writes the result to an io.Writer. It uses the
+// decorator.Fprint function from the "github.com/dave/dst/decorator" package to
+// format the AST nodes.
 func Fprint(w io.Writer, node *dst.File) error {
 	return decorator.Fprint(w, node)
 }
 
-// Format returns the formatted source code of a given *dst.File node as a
-// []byte slice, and an error if one occurred during formatting.
+// Format formats a Go AST [dst.File] into a []byte. It uses the decorator
+// package to print the AST with additional formatting such as indentation and
+// comments.
 func Format(node *dst.File) ([]byte, error) {
 	var buf bytes.Buffer
 	err := decorator.Fprint(&buf, node)

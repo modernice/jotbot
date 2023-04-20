@@ -1,12 +1,10 @@
 package internal
 
-// Drain[T any](vals <-chan T, errs <-chan error) ([]T, error)
-//
-// Drain reads values from a channel of type T and returns a slice of those
-// values. It also accepts an error channel and returns any error encountered
-// while reading the channel. If an error is encountered, Drain stops reading
-// from the value channel and returns the accumulated slice along with the
-// error.
+// Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) function reads 
+// from the channel vals until it is closed and stores the read values into a 
+// slice of type T. If errs channel is closed, the function returns the stored 
+// values and nil error. If an error is received from errs channel, the function 
+// returns the stored values and that error.
 func Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) {
 	out := make([]T, 0, len(vals))
 	for {
@@ -25,10 +23,10 @@ func Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) {
 	}
 }
 
-// Walk iterates over values received from a channel of type T, and calls the
-// function fn for each value. If fn returns an error, Walk immediately returns
-// that error. Walk continues until the channel is closed or fn returns an
-// error.
+// Walk iterates over values received from a channel [vals] and applies a 
+// function [fn] to each value. If the function returns an error, Walk returns 
+// that error. If values are received on the error channel [errs], Walk stops 
+// iterating and returns the first error encountered.
 func Walk[T any](vals <-chan T, errs <-chan error, fn func(T) error) error {
 	for {
 		select {

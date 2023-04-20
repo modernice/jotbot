@@ -5,14 +5,16 @@ import (
 	"os/exec"
 )
 
-// Git is a type that represents a local Git repository. It has a method, Cmd,
-// that executes a Git command with the given arguments and returns the
-// resulting output as a byte slice.
+// Package git provides a Git client for executing Git commands.
+//
+// Git type represents a local Git repository path. The Cmd method on Git
+// executes the given Git command with the specified arguments and returns the
+// output as bytes, along with any error occurred during execution.
 type Git string
 
-// Cmd executes a Git command with the given arguments in the context of a Git
-// repository. It returns a pointer to an exec.Cmd struct, the output of the
-// command as a byte slice, and an error if any occurred. [exec.Cmd]
+// Cmd executes a git command with the given arguments on the Git repository. It
+// returns the *exec.Cmd object representing the command, the combined output of
+// stdout and stderr as a []byte, and an error if the command failed. [exec.Cmd]
 func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = string(g)

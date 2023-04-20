@@ -21,12 +21,14 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Patch represents a patch to apply comments to Go code. It provides methods to
-// add or remove comments to functions, types, and variables. Use New to create
-// a new Patch, and WithLogger or Override to set options. Call the Comment
-// method to add or remove comments for an identifier. Call Apply to apply the
-// patch to the given repo, and DryRun to preview the changes. The Identifiers
-// method returns a map of identifiers and their associated files.
+// Patch represents a code patch for adding or updating documentation comments
+// in Go files. It provides methods for commenting functions, type declarations,
+// and variables/constants. The Patch struct is created with the New function,
+// which takes a file system and options. The Identifiers method returns a map
+// of all the identifiers in the patch that have been commented. The Comment
+// method comments the identifier with the given comment string. The Apply
+// method applies all the patches to the files in a given repository directory.
+// The File method returns the source code of a single file from the patch.
 type Patch struct {
 	mux         sync.RWMutex
 	repo        fs.FS
@@ -38,31 +40,37 @@ type Patch struct {
 	log         *slog.Logger
 }
 
-// Option represents a functional option for Patch. It allows customization of
-// the Patch object created by New(). Use WithLogger() to specify a logger for
-// the Patch object, and Override() to allow overriding of existing
-// documentation.
+// Option represents a functional option that can be used when creating a new
+// Patch instance. It allows customization of the new instance by setting
+// various options such as a logger or an override flag. Use WithLogger to set a
+// logger and Override to set the override flag.
 type Option func(*Patch)
 
-// WithLogger sets the logger for the Patch object. It takes a slog.Handler and
-// returns an Option that sets the logger when passed to New.
+// WithLogger is an Option function that sets a logger for the Patch struct. The
+// logger is used to output debug information during the execution of methods on
+// the Patch struct. The logger must implement slog.Handler.
 func WithLogger(h slog.Handler) Option {
 	return func(p *Patch) {
 		p.log = slog.New(h)
 	}
 }
 
-// Override sets the option to override existing documentation for a type or
-// function. It takes a boolean value and returns an Option.
+// Override sets the Patch's override flag to the provided boolean value. When
+// the override flag is set to true, existing documentation for a function or
+// type will be overwritten when new documentation is added. When it is false,
+// an error will be returned if there is already documentation for a function or
+// type.
 func Override(override bool) Option {
 	return func(p *Patch) {
 		p.override = override
 	}
 }
 
-// New creates a new Patch object that represents a collection of source code
-// files with associated comments that can be modified. It takes a file system,
-// and optional options, and returns a pointer to a Patch.
+// New returns a new *Patch that can be used to update documentation comments in
+// Go source files. The repo argument is a filesystem to read the source files
+// from. Options may be provided to modify the behavior of the patcher.
+// WithLogger sets the logger for the patcher. Override allows existing comments
+// to be overwritten.
 func New(repo fs.FS, opts ...Option) *Patch {
 	p := &Patch{
 		repo:        repo,
@@ -80,20 +88,20 @@ func New(repo fs.FS, opts ...Option) *Patch {
 	return p
 }
 
-// Identifiers returns a map of all identifiers that have been documented as
-// part of this patch. The keys of the map are file names and the values are
-// slices of strings representing the documented identifiers within each file.
+// Identifiers returns a map where the keys are file paths and the values are
+// slices of identifiers for functions, types, variables or constants that have
+// been commented using the Comment function.
 func (p *Patch) Identifiers() map[string][]string {
 	p.mux.RLock()
 	defer p.mux.RUnlock()
 	return maps.Clone(p.identifiers)
 }
 
-// Comment represents a method that adds or removes a comment from a Go file. It
-// takes three arguments: the name of the file, the identifier of the type or
-// function to comment, and the comment text. If the comment text is empty, the
-// method removes any existing comment. If the type or function cannot be found
-// in the file, an error is returned.
+// Comment is a method of the Patch type. It adds or removes documentation
+// comments to an identifier in a Go source file. The identifier can be a
+// function, variable, constant, or type. If the given comment is an empty
+// string, the existing documentation for that identifier will be removed. If
+// the identifier cannot be found in the file, an error will be returned.
 func (p *Patch) Comment(file, identifier, comment string) (rerr error) {
 	defer func() {
 		if rerr == nil {
@@ -353,8 +361,9 @@ func (p *Patch) findVarOrConst(file, identifier string) (*dst.ValueSpec, *dst.Ge
 	return spec, decl, spec != nil, nil
 }
 
-// Commit commits the changes made to the documentation. It returns a git.Commit
-// with a description of the changes made.
+// Commit commits the changes made by the Patch to the repository as a new
+// git.Commit. The commit message will include a list of all files and
+// identifiers that were updated with documentation.
 func (p *Patch) Commit() git.Commit {
 	c := git.DefaultCommit()
 	if len(p.files) == 0 {
@@ -372,9 +381,8 @@ func (p *Patch) Commit() git.Commit {
 	return c
 }
 
-// Apply applies the documentation patch to the source code. It updates the
-// documentation of functions, types, and variables based on the provided
-// comments.
+// Apply applies the documentation patches to the source files of the patch. It
+// updates the files with new comments or removes existing ones.
 func (p *Patch) Apply(repo string) error {
 	p.log.Info("Applying patches ...", "files", len(p.files))
 
@@ -412,10 +420,9 @@ func (p *Patch) patchFile(path string, buf *bytes.Buffer) error {
 	return err
 }
 
-// File "*Patch.File" returns the source code of the specified file in the
-// patch. It takes a string argument representing the file name and returns a
-// byte slice containing the file's source code. If the file is not found in the
-// patch, an error is returned.
+// File "*Patch.File" returns the source code of the specified file in bytes. It
+// takes a string argument representing the path to the file. If the file is not
+// found in the patch, it returns an error.
 func (p *Patch) File(file string) ([]byte, error) {
 	p.mux.RLock()
 	defer p.mux.RUnlock()
@@ -439,8 +446,8 @@ func (p *Patch) printFile(file string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// DryRun returns a map of file names to their contents as they would be after
-// applying the patch, without actually modifying any files.
+// DryRun returns a map of file paths to their corresponding bytes in the
+// current state of the patch. No changes are made to the files on disk.
 func (p *Patch) DryRun() (map[string][]byte, error) {
 	result := make(map[string][]byte)
 

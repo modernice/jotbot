@@ -18,12 +18,12 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// CLI is a command-line interface that generates missing documentation. It uses
-// OpenAI to generate documentation for functions and types that lack
-// documentation. CLI takes in options such as the root directory of the
-// repository, a filter for files, the number of documentations to generate, and
-// more. It provides options to override or clear existing documentation, and
-// can commit changes to Git.
+// CLI represents a command-line interface for generating missing documentation.
+// It has options to configure the generation process, such as file filtering,
+// committing changes to Git, and limiting the number of documentations
+// generated. It also allows overriding or clearing existing documentation. The
+// API key for OpenAI is provided as an option. Use New() to create a new CLI
+// instance and Run() to execute it.
 type CLI struct {
 	Generate struct {
 		Root      string   `arg:"" help:"Root directory of the repository."`
@@ -42,11 +42,10 @@ type CLI struct {
 	Verbose bool   `name:"verbose" short:"v" env:"JOTBOT_VERBOSE" help:"Enable verbose logging."`
 }
 
-// Run executes the CLI application with the given configuration. It generates
-// missing documentation for a repository by using OpenAI's GPT-3 model to write
-// documentation for functions and types in GoDoc format. It takes into account
-// various configuration options such as filtering files, committing changes to
-// Git, limiting the number of documentations to generate, and more.
+// Run generates missing documentation. It uses OpenAI's GPT to generate
+// documentation for exported functions and types in Go source files. It takes a
+// Kong context as an argument and returns an error if one occurred during
+// execution.
 func (cfg *CLI) Run(ctx *kong.Context) error {
 	if cfg.Generate.Root != "." {
 		if !filepath.IsAbs(cfg.Generate.Root) {
@@ -128,9 +127,9 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 	return nil
 }
 
-// New returns a new *kong.Context for parsing command line arguments. It
-// creates a CLI object, which can be used to generate or apply documentation
-// patches.
+// New creates a new *kong.Context and returns a pointer to it. The
+// *kong.Context is used to parse command-line arguments for the "jotbot" CLI
+// tool.
 func New() *kong.Context {
 	if len(os.Args) < 1 {
 		os.Args = append(os.Args, "generate")
