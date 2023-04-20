@@ -12,6 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Set up Git
+      run: |
+        git config --global user.email "jotbot@modernice.dev"
+        git config --global user.name "jotbot"
 
     - name: Set up Go
       uses: actions/setup-go@v3
