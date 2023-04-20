@@ -30,14 +30,6 @@ welcome.
 
 ## Installation
 
-To use JotBot as a library, run:
-
-```bash
-go get -u github.com/modernice/jotbot
-```
-
-To use JotBot as a CLI tool, run:
-
 ```bash
 go install github.com/modernice/jotbot/cmd/jotbot@latest
 ```
@@ -54,7 +46,7 @@ jotbot generate --key <OPENAI_API_KEY>
 ### CLI options
 
 - `--key`: OpenAI API key (required)
-- `--root`: Root directory of the repository (default: ".")
+- `--root`: Root directory to start searching for files (default: ".")
 - `-f`, `--filter:` Glob pattern(s) to filter files
 - `--commit`: Commit changes to Git (default: true)
 - `--branch`: Branch name to commit changes to (default: "jotbot-patch")
