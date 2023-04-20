@@ -181,6 +181,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 
 	code = result.Minified
 	prompt = prompt + string(code)
+	maxCompletionTokens := svc.maxTokens - len(result.Tokens)
 
 	if svc.forceMinify || len(steps) > 1 {
 		svc.log.Debug(fmt.Sprintf("[OpenAI] Minified code to %d tokens in %d step(s)", len(result.Tokens), len(steps)))
@@ -190,7 +191,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 
 	svc.log.Debug("[OpenAI] Generating documentation ...", "file", file, "identifier", identifier, "model", svc.model)
 
-	answer, err := svc.createCompletion(ctx, prompt)
+	answer, err := svc.createCompletion(ctx, prompt, maxCompletionTokens)
 	if err != nil {
 		return "", fmt.Errorf("create completion: %w", err)
 	}
@@ -200,13 +201,13 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	return answer, nil
 }
 
-func (svc *Service) createCompletion(ctx context.Context, prompt string) (string, error) {
+func (svc *Service) createCompletion(ctx context.Context, prompt string, maxTokens int) (string, error) {
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:       svc.model,
 		Temperature: 0.618,
 		// TopP:             0.3,
-		MaxTokens:        512,
+		MaxTokens:        maxTokens,
 		PresencePenalty:  0.2,
 		FrequencyPenalty: 0.35,
 		Prompt:           prompt,
