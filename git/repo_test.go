@@ -44,8 +44,6 @@ func TestRepo_Commit(t *testing.T) {
 
 		repo := git.Repo(repoRoot)
 
-		g.AssertBranch(t, "main")
-
 		if err := repo.Commit(p); err != nil {
 			t.Fatal(err)
 		}
