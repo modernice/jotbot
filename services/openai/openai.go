@@ -195,11 +195,11 @@ func (svc *Service) createCompletion(ctx context.Context, prompt string) (string
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:       svc.model,
-		Temperature: 0.8,
+		Temperature: 0.618,
 		// TopP:             0.3,
 		MaxTokens:        512,
-		PresencePenalty:  0.15,
-		FrequencyPenalty: 0.25,
+		PresencePenalty:  0.2,
+		FrequencyPenalty: 0.35,
 		Prompt:           prompt,
 	}
 
