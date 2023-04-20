@@ -1,4 +1,4 @@
-package opendocs
+package jotbot
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/modernice/opendocs/generate"
-	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/patch"
+	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
+	"github.com/modernice/jotbot/patch"
 	"golang.org/x/exp/slog"
 )
 

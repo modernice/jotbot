@@ -8,8 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/modernice/opendocs/find"
-	"github.com/modernice/opendocs/internal"
+	"github.com/modernice/jotbot/find"
+	"github.com/modernice/jotbot/internal"
 	"golang.org/x/exp/slog"
 )
 

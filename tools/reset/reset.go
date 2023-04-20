@@ -2,8 +2,8 @@ package reset
 
 import "github.com/dave/dst"
 
-// Comments function removes all comments from the source code represented by 
-// the given dst.Node. It traverses the AST and clears comments associated with 
+// Comments function removes all comments from the source code represented by
+// the given dst.Node. It traverses the AST and clears comments associated with
 // the package declaration, declarations, functions, variables, and types.
 func Comments(node dst.Node) {
 	dst.Inspect(node, func(node dst.Node) bool {

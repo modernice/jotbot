@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/modernice/opendocs/git"
-	igit "github.com/modernice/opendocs/internal/git"
+	"github.com/modernice/jotbot/git"
+	igit "github.com/modernice/jotbot/internal/git"
 )
 
 // Git represents a Git repository, and provides methods to assert the current

@@ -9,9 +9,9 @@ import (
 
 	"github.com/dave/jennifer/jen"
 	"github.com/google/go-cmp/cmp"
-	"github.com/modernice/opendocs/git"
-	"github.com/modernice/opendocs/internal/tests"
-	"github.com/modernice/opendocs/patch"
+	"github.com/modernice/jotbot/git"
+	"github.com/modernice/jotbot/internal/tests"
+	"github.com/modernice/jotbot/patch"
 	"github.com/psanford/memfs"
 )
 

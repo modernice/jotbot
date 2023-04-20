@@ -1,4 +1,4 @@
-module github.com/modernice/opendocs
+module github.com/modernice/jotbot
 
 go 1.20
 

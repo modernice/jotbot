@@ -7,8 +7,8 @@ if [ "$BRANCH" != "main" ]; then
 	git checkout main
 fi
 
-echo "Deleting opendocs-patch branches ..."
-BRANCHES=$(git branch | grep opendocs-patch)
+echo "Deleting jotbot-patch branches ..."
+BRANCHES=$(git branch | grep jotbot-patch)
 BRANCHES="${BRANCHES// }"
 
 if [ -z "$BRANCHES" ]; then

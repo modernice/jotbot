@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/modernice/opendocs/git"
-	"github.com/modernice/opendocs/internal/git/gittest"
-	"github.com/modernice/opendocs/internal/tests"
-	"github.com/modernice/opendocs/patch"
+	"github.com/modernice/jotbot/git"
+	"github.com/modernice/jotbot/internal/git/gittest"
+	"github.com/modernice/jotbot/internal/tests"
+	"github.com/modernice/jotbot/patch"
 	"github.com/psanford/memfs"
 )
 
@@ -50,14 +50,14 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		g.AssertBranchPrefix(t, "opendocs-patch")
+		g.AssertBranchPrefix(t, "jotbot-patch")
 		g.AssertCommit(t, git.Commit{
 			Msg: "docs: add missing documentation",
 			Desc: []string{
 				"Updated docs:",
 				"  - foo.go@Foo",
 			},
-			Footer: "This commit was created by opendocs.",
+			Footer: "This commit was created by jotbot.",
 		})
 
 		dryRun, err := p.DryRun()

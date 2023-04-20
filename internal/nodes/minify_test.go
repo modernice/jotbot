@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/dave/dst/decorator"
-	"github.com/modernice/opendocs/internal/nodes"
+	"github.com/modernice/jotbot/internal/nodes"
 )
 
 var minifyInput = `// Package foo is super nice.

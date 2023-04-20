@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dave/dst/decorator"
-	"github.com/modernice/opendocs/internal/nodes"
+	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/tiktoken-go/tokenizer"
 )
 

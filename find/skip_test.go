@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/modernice/opendocs/find"
-	"github.com/modernice/opendocs/internal/tests"
+	"github.com/modernice/jotbot/find"
+	"github.com/modernice/jotbot/internal/tests"
 	"github.com/psanford/memfs"
 )
 

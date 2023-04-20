@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/modernice/opendocs/internal/git"
+	"github.com/modernice/jotbot/internal/git"
 )
 
 var (

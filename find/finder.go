@@ -12,9 +12,9 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/internal/nodes"
-	"github.com/modernice/opendocs/internal/slice"
+	"github.com/modernice/jotbot/internal"
+	"github.com/modernice/jotbot/internal/nodes"
+	"github.com/modernice/jotbot/internal/slice"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )

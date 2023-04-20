@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/modernice/opendocs/cli"
+	"github.com/modernice/jotbot/cli"
 )
 
 func main() {

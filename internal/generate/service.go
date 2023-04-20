@@ -3,7 +3,7 @@ package generate
 import (
 	"fmt"
 
-	"github.com/modernice/opendocs/generate"
+	"github.com/modernice/jotbot/generate"
 )
 
 var _ generate.Service = (*Service)(nil)
@@ -32,7 +32,7 @@ func MockService() *Service {
 }
 
 // Generations returns a slice of
-// [generate.Generation](https://godoc.org/github.com/modernice/opendocs/generate#Generation)
+// [generate.Generation](https://godoc.org/github.com/modernice/jotbot/generate#Generation)
 // values. These describe the file, identifier, and documentation for each
 // identifier registered with the Service.
 func (svc *Service) Generations() []generate.Generation {

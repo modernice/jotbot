@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/modernice/opendocs/find"
-	"github.com/modernice/opendocs/internal/slice"
-	"github.com/modernice/opendocs/internal/tests"
+	"github.com/modernice/jotbot/find"
+	"github.com/modernice/jotbot/internal/slice"
+	"github.com/modernice/jotbot/internal/tests"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )

@@ -14,9 +14,9 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/modernice/opendocs/git"
-	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/internal/slice"
+	"github.com/modernice/jotbot/git"
+	"github.com/modernice/jotbot/internal"
+	"github.com/modernice/jotbot/internal/slice"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slog"
 )

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/modernice/opendocs/generate"
-	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/internal/nodes"
+	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
+	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/exp/slog"
 )

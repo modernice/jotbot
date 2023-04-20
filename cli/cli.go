@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 
 	"github.com/alecthomas/kong"
-	"github.com/modernice/opendocs"
-	"github.com/modernice/opendocs/find"
-	"github.com/modernice/opendocs/generate"
-	"github.com/modernice/opendocs/git"
-	"github.com/modernice/opendocs/internal/nodes"
-	"github.com/modernice/opendocs/patch"
-	"github.com/modernice/opendocs/services/openai"
+	"github.com/modernice/jotbot"
+	"github.com/modernice/jotbot/find"
+	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/git"
+	"github.com/modernice/jotbot/internal/nodes"
+	"github.com/modernice/jotbot/patch"
+	"github.com/modernice/jotbot/services/openai"
 	"golang.org/x/exp/slog"
 )
 
@@ -27,19 +27,19 @@ import (
 type CLI struct {
 	Generate struct {
 		Root      string   `arg:"" help:"Root directory of the repository."`
-		Filter    []string `name:"filter" short:"f" env:"OPENDOCS_FILTER" help:"Glob pattern(s) to filter files."`
-		Commit    bool     `name:"commit" default:"true" env:"OPENDOCS_COMMIT" help:"Commit changes to Git."`
-		Branch    string   `default:"opendocs-patch" env:"OPENDOCS_BRANCH" help:"Branch name to commit changes to."`
-		Limit     int      `default:"0" env:"OPENDOCS_LIMIT" help:"Limit the number of documentations to generate."`
-		FileLimit int      `default:"0" env:"OPENDOCS_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
-		DryRun    bool     `name:"dry" default:"false" env:"OPENDOCS_DRY_RUN" help:"Print the changes without applying them."`
-		Model     string   `default:"gpt-3.5-turbo" env:"OPENDOCS_MODEL" help:"OpenAI model to use."`
-		Override  bool     `name:"override" short:"o" env:"OPENDOCS_OVERRIDE" help:"Override existing documentation."`
-		Clear     bool     `name:"clear" short:"c" env:"OPENDOCS_CLEAR" help:"Clear existing documentation."`
+		Filter    []string `name:"filter" short:"f" env:"JOTBOT_FILTER" help:"Glob pattern(s) to filter files."`
+		Commit    bool     `name:"commit" default:"true" env:"JOTBOT_COMMIT" help:"Commit changes to Git."`
+		Branch    string   `default:"jotbot-patch" env:"JOTBOT_BRANCH" help:"Branch name to commit changes to."`
+		Limit     int      `default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of documentations to generate."`
+		FileLimit int      `default:"0" env:"JOTBOT_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
+		DryRun    bool     `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
+		Model     string   `default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model to use."`
+		Override  bool     `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
+		Clear     bool     `name:"clear" short:"c" env:"JOTBOT_CLEAR" help:"Clear existing documentation."`
 	} `cmd:"" default:"withargs" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
-	Verbose bool   `name:"verbose" short:"v" env:"OPENDOCS_VERBOSE" help:"Enable verbose logging."`
+	Verbose bool   `name:"verbose" short:"v" env:"JOTBOT_VERBOSE" help:"Enable verbose logging."`
 }
 
 // Run executes the CLI application with the given configuration. It generates
@@ -85,13 +85,13 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		opts = append(opts, generate.FindWith(find.Glob(cfg.Generate.Filter...)))
 	}
 
-	docs := opendocs.New(svc, opendocs.WithLogger(logHandler))
+	docs := jotbot.New(svc, jotbot.WithLogger(logHandler))
 
 	patch, err := docs.Generate(
 		context.Background(),
 		cfg.Generate.Root,
-		opendocs.GenerateWith(opts...),
-		opendocs.PatchWith(patch.Override(cfg.Generate.Override)),
+		jotbot.GenerateWith(opts...),
+		jotbot.PatchWith(patch.Override(cfg.Generate.Override)),
 	)
 	if err != nil {
 		return err

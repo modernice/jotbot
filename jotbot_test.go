@@ -1,4 +1,4 @@
-package opendocs_test
+package jotbot_test
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/modernice/opendocs"
-	"github.com/modernice/opendocs/generate"
-	igen "github.com/modernice/opendocs/internal/generate"
-	"github.com/modernice/opendocs/internal/tests"
+	"github.com/modernice/jotbot"
+	"github.com/modernice/jotbot/generate"
+	igen "github.com/modernice/jotbot/internal/generate"
+	"github.com/modernice/jotbot/internal/tests"
 )
 
 func TestRepository_Generate(t *testing.T) {
@@ -23,7 +23,7 @@ func TestRepository_Generate(t *testing.T) {
 			WithDoc("baz.go", "Y.Foo", "Foo is a method of Y.")
 		svc.Fallbacks = true
 
-		repo := opendocs.New(svc)
+		repo := jotbot.New(svc)
 
 		p, err := repo.Generate(context.Background(), root)
 		if err != nil {

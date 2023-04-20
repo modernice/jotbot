@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/modernice/opendocs/internal"
-	"github.com/modernice/opendocs/internal/git"
+	"github.com/modernice/jotbot/internal"
+	"github.com/modernice/jotbot/internal/git"
 	"golang.org/x/exp/slog"
 )
 
@@ -89,7 +89,7 @@ type commit struct {
 
 // Commit creates a new commit in the repository. It takes a Patch and optional
 // CommitOptions. If the CommitOption Branch is not provided, it defaults to
-// "opendocs-patch". If a branch with that name already exists, it appends the
+// "jotbot-patch". If a branch with that name already exists, it appends the
 // current Unix timestamp to the branch name. If Patch implements the Committer
 // interface, its Commit method is used to generate the commit message.
 // Otherwise, DefaultCommit is used.
@@ -100,7 +100,7 @@ func (r *Repository) Commit(p Patch, opts ...CommitOption) error {
 	}
 
 	if cfg.branch == "" {
-		cfg.branch = "opendocs-patch"
+		cfg.branch = "jotbot-patch"
 	}
 
 	_, output, err := r.git.Cmd("rev-parse", "--verify", cfg.branch)

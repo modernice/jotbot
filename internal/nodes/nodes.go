@@ -5,7 +5,7 @@ import (
 	"unicode"
 
 	"github.com/dave/dst"
-	"github.com/modernice/opendocs/internal/slice"
+	"github.com/modernice/jotbot/internal/slice"
 )
 
 // HasDoc checks if a Go syntax tree node has any associated comments in its

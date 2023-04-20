@@ -3,7 +3,7 @@ package generate
 import (
 	"io/fs"
 
-	"github.com/modernice/opendocs/patch"
+	"github.com/modernice/jotbot/patch"
 )
 
 // Patch returns a new *patch.Patch that generates documentation patches for the
