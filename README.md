@@ -1,4 +1,4 @@
-# jotbot - AI Powered Code Documentation Generator
+# jotbot - AI-Powered Code Documentation Generator
 
 `jotbot` auto-generates missing documentation for your Go repositories
 (more languages to come). The documentation of this repository was entirely
