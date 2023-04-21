@@ -205,13 +205,6 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		}
 	}
 
-	fail := func(err error) {
-		select {
-		case <-ctx.Done():
-		case errs <- err:
-		}
-	}
-
 	workers := runtime.NumCPU()
 	if cfg.fileLimit > 0 && cfg.fileLimit < workers {
 		cfg.log.Debug(fmt.Sprintf("File limit (%d) is lower than number of workers (%d). Reducing workers to %d.", cfg.fileLimit, workers, cfg.fileLimit))
@@ -254,8 +247,9 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 			for file := range queue {
 				gens, err := g.generateFile(rootGenCtx, ctx, file, result[file], repo, cfg, canGenerate, onGenerated)
 				if err != nil {
-					fail(fmt.Errorf("generate %s: %w", file, err))
-					return
+					cfg.log.Debug("generate %s: %v", file, err)
+					cfg.log.Warn("Generation of %s failed. Skipping.", file)
+					continue
 				}
 
 				if !push(file, gens) {
