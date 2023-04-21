@@ -24,6 +24,8 @@ var (
 	minifyFS embed.FS
 	//go:embed testdata/fixtures/glob
 	globFS embed.FS
+	//go:embed testdata/fixtures/generic
+	genericFS embed.FS
 
 	fixtures = map[string]fs.FS{
 		"basic":          Must(fs.Sub(basicFS, "testdata/fixtures/basic")),
@@ -32,6 +34,7 @@ var (
 		"duplicate-name": Must(fs.Sub(duplicateNameFS, "testdata/fixtures/duplicate-name")),
 		"minify":         Must(fs.Sub(minifyFS, "testdata/fixtures/minify")),
 		"glob":           Must(fs.Sub(globFS, "testdata/fixtures/glob")),
+		"generic":        Must(fs.Sub(genericFS, "testdata/fixtures/generic")),
 	}
 )
 

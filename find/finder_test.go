@@ -88,6 +88,27 @@ func TestFinder_Uncommented_duplicateName(t *testing.T) {
 	})
 }
 
+func TestFinder_Uncommented_generic(t *testing.T) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generic")
+
+	tests.WithRepo("generic", root, func(repoFS fs.FS) {
+		f := find.New(repoFS)
+
+		result, err := f.Uncommented()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tests.ExpectFindings(t, find.Findings{
+			"foo.go": {
+				{Path: "foo.go", Identifier: "Foo"},
+				{Path: "foo.go", Identifier: "X"},
+				{Path: "foo.go", Identifier: "*X.Foo"},
+			},
+		}, result)
+	})
+}
+
 func TestGlob(t *testing.T) {
 	all := []string{
 		"foo.go",

@@ -105,7 +105,16 @@ func methodIdentifier(identifier string, recv dst.Expr) string {
 	case *dst.Ident:
 		return recv.Name + "." + identifier
 	case *dst.StarExpr:
-		if ident, ok := recv.X.(*dst.Ident); ok {
+		var ident *dst.Ident
+
+		switch recv := recv.X.(type) {
+		case *dst.Ident:
+			ident = recv
+		case *dst.IndexExpr:
+			ident, _ = recv.X.(*dst.Ident)
+		}
+
+		if ident != nil {
 			return "*" + ident.Name + "." + identifier
 		}
 	}
