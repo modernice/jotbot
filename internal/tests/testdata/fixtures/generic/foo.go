@@ -8,4 +8,4 @@ func (x *X[_]) Foo() {}
 
 type y[T any] struct{}
 
-func (y *y[T]) AggregateID() {}
+func (y *y[T]) Foo() {}

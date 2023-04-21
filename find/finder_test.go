@@ -104,7 +104,7 @@ func TestFinder_Uncommented_generic(t *testing.T) {
 				{Path: "foo.go", Identifier: "Foo"},
 				{Path: "foo.go", Identifier: "X"},
 				{Path: "foo.go", Identifier: "*X.Foo"},
-				{Path: "foo.go", Identifier: "*y.AggregateID"},
+				{Path: "foo.go", Identifier: "*y.Foo"},
 			},
 		}, result)
 	})
