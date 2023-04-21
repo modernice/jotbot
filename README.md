@@ -42,20 +42,22 @@ Go files:
 jotbot generate --key <OPENAI_API_KEY>
 ```
 
-### CLI options
+### Options
 
-- `--key`: OpenAI API key (required)
-- `--root`: Root directory to start searching for files (default: ".")
-- `-f`, `--filter:` Glob pattern(s) to filter files
-- `--commit`: Commit changes to Git (default: true)
-- `--branch`: Branch name to commit changes to (default: "jotbot-patch")
-- `--limit:` Limit the number of documentations to generate (default: 0, no limit)
-- `--file-limit`: Limit the number of files to generate documentations for (default: 0, no limit)
-- `--dry`: Print the changes without applying them (default: false)
-- `--model`: OpenAI model to use (default: "gpt-3.5-turbo")
-- `-o`, `--override`: Override existing documentation (default: false)
-- `-c`, `--clear`: Clear existing documentation for GPT (default: false)
-- `-v`, `--verbose`: Enable verbose logging (default: false)
+| Option | Description | Default |
+| --- | --- | --- |
+| `--key` | OpenAI API key (required) | - |
+| `--root` | Root directory to start searching for files | `.` |
+| `-f, --filter` | Glob pattern(s) to filter files | - |
+| `--commit` | Commit changes to Git | `true` |
+| `--branch` | Branch name to commit changes to | `"jotbot-patch"` |
+| `--limit` | Limit the number of documentations to generate | `0` (no limit) |
+| `--file`-limit | Limit the number of files to generate documentations for | `0` (no limit) |
+| `--dry` | Print the changes without applying them | `false` |
+| `--model` | OpenAI model to use | `"gpt-3.5-turbo"` |
+| `-o, --override` | Override existing documentation | `false` |
+| `-c, --clear` | Clear existing documentation for GPT | `false` |
+| `-v, --verbose` | Enable verbose logging | `false` |
 
 ## License
 
