@@ -298,8 +298,12 @@ func (p *Patch) findMethod(file, name, method string) (*dst.FuncDecl, bool, erro
 		}
 
 		rcv := funcDecl.Recv.List[0].Type
+
 		if star, ok := rcv.(*dst.StarExpr); ok {
 			rcv = star.X
+		}
+		if idx, ok := rcv.(*dst.IndexExpr); ok {
+			rcv = idx.X
 		}
 
 		if ident, ok := rcv.(*dst.Ident); ok && ident.Name == name {
