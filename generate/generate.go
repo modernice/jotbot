@@ -247,8 +247,8 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 			for file := range queue {
 				gens, err := g.generateFile(rootGenCtx, ctx, file, result[file], repo, cfg, canGenerate, onGenerated)
 				if err != nil {
-					cfg.log.Debug("generate %s: %v", file, err)
-					cfg.log.Warn("Generation of %s failed. Skipping.", file)
+					cfg.log.Debug(fmt.Sprintf("generate %s: %v", file, err))
+					cfg.log.Warn(fmt.Sprintf("Generation of %s failed. Skipping.", file))
 					continue
 				}
 
