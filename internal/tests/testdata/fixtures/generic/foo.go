@@ -2,10 +2,10 @@ package fixture
 
 func Foo() {}
 
-type X[T any] struct{}
+type X[T, T2 any] struct{}
 
-func (x *X[_]) Foo() {}
+func (x *X[T, T2]) Foo() {}
 
-type y[T any] struct{}
+type y[T, T2 any] struct{}
 
-func (y *y[T]) Foo() {}
+func (y *y[T, _]) Foo() {}

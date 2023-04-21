@@ -45,7 +45,7 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 		exported = isExported(identifier)
 
 		if node.Recv != nil && len(node.Recv.List) > 0 {
-			identifier = methodIdentifier(identifier, node.Recv.List[0].Type)
+			identifier, _ = methodIdentifier(identifier, node.Recv.List[0].Type)
 		}
 	case *dst.GenDecl:
 		if len(node.Specs) == 0 {
@@ -100,25 +100,35 @@ func FindT[Node dst.Node](identifier string, root dst.Node) (Node, bool) {
 	return found, ok
 }
 
-func methodIdentifier(identifier string, recv dst.Expr) string {
+func methodIdentifier(identifier string, recv dst.Expr) (string, bool) {
 	switch recv := recv.(type) {
 	case *dst.Ident:
-		return recv.Name + "." + identifier
+		return recv.Name + "." + identifier, true
 	case *dst.StarExpr:
-		var ident *dst.Ident
-
-		switch recv := recv.X.(type) {
-		case *dst.Ident:
-			ident = recv
-		case *dst.IndexExpr:
-			ident, _ = recv.X.(*dst.Ident)
-		}
-
-		if ident != nil {
-			return "*" + ident.Name + "." + identifier
+		if ident, ok := getStructIdent(recv.X); ok {
+			return "*" + ident.Name + "." + identifier, true
 		}
 	}
-	return identifier
+	return "", false
+}
+
+func getStructIdent(expr dst.Expr) (*dst.Ident, bool) {
+	var ident *dst.Ident
+
+	switch e := expr.(type) {
+	case *dst.Ident:
+		ident = e
+	case *dst.IndexListExpr:
+		ident, _ = e.X.(*dst.Ident)
+	case *dst.IndexExpr:
+		ident, _ = e.X.(*dst.Ident)
+	}
+
+	if ident == nil {
+		return nil, false
+	}
+
+	return ident, true
 }
 
 func isExported(identifier string) bool {
