@@ -9,11 +9,10 @@ fi
 
 echo "Deleting jotbot-patch branches ..."
 BRANCHES=$(git branch | grep jotbot-patch)
-BRANCHES="${BRANCHES// }"
 
 if [ -z "$BRANCHES" ]; then
 	echo "No branches to delete"
 	exit 0
 fi
 
-git branch -D "$BRANCHES"
+echo "$BRANCHES" | xargs git branch -D
