@@ -1,1 +1,3 @@
 *.sum
+**/pnpm-lock.yaml
+**/tsconfig*.json

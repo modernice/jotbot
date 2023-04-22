@@ -1,7 +1,0 @@
-lockfileVersion: '6.0'
-
-importers:
-
-  .: {}
-
-  packages/jotbot: {}
