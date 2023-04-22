@@ -52,7 +52,7 @@ jotbot generate --key <OPENAI_API_KEY>
 | `--commit` | Commit changes to Git | `true` |
 | `--branch` | Branch name to commit changes to | `"jotbot-patch"` |
 | `--limit` | Limit the number of documentations to generate | `0` (no limit) |
-| `--file`-limit | Limit the number of files to generate documentations for | `0` (no limit) |
+| `--file-limit` | Limit the number of files to generate documentations for | `0` (no limit) |
 | `--dry` | Print the changes without applying them | `false` |
 | `--model` | OpenAI model to use | `"gpt-3.5-turbo"` |
 | `-o, --override` | Override existing documentation | `false` |
