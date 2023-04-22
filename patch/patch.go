@@ -498,7 +498,7 @@ func splitString(str string, maxLen int) []string {
 }
 
 func splitByWords(str string, maxLen int) []string {
-	words := strings.Fields(str)
+	words := strings.Split(str, " ")
 
 	var lines []string
 	var line string
@@ -509,9 +509,7 @@ func splitByWords(str string, maxLen int) []string {
 		}
 		line += word + " "
 	}
-	if line = strings.TrimSpace(line); line != "" {
-		lines = append(lines, line)
-	}
+	lines = append(lines, line)
 
 	return lines
 }
