@@ -30,7 +30,7 @@ gpt-3.5-turbo.
 - [ ] `exclude` option to exclude files from documentation generation
 - [ ] GitHub Action to generate documentation on push
 - [ ] ...
-- [ ] _any ideas?_ [open an issue](./issues) or [start a discussion](./discussions)
+- [ ] _any ideas?_ [open an issue](//github.com/modernice/jotbot/issues) or [start a discussion](//github.com/modernice/jotbot/discussions)
 
 ## Installation
 
