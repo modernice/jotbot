@@ -9,23 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     strategy:
       matrix:
         node-version: [14.x, 16.x, 18.x]
 
     steps:
+    - uses: actions/checkout@v3
+    - run: cd packages/jotbot
     - uses: pnpm/action-setup@v2
       with:
         version: 8
-    - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
     - run: pnpm i
-      working-directory: ./packages
     - run: pnpm test
-      working-directory: ./packages/jotbot
 
