@@ -96,7 +96,7 @@ export function isPrivate<Node extends ts.Node>(node: Node): boolean {
   return modifiers.some(
     (mod) =>
       mod.kind === ts.SyntaxKind.PrivateKeyword ||
-      mod.kind == ts.SyntaxKind.ProtectedKeyword,
+      mod.kind === ts.SyntaxKind.ProtectedKeyword,
   )
 }
 
@@ -108,7 +108,7 @@ export function isPublicMethodOfExportedClass(
   }
 
   const classNode = getClassOfMethod(node)
-  if (classNode == null) {
+  if (!classNode) {
     return false
   }
 
@@ -365,7 +365,7 @@ export function findMethod(
   commentTarget: SupportedMethod
 } | null {
   const owner = findClass(node, ownerName) ?? findInterface(node, ownerName)
-  if (owner == null) {
+  if (!owner) {
     return null
   }
 
@@ -377,7 +377,7 @@ export function findMethod(
     (member) => isMethod(member) && member.name.getText() === methodName,
   )
 
-  if (method == null || !isMethod(method)) {
+  if (!method || !isMethod(method)) {
     return null
   }
 
@@ -424,7 +424,7 @@ export function findProperty(
   propertyName: string,
 ) {
   const owner = findClass(node, ownerName) ?? findInterface(node, ownerName)
-  if (owner == null) {
+  if (!owner) {
     return null
   }
 

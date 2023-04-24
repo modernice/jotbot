@@ -2,5 +2,6 @@
   "extends": ["@antfu", "prettier"],
   "rules": {
     "no-console": "off"
-  }
+  },
+  "ignorePatterns": ["tests/**", "dist/**", "node_modules/**"]
 }

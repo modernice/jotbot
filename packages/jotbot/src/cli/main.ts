@@ -1,5 +1,5 @@
-import { createCLI } from './cli'
 import { fileURLToPath } from 'node:url'
+import { createCLI } from './cli'
 
 export function main(args: readonly string[] = process.argv.slice(2)) {
   const cli = createCLI()

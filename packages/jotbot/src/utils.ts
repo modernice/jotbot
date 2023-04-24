@@ -2,7 +2,7 @@ export function toArray<T>(value?: T | readonly T[]): T[] {
   if (!value) {
     return []
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+   
   return Array.isArray(value) ? (value as any) : [value]
 }
 

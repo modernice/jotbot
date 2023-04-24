@@ -1,15 +1,16 @@
-import {
+import { resolve } from 'node:path'
+import type { Command } from 'commander'
+import type {
   FinderOptions,
-  SymbolType,
+  SymbolType} from '..';
+import {
   createFinder,
   defaultExclude,
   isSymbol,
   removeNodesFromFindings,
 } from '..'
-import { resolve } from 'node:path'
 import { createLogger } from './logger'
-import { WithFormatOptions, WithVerboseOption } from './options'
-import { Command } from 'commander'
+import type { WithFormatOptions, WithVerboseOption } from './options'
 import { commaSeparated } from './utils'
 
 const { log: print } = createLogger(process.stdout)
@@ -90,7 +91,7 @@ function run(
 
   if (format === 'json') {
     print(JSON.stringify(removeNodesFromFindings(findings), null, 2))
-    return
+    
   }
 }
 

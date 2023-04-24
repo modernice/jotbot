@@ -43,7 +43,7 @@ function updateComment(
   comment: string,
 ) {
   const node = findNode(tree, parseIdentifier(identifier))
-  if (node == null) {
+  if (!node) {
     return false
   }
 
