@@ -1,1 +1,1 @@
-{}
+{"pnpm":{"patchedDependencies":{"pkg-types@1.0.2":"patches/pkg-types@1.0.2.patch"}}}

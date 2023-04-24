@@ -1,5 +1,10 @@
 lockfileVersion: '6.0'
 
+patchedDependencies:
+  pkg-types@1.0.2:
+    hash: yljoujhdufzobmjtr5vx4opuai
+    path: patches/pkg-types@1.0.2.patch
+
 importers:
 
   .: {}
@@ -15,9 +20,6 @@ importers:
       minimatch:
         specifier: ^9.0.0
         version: 9.0.0
-      ts-clone-node:
-        specifier: ^2.0.4
-        version: 2.0.4(typescript@5.0.4)
       typescript:
         specifier: ^5.0.4
         version: 5.0.4
@@ -44,8 +46,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       pkg-types:
-        specifier: git://github.com/unjs/pkg-types#2737559ad7bf2a72cba3915386c7433ba8fd448e
-        version: github.com/unjs/pkg-types/2737559ad7bf2a72cba3915386c7433ba8fd448e
+        specifier: ^1.0.2
+        version: 1.0.2(patch_hash=yljoujhdufzobmjtr5vx4opuai)
       tsx:
         specifier: ^3.12.6
         version: 3.12.6
@@ -1114,16 +1116,6 @@ packages:
     dev: true
     optional: true
 
-  /compatfactory@2.0.9(typescript@5.0.4):
-    resolution: {integrity: sha512-fvO+AWcmbO7P1S+A3mwm3IGr74eHMeq5ZLhNhyNQc9mVDNHT4oe0Gg0ksdIFFNXLK7k7Z/TYcLAUSQdRgh1bsA==}
-    engines: {node: '>=14.9.0'}
-    peerDependencies:
-      typescript: '>=3.x || >= 4.x'
-    dependencies:
-      helpertypes: 0.0.19
-      typescript: 5.0.4
-    dev: false
-
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
     dev: true
@@ -2051,11 +2043,6 @@ packages:
       function-bind: 1.1.1
     dev: true
 
-  /helpertypes@0.0.19:
-    resolution: {integrity: sha512-J00e55zffgi3yVnUp0UdbMztNkr2PnizEkOe9URNohnrNhW5X0QpegkuLpOmFQInpi93Nb8MCjQRHAiCDF42NQ==}
-    engines: {node: '>=10.0.0'}
-    dev: false
-
   /hosted-git-info@2.8.9:
     resolution: {integrity: sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==}
     dev: true
@@ -2515,7 +2502,7 @@ packages:
     dependencies:
       acorn: 8.8.2
       pathe: 1.1.0
-      pkg-types: 1.0.2
+      pkg-types: 1.0.2(patch_hash=yljoujhdufzobmjtr5vx4opuai)
       ufo: 1.1.1
     dev: true
 
@@ -2720,13 +2707,14 @@ packages:
     engines: {node: '>=8.6'}
     dev: true
 
-  /pkg-types@1.0.2:
+  /pkg-types@1.0.2(patch_hash=yljoujhdufzobmjtr5vx4opuai):
     resolution: {integrity: sha512-hM58GKXOcj8WTqUXnsQyJYXdeAPbythQgEF3nTcEo+nkD49chjQ9IKm/QJy9xf6JakXptz86h7ecP2024rrLaQ==}
     dependencies:
       jsonc-parser: 3.2.0
       mlly: 1.2.0
       pathe: 1.1.0
     dev: true
+    patched: true
 
   /pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
@@ -3116,16 +3104,6 @@ packages:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
     dev: true
-
-  /ts-clone-node@2.0.4(typescript@5.0.4):
-    resolution: {integrity: sha512-eG6FAgmQsenhIJOIFhUcO6yyYejBKZIKcI3y21jiQmIOrth5pD6GElyPAyeihbPSyBs3u/9PVNXy+5I7jGy8jA==}
-    engines: {node: '>=14.9.0'}
-    peerDependencies:
-      typescript: ^3.x || ^4.x
-    dependencies:
-      compatfactory: 2.0.9(typescript@5.0.4)
-      typescript: 5.0.4
-    dev: false
 
   /ts-morph@18.0.0:
     resolution: {integrity: sha512-Kg5u0mk19PIIe4islUI/HWRvm9bC1lHejK4S0oh1zaZ77TMZAEmQC0sHQYiu2RgCQFZKXz1fMVi/7nOOeirznA==}
@@ -3523,14 +3501,4 @@ packages:
       validator: 13.9.0
     optionalDependencies:
       commander: 9.5.0
-    dev: true
-
-  github.com/unjs/pkg-types/2737559ad7bf2a72cba3915386c7433ba8fd448e:
-    resolution: {tarball: https://codeload.github.com/unjs/pkg-types/tar.gz/2737559ad7bf2a72cba3915386c7433ba8fd448e}
-    name: pkg-types
-    version: 1.0.2
-    dependencies:
-      jsonc-parser: 3.2.0
-      mlly: 1.2.0
-      pathe: 1.1.0
     dev: true

@@ -13,6 +13,10 @@
     },
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "package.json"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -27,7 +31,6 @@
     "commander": "^10.0.1",
     "consola": "^3.1.0",
     "minimatch": "^9.0.0",
-    "ts-clone-node": "^2.0.4",
     "typescript": "^5.0.4"
   },
   "devDependencies": {
@@ -38,7 +41,7 @@
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
     "lodash": "^4.17.21",
-    "pkg-types": "git://github.com/unjs/pkg-types#2737559ad7bf2a72cba3915386c7433ba8fd448e",
+    "pkg-types": "^1.0.2",
     "tsx": "^3.12.6",
     "vite": "^4.3.1",
     "vite-plugin-dts": "^2.3.0",
