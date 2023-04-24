@@ -25,7 +25,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
     - run: pnpm i
-      working-directory: ./packages/jotbot
+      working-directory: ./packages
     - run: pnpm test
       working-directory: ./packages/jotbot
 
