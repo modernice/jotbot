@@ -1,4 +1,4 @@
-name: Node Test
+name: jotbot-es
 
 on:
   push:
