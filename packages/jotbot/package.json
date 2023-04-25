@@ -5,17 +5,26 @@
   "author": "Saman Hosseini <bounoable@gmail.com>",
   "license": "MIT",
   "keywords": [],
+  "bin": {
+    "jotbot-es": "./bin/jotbot-es.mjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "require": "./dist/cli.cjs",
+      "import": "./dist/cli.mjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "package.json"
+    "package.json",
+    "LICENSE"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

@@ -16,18 +16,23 @@ export default defineConfig(async () => {
   }
 
   return {
-    plugins: [dts({ insertTypesEntry: true })],
+    plugins: [dts({ entryRoot: './src' })],
 
     build: {
       lib: {
         entry: './src/index.ts',
         name: 'JotBot',
-        fileName: (format) => `index.${format === 'es' ? 'mjs' : format}`,
+        fileName: (format, name) =>
+          `${name}.${format === 'es' ? 'mjs' : format}`,
         formats: ['es', 'cjs'],
       },
 
       rollupOptions: {
         external: isExternal,
+        input: {
+          index: './src/index.ts',
+          cli: './src/cli/index.ts',
+        },
       },
     },
   }

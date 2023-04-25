@@ -11,8 +11,8 @@ import {
   isPublicMethodOfExportedClass,
   isPublicPropertyOfExportedOwner,
 } from './nodes'
-import type { RawIdentifier } from './identifier'
-import { createRawIdentifier } from './identifier'
+import type { NaturalLanguageTarget, RawIdentifier } from './identifier'
+import { createRawIdentifier, describeIdentifier } from './identifier'
 import type { SymbolType } from './symbols'
 import { configureSymbols } from './symbols'
 import { toArray } from './utils'
@@ -21,7 +21,7 @@ export type Findings = Record<string, Finding[]>
 
 export interface Finding<Symbols extends SymbolType = SymbolType> {
   identifier: RawIdentifier<Symbols>
-  node: ts.Node
+  target: NaturalLanguageTarget<Symbols>
 }
 
 export interface WithSymbolsOption<Symbols extends SymbolType = SymbolType> {
@@ -108,16 +108,22 @@ export function createFinder<Symbols extends SymbolType = SymbolType>(
 function findUncommentedInPath<Symbols extends SymbolType = SymbolType>(
   path: string,
   options?: WithSymbolsOption<Symbols>,
-) {
+): Finding<Symbols>[] {
   const content = ts.sys.readFile(path)
   if (!content) {
-    return null
+    return []
   }
 
   const file = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true)
   const nodes = findUncommentedNodes(file, options)
 
-  return nodes.map((node) => ({ node, identifier: createRawIdentifier(node) }))
+  return nodes.map((node) => {
+    const identifier = createRawIdentifier(node) as RawIdentifier<Symbols>
+    return {
+      identifier,
+      target: describeIdentifier(identifier) as NaturalLanguageTarget<Symbols>,
+    }
+  })
 }
 
 function findUncommentedNodes<Symbols extends SymbolType = SymbolType>(
@@ -150,16 +156,7 @@ function findUncommentedNodes<Symbols extends SymbolType = SymbolType>(
 }
 
 export function printFindings(findings: Findings) {
-  const withoutNodes = removeNodesFromFindings(findings)
-  return JSON.stringify(withoutNodes, null, 2)
-}
-
-export function removeNodesFromFindings(findings: Findings) {
-  const out = {} as Record<string, RawIdentifier[]>
-  for (const [file, _findings] of Object.entries(findings)) {
-    out[file] = _findings.map((finding) => finding.identifier)
-  }
-  return out
+  return JSON.stringify(findings, null, 2)
 }
 
 function isSupportedNode<Symbols extends SymbolType = SymbolType>(

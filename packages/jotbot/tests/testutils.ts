@@ -4,7 +4,7 @@ import type { Comments } from '../src/comments'
 import { getNodeComments, getRawIdentifiers } from '../src/comments'
 import type { Fixture } from '../tests/fixtures'
 import { loadFixture } from '../tests/fixtures'
-import type { RawIdentifier } from '../src/identifier'
+import { RawIdentifier, describeIdentifier } from '../src/identifier'
 import { parseIdentifier } from '../src/identifier'
 import { findNode } from '../src/nodes'
 import type { Findings } from '../src/finder'
@@ -65,6 +65,13 @@ export function expectFindings(
   findings: Findings,
   want: Record<string, readonly RawIdentifier[]>,
 ) {
+  for (const _findings of Object.values(findings)) {
+    for (const finding of _findings) {
+      const wantTarget = describeIdentifier(finding.identifier)
+      expect(finding.target).toBe(wantTarget)
+    }
+  }
+
   for (const path of Object.keys(want)) want[path] = want[path].slice().sort()
 
   const got = Object.entries(findings).reduce<Record<string, RawIdentifier[]>>(

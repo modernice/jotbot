@@ -83,7 +83,10 @@ export function isMethod(node: ts.Node): node is SupportedMethod {
 }
 
 export function isPrivate<Node extends ts.Node>(node: Node): boolean {
-  if (ts.isPropertyDeclaration(node) && node.name.getText().startsWith('#')) {
+  if (
+    (ts.isPropertyDeclaration(node) || ts.isMethodDeclaration(node)) &&
+    node.name.getText().startsWith('#')
+  ) {
     return true
   }
 

@@ -1,10 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { isEqual } from 'lodash'
-import {
-  createFinder,
-  printFindings,
-  removeNodesFromFindings,
-} from '../src/finder'
+import { describe, it } from 'vitest'
+import { createFinder } from '../src/finder'
 import { symbolTypes } from '../src/symbols'
 import { fixtureRoot } from './fixtures'
 import {
@@ -250,21 +245,5 @@ describe('finder', () => {
     expectFindings(nodes, {
       'foo.mjs': ['func:foo', 'class:Foo', 'prop:Foo.foo', 'method:Foo.foobar'],
     })
-  })
-})
-
-describe('printFindings', () => {
-  it('prints findings', () => {
-    const root = fixtureRoot('iface')
-    const { findUncommented } = createFinder(root, {
-      include: ['foo.ts', 'bar.ts'],
-    })
-
-    const findings = findUncommented()
-
-    const withoutNodes = removeNodesFromFindings(findings)
-    const parsedFindings = JSON.parse(printFindings(findings)) as unknown
-
-    expect(isEqual(parsedFindings, withoutNodes)).toBe(true)
   })
 })

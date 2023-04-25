@@ -1,14 +1,7 @@
 import { resolve } from 'node:path'
 import type { Command } from 'commander'
-import type {
-  FinderOptions,
-  SymbolType} from '..';
-import {
-  createFinder,
-  defaultExclude,
-  isSymbol,
-  removeNodesFromFindings,
-} from '..'
+import type { FinderOptions, SymbolType } from '..'
+import { createFinder, defaultExclude, isSymbol, printFindings } from '..'
 import { createLogger } from './logger'
 import type { WithFormatOptions, WithVerboseOption } from './options'
 import { commaSeparated } from './utils'
@@ -68,6 +61,11 @@ function run(
     enabled: options.verbose ?? false,
   })
 
+  info(`Root: ${root}`)
+  info(`Symbols: ${options.symbols?.join(', ') || '-'}`)
+  info(`Include: ${options.include ?? '-'}`)
+  info(`Exclude: ${options.exclude ?? '-'}`)
+
   const { findUncommented } = createFinder(root, options)
 
   info(`Searching for uncommented symbols in ${root} ...\n`)
@@ -90,8 +88,7 @@ function run(
   }
 
   if (format === 'json') {
-    print(JSON.stringify(removeNodesFromFindings(findings), null, 2))
-    
+    print(printFindings(findings))
   }
 }
 
