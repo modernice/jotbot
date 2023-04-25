@@ -1,4 +1,4 @@
-package patch
+package golang
 
 import (
 	"bytes"
@@ -40,19 +40,18 @@ type Patch struct {
 	log         *slog.Logger
 }
 
-// Option represents a functional option that can be used when creating a new
+// PatchOption represents a functional option that can be used when creating a new
 // Patch instance. It allows customization of the new instance by setting
 // various options such as a logger or an override flag. Use WithLogger to set a
 // logger and Override to set the override flag.
-type Option func(*Patch)
+type PatchOption interface {
+	applyPatch(*Patch)
+}
 
-// WithLogger is an Option function that sets a logger for the Patch struct. The
-// logger is used to output debug information during the execution of methods on
-// the Patch struct. The logger must implement slog.Handler.
-func WithLogger(h slog.Handler) Option {
-	return func(p *Patch) {
-		p.log = slog.New(h)
-	}
+type patchOptionFunc func(*Patch)
+
+func (opt patchOptionFunc) applyPatch(p *Patch) {
+	opt(p)
 }
 
 // Override sets the Patch's override flag to the provided boolean value. When
@@ -60,18 +59,18 @@ func WithLogger(h slog.Handler) Option {
 // type will be overwritten when new documentation is added. When it is false,
 // an error will be returned if there is already documentation for a function or
 // type.
-func Override(override bool) Option {
-	return func(p *Patch) {
+func Override(override bool) PatchOption {
+	return patchOptionFunc(func(p *Patch) {
 		p.override = override
-	}
+	})
 }
 
-// New returns a new *Patch that can be used to update documentation comments in
+// NewPatch returns a new *Patch that can be used to update documentation comments in
 // Go source files. The repo argument is a filesystem to read the source files
 // from. Options may be provided to modify the behavior of the patcher.
 // WithLogger sets the logger for the patcher. Override allows existing comments
 // to be overwritten.
-func New(repo fs.FS, opts ...Option) *Patch {
+func NewPatch(repo fs.FS, opts ...PatchOption) *Patch {
 	p := &Patch{
 		repo:        repo,
 		fset:        token.NewFileSet(),
@@ -80,7 +79,7 @@ func New(repo fs.FS, opts ...Option) *Patch {
 		identifiers: make(map[string][]string),
 	}
 	for _, opt := range opts {
-		opt(p)
+		opt.applyPatch(p)
 	}
 	if p.log == nil {
 		p.log = internal.NopLogger()

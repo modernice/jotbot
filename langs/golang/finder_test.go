@@ -1,4 +1,4 @@
-package find_test
+package golang_test
 
 import (
 	"io/fs"
@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/slice"
 	"github.com/modernice/jotbot/internal/tests"
+	"github.com/modernice/jotbot/langs/golang"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -17,14 +17,14 @@ func TestFinder_Uncommented(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "basic")
 
 	tests.WithRepo("basic", root, func(repoFS fs.FS) {
-		f := find.New(repoFS)
+		f := golang.NewFinder(repoFS)
 
 		result, err := f.Uncommented()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		tests.ExpectFindings(t, find.Findings{
+		tests.ExpectFindings(t, golang.Findings{
 			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
 			"bar.go": {
 				{Path: "bar.go", Identifier: "Bar"},
@@ -44,7 +44,7 @@ func TestFinder_Find_onlyGoFiles(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "only-go-files")
 
 	tests.WithRepo("only-go-files", root, func(repoFS fs.FS) {
-		f := find.New(repoFS)
+		f := golang.NewFinder(repoFS)
 
 		result, err := f.Uncommented()
 		if err != nil {
@@ -59,7 +59,7 @@ func TestFinder_Find_onlyGoFiles(t *testing.T) {
 			t.Fatalf("Go files should be returned in findings; got no 'foo.go'")
 		}
 
-		tests.ExpectFindings(t, find.Findings{
+		tests.ExpectFindings(t, golang.Findings{
 			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
 		}, result)
 	})
@@ -69,14 +69,14 @@ func TestFinder_Uncommented_duplicateName(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "duplicate-name")
 
 	tests.WithRepo("duplicate-name", root, func(repoFS fs.FS) {
-		f := find.New(repoFS)
+		f := golang.NewFinder(repoFS)
 
 		result, err := f.Uncommented()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		tests.ExpectFindings(t, find.Findings{
+		tests.ExpectFindings(t, golang.Findings{
 			"foo.go": {
 				{Path: "foo.go", Identifier: "Foo"},
 				{Path: "foo.go", Identifier: "X"},
@@ -92,14 +92,14 @@ func TestFinder_Uncommented_generic(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generic")
 
 	tests.WithRepo("generic", root, func(repoFS fs.FS) {
-		f := find.New(repoFS)
+		f := golang.NewFinder(repoFS)
 
 		result, err := f.Uncommented()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		tests.ExpectFindings(t, find.Findings{
+		tests.ExpectFindings(t, golang.Findings{
 			"foo.go": {
 				{Path: "foo.go", Identifier: "Foo"},
 				{Path: "foo.go", Identifier: "X"},
@@ -174,7 +174,7 @@ func TestGlob(t *testing.T) {
 	tests.WithRepo("glob", root, func(repoFS fs.FS) {
 		for _, tt := range cases {
 			t.Run(tt.name, func(t *testing.T) {
-				f := find.New(repoFS, find.Glob(tt.pattern))
+				f := golang.NewFinder(repoFS, golang.Glob(tt.pattern))
 
 				result, err := f.Uncommented()
 				if err != nil {

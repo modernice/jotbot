@@ -1,4 +1,4 @@
-package find
+package golang
 
 import (
 	"io/fs"
@@ -51,7 +51,7 @@ func SkipDefault() Skip {
 	}
 }
 
-func (s Skip) apply(f *Finder) {
+func (s Skip) applyFinder(f *Finder) {
 	f.skip = &s
 }
 

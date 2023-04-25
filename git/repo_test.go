@@ -11,7 +11,7 @@ import (
 	"github.com/modernice/jotbot/git"
 	"github.com/modernice/jotbot/internal/git/gittest"
 	"github.com/modernice/jotbot/internal/tests"
-	"github.com/modernice/jotbot/patch"
+	"github.com/modernice/jotbot/langs/golang"
 	"github.com/psanford/memfs"
 )
 
@@ -37,7 +37,7 @@ func TestRepo_Commit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		p := patch.New(sourceFS)
+		p := golang.NewPatch(sourceFS)
 		if err := p.Comment("foo.go", "Foo", `Foo is a function that returns a "foo" error.`); err != nil {
 			t.Fatal(err)
 		}

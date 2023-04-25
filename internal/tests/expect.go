@@ -12,7 +12,7 @@ import (
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
-	"github.com/modernice/jotbot/patch"
+	"github.com/modernice/jotbot/langs/golang"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -60,9 +60,9 @@ func ExpectFindings[Findings ~map[string][]Finding, Finding interface{ GetIdenti
 	}
 }
 
-// ExpectPatch compares two *patch.Patch structs and fails the test if their
+// ExpectPatch compares two *golang.Patch structs and fails the test if their
 // DryRun output differs.
-func ExpectPatch(t *testing.T, want *patch.Patch, got *patch.Patch) {
+func ExpectPatch(t *testing.T, want *golang.Patch, got *golang.Patch) {
 	t.Helper()
 
 	wantDryRun, err := want.DryRun()

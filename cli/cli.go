@@ -9,11 +9,10 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/modernice/jotbot"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/git"
 	"github.com/modernice/jotbot/internal/nodes"
-	"github.com/modernice/jotbot/patch"
+	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/services/openai"
 	"golang.org/x/exp/slog"
 )
@@ -85,7 +84,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		generate.Override(cfg.Generate.Override),
 	}
 	if len(cfg.Generate.Filter) > 0 {
-		opts = append(opts, generate.FindWith(find.Glob(cfg.Generate.Filter...)))
+		opts = append(opts, generate.FindWith(golang.Glob(cfg.Generate.Filter...)))
 	}
 
 	docs := jotbot.New(svc, jotbot.WithLogger(logHandler))
@@ -94,7 +93,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		context.Background(),
 		cfg.Generate.Root,
 		jotbot.GenerateWith(opts...),
-		jotbot.PatchWith(patch.Override(cfg.Generate.Override)),
+		jotbot.PatchWith(golang.Override(cfg.Generate.Override)),
 	)
 	if err != nil {
 		return err

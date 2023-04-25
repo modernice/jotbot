@@ -8,8 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal"
+	"github.com/modernice/jotbot/langs/golang"
 	"golang.org/x/exp/slog"
 )
 
@@ -123,9 +123,9 @@ func Override(override bool) Option {
 
 // FindWith returns an Option that can be passed to Generator.Generate to
 // configure the Find operation used to identify code elements for documentation
-// generation. The Option takes one or more find.Options from the
+// generation. The Option takes one or more golang.Options from the
 // "github.com/modernice/jotbot/find" package.
-func FindWith(opts ...find.Option) Option {
+func FindWith(opts ...golang.FinderOption) Option {
 	return func(g *generation) {
 		g.findOpts = append(g.findOpts, opts...)
 	}
@@ -136,7 +136,7 @@ type generation struct {
 	fileLimit int
 	footer    string
 	override  bool
-	findOpts  []find.Option
+	findOpts  []golang.FinderOption
 	log       *slog.Logger
 }
 
@@ -160,17 +160,17 @@ func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<
 		cfg.log = internal.NopLogger()
 	}
 
-	findOpts := append([]find.Option{find.WithLogger(cfg.log.Handler())}, cfg.findOpts...)
+	findOpts := append([]golang.FinderOption{golang.WithLogger(cfg.log.Handler())}, cfg.findOpts...)
 
 	var (
-		result find.Findings
+		result golang.Findings
 		err    error
 	)
 
 	if cfg.override {
-		result, err = find.New(repo, findOpts...).All()
+		result, err = golang.NewFinder(repo, findOpts...).All()
 	} else {
-		result, err = find.New(repo, findOpts...).Uncommented()
+		result, err = golang.NewFinder(repo, findOpts...).Uncommented()
 	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("find identifiers: %w", err)
@@ -270,7 +270,7 @@ func (g *Generator) generateFile(
 	ctx *genCtx,
 	parent context.Context,
 	file string,
-	findings []find.Finding,
+	findings []golang.Finding,
 	repo fs.FS,
 	cfg generation,
 	canGenerate func() bool,
@@ -303,14 +303,14 @@ func (g *Generator) generateFile(
 	return generations, nil
 }
 
-func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, finding find.Finding) (*genCtx, error) {
+func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, finding golang.Finding) (*genCtx, error) {
 	if ctx == nil {
 		return newCtx(parent, repo, finding.Path, finding.Identifier)
 	}
 	return ctx.new(parent, finding.Path, finding.Identifier), nil
 }
 
-func (g *Generator) generateFinding(ctx *genCtx, cfg generation, finding find.Finding) (Generation, error) {
+func (g *Generator) generateFinding(ctx *genCtx, cfg generation, finding golang.Finding) (Generation, error) {
 	cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
 
 	doc, err := g.svc.GenerateDoc(ctx)

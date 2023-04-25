@@ -1,4 +1,4 @@
-package find
+package golang
 
 import (
 	"fmt"
@@ -57,32 +57,24 @@ func (f Finding) String() string {
 // uncommented types/functions.
 type Findings map[string][]Finding
 
-// Option is an interface for configuring a *Finder.
-type Option interface {
-	apply(*Finder)
+// FinderOption is an interface for configuring a *Finder.
+type FinderOption interface {
+	applyFinder(*Finder)
 }
 
-type optionFunc func(*Finder)
+type finderOptionFunc func(*Finder)
 
-func (opt optionFunc) apply(f *Finder) {
+func (opt finderOptionFunc) applyFinder(f *Finder) {
 	opt(f)
-}
-
-// WithLogger returns an Option that sets the logger for a Finder. The logger is
-// used to log debug, info and error messages during file searching.
-func WithLogger(h slog.Handler) Option {
-	return optionFunc(func(f *Finder) {
-		f.log = slog.New(h)
-	})
 }
 
 // Glob returns an Option that appends one or more glob patterns to the Finder.
 // The Finder will exclude files and directories that match any of the glob
 // patterns.
-func Glob(pattern ...string) Option {
+func Glob(pattern ...string) FinderOption {
 	pattern = slice.Map(pattern, strings.TrimSpace)
 	pattern = slice.NoZero(pattern)
-	return optionFunc(func(f *Finder) {
+	return finderOptionFunc(func(f *Finder) {
 		f.globs = append(f.globs, pattern...)
 	})
 }
@@ -91,10 +83,10 @@ func Glob(pattern ...string) Option {
 // repository. It accepts an fs.FS representing the repository and zero or more
 // Options to configure the search. The returned Finder can be used to search
 // for all types and functions or only those without comments.
-func New(repo fs.FS, opts ...Option) *Finder {
+func NewFinder(repo fs.FS, opts ...FinderOption) *Finder {
 	f := &Finder{repo: repo}
 	for _, opt := range opts {
-		opt.apply(f)
+		opt.applyFinder(f)
 	}
 	if f.skip == nil {
 		skip := SkipDefault()

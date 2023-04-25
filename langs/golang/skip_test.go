@@ -1,11 +1,11 @@
-package find_test
+package golang_test
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/tests"
+	"github.com/modernice/jotbot/langs/golang"
 	"github.com/psanford/memfs"
 )
 
@@ -13,7 +13,7 @@ func TestSkip(t *testing.T) {
 	cases := []struct {
 		name  string
 		files []string
-		skip  *find.Skip
+		skip  *golang.Skip
 		want  []string
 	}{
 		{
@@ -44,7 +44,7 @@ func TestSkip(t *testing.T) {
 				".foo/foo.go",
 				".baz.go",
 			},
-			skip: ptr(find.SkipNone()),
+			skip: ptr(golang.SkipNone()),
 			want: []string{
 				"foo.go",
 				"bar.go",
@@ -62,7 +62,7 @@ func TestSkip(t *testing.T) {
 				".bar/bar.go",
 				".baz.go", // dotfiles are handled by the Dotfiles option
 			},
-			skip: &find.Skip{Hidden: true},
+			skip: &golang.Skip{Hidden: true},
 			want: []string{
 				"foo.go",
 				".baz.go",
@@ -74,7 +74,7 @@ func TestSkip(t *testing.T) {
 				"foo.go",
 				".bar.go",
 			},
-			skip: &find.Skip{Dotfiles: true},
+			skip: &golang.Skip{Dotfiles: true},
 			want: []string{
 				"foo.go",
 			},
@@ -88,7 +88,7 @@ func TestSkip(t *testing.T) {
 				"bar/bar.go",
 				".baz.go",
 			},
-			skip: &find.Skip{Testdata: true},
+			skip: &golang.Skip{Testdata: true},
 			want: []string{
 				"foo.go",
 				"bar/bar.go",
@@ -105,7 +105,7 @@ func TestSkip(t *testing.T) {
 				".foo/bar/baz.go",
 				".foo/bar/baz_test.go",
 			},
-			skip: &find.Skip{Testfiles: true},
+			skip: &golang.Skip{Testfiles: true},
 			want: []string{
 				"foo.go",
 				"bar/bar.go",
@@ -127,8 +127,8 @@ func TestSkip(t *testing.T) {
 				"bar/bar/bar.go",
 				"bar/baz/bar.go",
 			},
-			skip: &find.Skip{
-				Dir: func(e find.Exclude) bool {
+			skip: &golang.Skip{
+				Dir: func(e golang.Exclude) bool {
 					return e.Path == "foo/bar" || e.DirEntry.Name() == "baz" || e.DirEntry.Name() == "what"
 				},
 			},
@@ -151,8 +151,8 @@ func TestSkip(t *testing.T) {
 				"bar/bar.go",
 				"bar/baz.go",
 			},
-			skip: &find.Skip{
-				File: func(e find.Exclude) bool {
+			skip: &golang.Skip{
+				File: func(e golang.Exclude) bool {
 					return e.Path == "bar/bar.go" || e.DirEntry.Name() == "foo.go"
 				},
 			},
@@ -167,12 +167,12 @@ func TestSkip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			files := createRepo(t, tt.files)
 
-			var opts []find.Option
+			var opts []golang.FinderOption
 			if tt.skip != nil {
-				opts = append(opts, find.Skip(*tt.skip))
+				opts = append(opts, golang.Skip(*tt.skip))
 			}
 
-			findings, err := find.New(files, opts...).Uncommented()
+			findings, err := golang.NewFinder(files, opts...).Uncommented()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -200,10 +200,10 @@ func createRepo(t *testing.T, files []string) *memfs.FS {
 	return fs
 }
 
-func expectedFindings(files []string) find.Findings {
-	out := make(find.Findings, len(files))
+func expectedFindings(files []string) golang.Findings {
+	out := make(golang.Findings, len(files))
 	for _, file := range files {
-		out[file] = []find.Finding{
+		out[file] = []golang.Finding{
 			{
 				Path:       file,
 				Identifier: "Foo",

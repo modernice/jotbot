@@ -8,7 +8,7 @@ import (
 
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal"
-	"github.com/modernice/jotbot/patch"
+	"github.com/modernice/jotbot/langs/golang"
 	"golang.org/x/exp/slog"
 )
 
@@ -16,7 +16,7 @@ import (
 // and patching files in the repository. Use the New function to create a new
 // Repository instance. The Generate method generates files in the repository
 // using a generate.Service, while the Patch method patches files in the
-// repository using a patch.Patch. The Files method returns a channel of
+// repository using a golang. The Files method returns a channel of
 // generated files and any errors encountered during generation.
 type Repository struct {
 	svc generate.Service
@@ -58,7 +58,7 @@ func New(svc generate.Service, opts ...Option) *Repository {
 // generation. Two functions are provided to create GenerateOptions:
 // GenerateWith and PatchWith. The former takes a variadic parameter of
 // generate.Options, while the latter takes a variadic parameter of
-// patch.Options.
+// golang.Options.
 type GenerateOption func(*generation)
 
 // GenerateWith is an option for generating code with given options. It returns
@@ -73,7 +73,7 @@ func GenerateWith(opts ...generate.Option) GenerateOption {
 // PatchWith returns a GenerateOption that appends patch options to the
 // generation. These options are applied when generating a patch for a
 // repository.
-func PatchWith(opts ...patch.Option) GenerateOption {
+func PatchWith(opts ...golang.PatchOption) GenerateOption {
 	return func(g *generation) {
 		g.patchOpts = append(g.patchOpts, opts...)
 	}
@@ -81,14 +81,14 @@ func PatchWith(opts ...patch.Option) GenerateOption {
 
 type generation struct {
 	genOpts   []generate.Option
-	patchOpts []patch.Option
+	patchOpts []golang.PatchOption
 }
 
 // Generate generates a patch for a repository at path repo. It accepts a
 // context.Context and a GenerateOption variadic parameter that is used to
-// configure the generation process. It returns the resulting *patch.Patch and
+// configure the generation process. It returns the resulting *golang.Patch and
 // an error (if any).
-func (g *Repository) Generate(ctx context.Context, repo string, opts ...GenerateOption) (*patch.Patch, error) {
+func (g *Repository) Generate(ctx context.Context, repo string, opts ...GenerateOption) (*golang.Patch, error) {
 	var cfg generation
 	for _, opt := range opts {
 		opt(&cfg)
@@ -101,7 +101,7 @@ func (g *Repository) Generate(ctx context.Context, repo string, opts ...Generate
 
 	errs := make(chan error)
 
-	pc := make(chan *patch.Patch)
+	pc := make(chan *golang.Patch)
 	go func() {
 		p, err := g.Patch(ctx, os.DirFS(repo), files, cfg.patchOpts...)
 		if err != nil {
@@ -163,10 +163,10 @@ func (g *Repository) Files(ctx context.Context, repo string, opts ...generate.Op
 
 // Patch applies comments to the source code files in a file system. It takes a
 // context.Context, an fs.FS, a <-chan generate.File and zero or more
-// patch.Option arguments. It returns a *patch.Patch and an error.
-func (g *Repository) Patch(ctx context.Context, repo fs.FS, files <-chan generate.File, opts ...patch.Option) (*patch.Patch, error) {
-	opts = append([]patch.Option{patch.WithLogger(g.log.Handler())}, opts...)
-	p := patch.New(repo, opts...)
+// golang.Option arguments. It returns a *golang.Patch and an error.
+func (g *Repository) Patch(ctx context.Context, repo fs.FS, files <-chan generate.File, opts ...golang.PatchOption) (*golang.Patch, error) {
+	opts = append([]golang.PatchOption{golang.WithLogger(g.log.Handler())}, opts...)
+	p := golang.NewPatch(repo, opts...)
 
 	for file := range files {
 		for _, gen := range file.Generations {

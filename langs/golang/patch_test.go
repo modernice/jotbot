@@ -1,4 +1,4 @@
-package patch_test
+package golang_test
 
 import (
 	"io/fs"
@@ -11,14 +11,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/jotbot/git"
 	"github.com/modernice/jotbot/internal/tests"
-	"github.com/modernice/jotbot/patch"
+	"github.com/modernice/jotbot/langs/golang"
 	"github.com/psanford/memfs"
 )
 
 var _ interface {
 	git.Patch
 	git.Committer
-} = (*patch.Patch)(nil)
+} = (*golang.Patch)(nil)
 
 var dryRunTests = []struct {
 	name       string
@@ -106,7 +106,7 @@ func TestPatch_DryRun(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			p := patch.New(sourceFS)
+			p := golang.NewPatch(sourceFS)
 
 			if err := p.Comment("foo.go", tt.identifier, tt.comment); err != nil {
 				t.Log(input)
@@ -134,7 +134,7 @@ func TestPatch_DryRun(t *testing.T) {
 func TestPatch_DryRun_realFiles(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "patch")
 	tests.WithRepo("basic", root, func(repoFS fs.FS) {
-		p := patch.New(repoFS)
+		p := golang.NewPatch(repoFS)
 
 		if err := p.Comment("foo.go", "Foo", "Foo is a function that returns a \"foo\" error."); err != nil {
 			t.Fatal(err)
@@ -193,7 +193,7 @@ is in the middle of the earth of every kind. And it was so.
 func TestPatch_Comment_splitString(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "split-string")
 	tests.WithRepo("basic", root, func(repoFS fs.FS) {
-		p := patch.New(repoFS)
+		p := golang.NewPatch(repoFS)
 
 		if err := p.Comment("foo.go", "Foo", splitStringInput); err != nil {
 			t.Fatal(err)
@@ -211,7 +211,7 @@ func TestPatch_Comment_splitString(t *testing.T) {
 func TestPatch_Comment_duplicateName(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "duplicate-name")
 	tests.WithRepo("duplicate-name", root, func(repoFS fs.FS) {
-		p := patch.New(repoFS)
+		p := golang.NewPatch(repoFS)
 
 		if err := p.Comment("foo.go", "Foo", "Foo is a function."); err != nil {
 			t.Fatal(err)
@@ -239,7 +239,7 @@ func TestPatch_Comment_duplicateName(t *testing.T) {
 func TestPatch_Comment_generics(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generics")
 	tests.WithRepo("generic", root, func(repoFS fs.FS) {
-		p := patch.New(repoFS)
+		p := golang.NewPatch(repoFS)
 
 		if err := p.Comment("foo.go", "Foo", "Foo is a function."); err != nil {
 			t.Fatal(err)
