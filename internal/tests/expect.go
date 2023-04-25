@@ -9,7 +9,6 @@ import (
 	"github.com/andreyvit/diff"
 	"github.com/dave/dst/decorator"
 	"github.com/google/go-cmp/cmp"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
@@ -18,17 +17,32 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+func ExpectFound[Finding interface{ GetIdentifier() string }](t *testing.T, want, got []Finding) {
+	t.Helper()
+
+	less := func(a, b Finding) bool {
+		return a.GetIdentifier() <= b.GetIdentifier()
+	}
+
+	slices.SortFunc(want, less)
+	slices.SortFunc(got, less)
+
+	if !cmp.Equal(want, got) {
+		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))
+	}
+}
+
 // ExpectFindings tests if two find.Findings are equal. It sorts the findings by
 // identifier, then compares the sorted findings using go-cmp/cmp.
-func ExpectFindings(t *testing.T, want, got find.Findings) {
+func ExpectFindings[Findings ~map[string][]Finding, Finding interface{ GetIdentifier() string }](t *testing.T, want, got Findings) {
 	t.Helper()
 
 	want = maps.Clone(want)
 	got = maps.Clone(got)
 
-	sort := func(findings []find.Finding) {
-		slices.SortFunc(findings, func(a, b find.Finding) bool {
-			return a.Identifier <= b.Identifier
+	sort := func(findings []Finding) {
+		slices.SortFunc(findings, func(a, b Finding) bool {
+			return a.GetIdentifier() <= b.GetIdentifier()
 		})
 	}
 

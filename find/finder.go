@@ -40,6 +40,10 @@ type Finding struct {
 	Identifier string
 }
 
+func (f Finding) GetIdentifier() string {
+	return f.Identifier
+}
+
 // String returns a string representation of a Finding. It concatenates the Path
 // and Identifier fields of the Finding with an "@" character in between.
 func (f Finding) String() string {

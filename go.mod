@@ -22,6 +22,7 @@ require (
 )
 
 require (
+	github.com/MakeNowJust/heredoc/v2 v2.0.1 // indirect
 	github.com/dlclark/regexp2 v1.9.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	golang.org/x/mod v0.6.0 // indirect
