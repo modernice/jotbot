@@ -232,7 +232,7 @@ func TestPatch_Comment_duplicateName(t *testing.T) {
 
 		tests.ExpectComment(t, "Foo", "Foo is a function.", strings.NewReader(string(b)))
 		tests.ExpectComment(t, "X.Foo", "Foo is a method of X.", strings.NewReader(string(b)))
-		tests.ExpectComment(t, "*Y.Foo", "Foo is a method of *Y.", strings.NewReader(string(b)))
+		tests.ExpectComment(t, "(*Y).Foo", "Foo is a method of *Y.", strings.NewReader(string(b)))
 	})
 }
 
@@ -245,11 +245,11 @@ func TestPatch_Comment_generics(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := p.Comment("foo.go", "*X.Foo", "Foo is a method of X."); err != nil {
+		if err := p.Comment("foo.go", "(*X).Foo", "Foo is a method of X."); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := p.Comment("foo.go", "*y.Foo", "Foo is a method of *Y."); err != nil {
+		if err := p.Comment("foo.go", "(*y).Foo", "Foo is a method of *Y."); err != nil {
 			t.Fatal(err)
 		}
 
@@ -259,7 +259,7 @@ func TestPatch_Comment_generics(t *testing.T) {
 		}
 
 		tests.ExpectComment(t, "Foo", "Foo is a function.", strings.NewReader(string(b)))
-		tests.ExpectComment(t, "*X.Foo", "Foo is a method of X.", strings.NewReader(string(b)))
-		tests.ExpectComment(t, "*y.Foo", "Foo is a method of *Y.", strings.NewReader(string(b)))
+		tests.ExpectComment(t, "(*X).Foo", "Foo is a method of X.", strings.NewReader(string(b)))
+		tests.ExpectComment(t, "(*y).Foo", "Foo is a method of *Y.", strings.NewReader(string(b)))
 	})
 }

@@ -2,11 +2,14 @@ package nodes
 
 import (
 	"strings"
-	"unicode"
 
 	"github.com/dave/dst"
 	"github.com/modernice/jotbot/internal/slice"
 )
+
+func IsExportedIdentifier(identifier string) bool {
+	return len(identifier) > 0 && identifier != "_" && strings.ToUpper(identifier[:1]) == identifier[:1]
+}
 
 // HasDoc [func] returns a boolean indicating whether a given Go AST node has
 // any associated documentation comments. It takes the Decorations of the node
@@ -42,9 +45,15 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 	switch node := node.(type) {
 	case *dst.FuncDecl:
 		identifier = node.Name.Name
-		exported = isExported(identifier)
 
 		if node.Recv != nil && len(node.Recv.List) > 0 {
+			// if identifier == "Foo" {
+			// 	log.Printf("%#v", node.Recv.List[0].Type)
+			// }
+			// if identifier == "Bar" {
+			// 	log.Printf("%#v", node.Recv.List[0].Type)
+			// }
+			// ident, ok := getIdent(node.Recv.List[0].Type)
 			identifier, _ = methodIdentifier(identifier, node.Recv.List[0].Type)
 		}
 	case *dst.GenDecl:
@@ -60,17 +69,13 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 		case *dst.ValueSpec:
 			identifier = spec.Names[0].Name
 		}
-
-		exported = isExported(identifier)
 	case *dst.TypeSpec:
 		identifier = node.Name.Name
-		exported = isExported(identifier)
 	case *dst.ValueSpec:
 		identifier = node.Names[0].Name
-		exported = isExported(identifier)
 	}
 
-	return
+	return identifier, IsExportedIdentifier(identifier)
 }
 
 // Find searches for a Go AST [dst.Node] with the given identifier in the root
@@ -102,17 +107,19 @@ func FindT[Node dst.Node](identifier string, root dst.Node) (Node, bool) {
 
 func methodIdentifier(identifier string, recv dst.Expr) (string, bool) {
 	switch recv := recv.(type) {
-	case *dst.Ident:
-		return recv.Name + "." + identifier, true
 	case *dst.StarExpr:
-		if ident, ok := getStructIdent(recv.X); ok {
-			return "*" + ident.Name + "." + identifier, true
+		if ident, ok := getIdent(recv.X); ok {
+			return "(*" + ident.Name + ")." + identifier, true
+		}
+	default:
+		if ident, ok := getIdent(recv); ok {
+			return ident.Name + "." + identifier, true
 		}
 	}
 	return "", false
 }
 
-func getStructIdent(expr dst.Expr) (*dst.Ident, bool) {
+func getIdent(expr dst.Expr) (*dst.Ident, bool) {
 	var ident *dst.Ident
 
 	switch e := expr.(type) {
@@ -129,15 +136,4 @@ func getStructIdent(expr dst.Expr) (*dst.Ident, bool) {
 	}
 
 	return ident, true
-}
-
-func isExported(identifier string) bool {
-	if len(identifier) == 0 {
-		return false
-	}
-	runes := []rune(identifier)
-	unexported := len(identifier) > 0 &&
-		unicode.IsLetter(runes[0]) &&
-		strings.ToLower(identifier[:1]) == identifier[:1]
-	return !unexported
 }

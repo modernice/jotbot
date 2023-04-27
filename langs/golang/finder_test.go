@@ -1,200 +1,208 @@
 package golang_test
 
 import (
-	"io/fs"
-	"os"
-	"path/filepath"
+	"context"
 	"testing"
 
-	"github.com/modernice/jotbot/internal/slice"
+	"github.com/MakeNowJust/heredoc/v2"
+	"github.com/modernice/jotbot"
 	"github.com/modernice/jotbot/internal/tests"
 	"github.com/modernice/jotbot/langs/golang"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
-func TestFinder_Uncommented(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "basic")
+var _ jotbot.Finder = (*golang.Finder)(nil)
 
-	tests.WithRepo("basic", root, func(repoFS fs.FS) {
-		f := golang.NewFinder(repoFS)
+func TestFinder_Find(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
 
-		result, err := f.Uncommented()
-		if err != nil {
-			t.Fatal(err)
+		const X = "x"
+
+		var Foo = "foo"
+
+		func Bar() string {
+			return "bar"
 		}
 
-		tests.ExpectFindings(t, golang.Findings{
-			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
-			"bar.go": {
-				{Path: "bar.go", Identifier: "Bar"},
-				{Path: "bar.go", Identifier: "Foo"},
-			},
-			"baz.go": {
-				{Path: "baz.go", Identifier: "*X.Bar"},
-				{Path: "baz.go", Identifier: "X"},
-				{Path: "baz.go", Identifier: "X.Foo"},
-				{Path: "baz.go", Identifier: "Y.Foo"},
-			},
-		}, result)
-	})
-}
+		type Baz struct{}
 
-func TestFinder_Find_onlyGoFiles(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "only-go-files")
-
-	tests.WithRepo("only-go-files", root, func(repoFS fs.FS) {
-		f := golang.NewFinder(repoFS)
-
-		result, err := f.Uncommented()
-		if err != nil {
-			t.Fatalf("find uncommented code: %v", err)
+		func (Baz) Baz() string {
+			return "baz"
 		}
 
-		if _, ok := result["bar.ts"]; ok {
-			t.Fatalf("only Go files should be returned in findings; got 'bar.ts'")
+		type Foobar interface {
+			Foobar() string
 		}
+	`)
 
-		if _, ok := result["foo.go"]; !ok {
-			t.Fatalf("Go files should be returned in findings; got no 'foo.go'")
-		}
+	f := golang.NewFinder()
 
-		tests.ExpectFindings(t, golang.Findings{
-			"foo.go": {{Path: "foo.go", Identifier: "Foo"}},
-		}, result)
-	})
-}
-
-func TestFinder_Uncommented_duplicateName(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "duplicate-name")
-
-	tests.WithRepo("duplicate-name", root, func(repoFS fs.FS) {
-		f := golang.NewFinder(repoFS)
-
-		result, err := f.Uncommented()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		tests.ExpectFindings(t, golang.Findings{
-			"foo.go": {
-				{Path: "foo.go", Identifier: "Foo"},
-				{Path: "foo.go", Identifier: "X"},
-				{Path: "foo.go", Identifier: "Y"},
-				{Path: "foo.go", Identifier: "X.Foo"},
-				{Path: "foo.go", Identifier: "*Y.Foo"},
-			},
-		}, result)
-	})
-}
-
-func TestFinder_Uncommented_generic(t *testing.T) {
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generic")
-
-	tests.WithRepo("generic", root, func(repoFS fs.FS) {
-		f := golang.NewFinder(repoFS)
-
-		result, err := f.Uncommented()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		tests.ExpectFindings(t, golang.Findings{
-			"foo.go": {
-				{Path: "foo.go", Identifier: "Foo"},
-				{Path: "foo.go", Identifier: "X"},
-				{Path: "foo.go", Identifier: "*X.Foo"},
-				{Path: "foo.go", Identifier: "*y.Foo"},
-			},
-		}, result)
-	})
-}
-
-func TestGlob(t *testing.T) {
-	all := []string{
-		"foo.go",
-		"bar.go",
-		"baz.go",
-		"foo/foo.go",
-		"foo/bar.go",
-		"foo/baz.go",
-		"bar/foo.go",
-		"bar/bar.go",
-		"bar/baz.go",
-		"baz/foo.go",
-		"baz/bar.go",
-		"baz/baz.go",
+	findings, err := f.Find(context.Background(), []byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
 	}
 
-	onlyFoo := slice.Filter(all, func(file string) bool {
-		return filepath.Base(file) == "foo.go"
-	})
-	onlyBar := slice.Filter(all, func(file string) bool {
-		return filepath.Base(file) == "bar.go"
-	})
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Identifier: "X", Target: "const 'X'"},
+		{Identifier: "Foo", Target: "variable 'Foo'"},
+		{Identifier: "Bar", Target: "function 'Bar'"},
+		{Identifier: "Baz", Target: "type 'Baz'"},
+		{Identifier: "Baz.Baz", Target: "method 'Baz.Baz'"},
+		{Identifier: "Foobar", Target: "type 'Foobar'"},
+		{Identifier: "Foobar.Foobar", Target: "method 'Foobar.Foobar'"},
+	}, findings)
+}
 
-	cases := []struct {
-		name    string
-		pattern string
-		want    []string
-	}{
-		{
-			name:    "empty pattern",
-			pattern: "",
-			want:    all,
-		},
-		{
-			name:    "only foo.go",
-			pattern: "**/foo.go",
-			want:    onlyFoo,
-		},
-		{
-			name:    "only bar.go",
-			pattern: "**/bar.go",
-			want:    onlyBar,
-		},
-		{
-			name:    "everything within foo/",
-			pattern: "foo/*",
-			want:    []string{"foo/foo.go", "foo/bar.go", "foo/baz.go"},
-		},
-		{
-			name:    "all ba*.go",
-			pattern: "**/ba*.go",
-			want: []string{
-				"bar.go", "baz.go",
-				"foo/bar.go", "foo/baz.go",
-				"bar/bar.go", "bar/baz.go",
-				"baz/bar.go", "baz/baz.go"},
-		},
+func TestFinder_Find_onlyUncommented(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		const Foo = "foo"
+
+		// Bar is a variable.
+		var Bar = "bar"
+
+		func Baz() string {
+			return Foo
+		}
+
+		// Foobar is a struct.
+		type Foobar struct{}
+	`)
+
+	f := golang.NewFinder()
+
+	findings, err := f.Find(context.Background(), []byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
 	}
 
-	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "glob")
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Identifier: "Foo", Target: "const 'Foo'"},
+		{Identifier: "Baz", Target: "function 'Baz'"},
+	}, findings)
+}
 
-	tests.WithRepo("glob", root, func(repoFS fs.FS) {
-		for _, tt := range cases {
-			t.Run(tt.name, func(t *testing.T) {
-				f := golang.NewFinder(repoFS, golang.Glob(tt.pattern))
+type X struct{}
 
-				result, err := f.Uncommented()
-				if err != nil {
-					t.Fatal(err)
-				}
+func TestFinder_Find_pointerReceiver(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
 
-				got := maps.Keys(result)
-				slices.Sort(got)
-				slices.Sort(tt.want)
+		type Foo struct{}
 
-				if len(got) != len(tt.want) {
-					t.Fatalf("got findings for %d files; want %d\nwant files: %v\nfound files: %v", len(got), len(tt.want), tt.want, got)
-				}
-
-				for _, wantFile := range tt.want {
-					if _, ok := result[wantFile]; !ok {
-						t.Errorf("file %q not found in findings", wantFile)
-					}
-				}
-			})
+		func (f *Foo) Foo() string {
+			return "foo"
 		}
-	})
+
+		func (f Foo) Bar() string {
+			return "bar"
+		}
+	`)
+
+	f := golang.NewFinder()
+
+	findings, err := f.Find(context.Background(), []byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
+	}
+
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Identifier: "Foo", Target: "type 'Foo'"},
+		{Identifier: "(*Foo).Foo", Target: "method '(*Foo).Foo'"},
+		{Identifier: "Foo.Bar", Target: "method 'Foo.Bar'"},
+	}, findings)
+}
+
+func TestFinder_Find_generics(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		func Foobar[T any, T2 string](t T, t2 T2) (T, T2) {
+			return t, t2
+		}
+
+		type Foo[T any] struct {
+			Bar T
+		}
+
+		func (f Foo[T]) Foo() T {
+			return f.Bar
+		}
+
+		func (f *Foo[T]) Bar() T {
+			return f.Bar
+		}
+
+		func (*Foo[_]) Baz() string {
+			return "baz"
+		}
+	`)
+
+	f := golang.NewFinder()
+
+	findings, err := f.Find(context.Background(), []byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
+	}
+
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Identifier: "Foobar", Target: "function 'Foobar'"},
+		{Identifier: "Foo", Target: "type 'Foo'"},
+		{Identifier: "Foo.Foo", Target: "method 'Foo.Foo'"},
+		{Identifier: "(*Foo).Bar", Target: "method '(*Foo).Bar'"},
+		{Identifier: "(*Foo).Baz", Target: "method '(*Foo).Baz'"},
+	}, findings)
+}
+
+func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		import "testing"
+
+		func TestFoo() {}
+
+		func TestBar(t *testing.T) {}
+
+		func Foobar() {}
+	`)
+
+	f := golang.NewFinder()
+
+	findings, err := f.Find(context.Background(), []byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
+	}
+
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Identifier: "Foobar", Target: "function 'Foobar'"},
+	}, findings)
+}
+
+func TestFindTests(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		import "testing"
+
+		func TestFoo() {}
+
+		func TestBar(t *testing.T) {}
+
+		func Foobar() {}
+	`)
+
+	f := golang.NewFinder(golang.FindTests(true))
+
+	findings, err := f.Find(context.Background(), []byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
+	}
+
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Identifier: "TestFoo", Target: "function 'TestFoo'"},
+		{Identifier: "TestBar", Target: "function 'TestBar'"},
+		{Identifier: "Foobar", Target: "function 'Foobar'"},
+	}, findings)
 }

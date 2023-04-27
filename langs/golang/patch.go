@@ -166,7 +166,12 @@ func splitMethodIdentifier(identifier string) (recv, method string, ok bool) {
 	if len(parts) != 2 {
 		return "", "", false
 	}
-	return parts[0], parts[1], true
+	recv = parts[0]
+	if strings.HasPrefix(recv, "(*") {
+		recv = recv[2 : len(recv)-1]
+	}
+
+	return recv, parts[1], true
 }
 
 func (p *Patch) parseFile(path string) (*dst.File, error) {
