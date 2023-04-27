@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { findClass, findFunction, findMethod, findVariable } from '../src/nodes'
-import { formatComment, updateNodeComments } from '../src/comments'
+import {
+  findClass,
+  findFunction,
+  findMethod,
+  findNode,
+  findVariable,
+} from '../src/nodes'
+import {
+  formatComment,
+  getInsertPosition,
+  updateNodeComments,
+} from '../src/comments'
 import { heredoc } from '../src/utils'
 import { parseCode } from '../src/parse'
 import { printComment } from '../src'
@@ -90,5 +100,90 @@ describe('updateNodeComments', () => {
        * foo is a method.
        */
     `)
+  })
+})
+
+describe('getInsertPosition', () => {
+  it('returns the correst insert position for comments', () => {
+    const code = heredoc`
+    export function foo() {}
+
+    export interface Foo {
+      foo: string
+      bar(): string
+      baz: () => string
+    }
+
+    export class Bar {
+      foo = 'foo'
+      bar() { return 'bar' }
+      baz = () => 'baz'
+    }
+  `
+
+    const file = parseCode(code)
+
+    expect(
+      getInsertPosition(findNode(file, 'func:foo')!.commentTarget),
+    ).toEqual({
+      line: 0,
+      character: 0,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'iface:Foo')!.commentTarget),
+    ).toEqual({
+      line: 2,
+      character: 0,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'class:Bar')!.commentTarget),
+    ).toEqual({
+      line: 8,
+      character: 0,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'prop:Foo.foo')!.commentTarget),
+    ).toEqual({
+      line: 3,
+      character: 2,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'method:Foo.bar')!.commentTarget),
+    ).toEqual({
+      line: 4,
+      character: 2,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'prop:Foo.baz')!.commentTarget),
+    ).toEqual({
+      line: 5,
+      character: 2,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'prop:Bar.foo')!.commentTarget),
+    ).toEqual({
+      line: 9,
+      character: 2,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'method:Bar.bar')!.commentTarget),
+    ).toEqual({
+      line: 10,
+      character: 2,
+    })
+
+    expect(
+      getInsertPosition(findNode(file, 'prop:Bar.baz')!.commentTarget),
+    ).toEqual({
+      line: 11,
+      character: 2,
+    })
   })
 })

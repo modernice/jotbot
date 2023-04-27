@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { findClass, findFunction, findMethod, findVariable } from '../src/nodes'
 import { heredoc } from '../src/utils'
 import { parseCode } from '../src/parse'

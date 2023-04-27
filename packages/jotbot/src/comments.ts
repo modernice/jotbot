@@ -78,6 +78,10 @@ export function getNodeComments(node: ts.Node) {
   }
 }
 
+export function getInsertPosition(node: ts.Node) {
+  return ts.getLineAndCharacterOfPosition(node.getSourceFile(), node.getStart())
+}
+
 export function updateNodeComments(node: ts.Node, comments: string[]) {
   ts.setSyntheticLeadingComments(node, [
     ...(ts.getSyntheticLeadingComments(node) ?? []),

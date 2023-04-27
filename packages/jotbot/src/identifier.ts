@@ -283,3 +283,15 @@ export function describeIdentifier(
       throw new Error(`Unknown symbol type: ${symbol}`)
   }
 }
+
+export function isRawIdentifier(s: unknown): s is RawIdentifier {
+  return (
+    typeof s === 'string' &&
+    (s.startsWith('var:') ||
+      s.startsWith('func:') ||
+      s.startsWith('class:') ||
+      s.startsWith('iface:') ||
+      s.startsWith('method:') ||
+      s.startsWith('prop:'))
+  )
+}

@@ -9,15 +9,14 @@ import {
 } from '..'
 import { createLogger } from './logger'
 import { commaSeparated } from './utils'
+import type { WithSourceOption, WithVerboseOption } from './options'
+import { verboseOption } from './options'
+import { print } from './print'
 
-interface Options extends FinderOptions {
-  path?: string
-  verbose?: boolean
+interface Options extends FinderOptions, WithSourceOption, WithVerboseOption {
   format?: 'json' | 'list'
   json?: boolean
 }
-
-const { log: print } = createLogger(process.stdout)
 
 export function withFindCmd(program: Command) {
   program
@@ -37,7 +36,7 @@ export function withFindCmd(program: Command) {
       'Output findings as JSON (same as `--format json`)',
       false,
     )
-    .option('-v, --verbose', 'Verbose output', false)
+    .option(...verboseOption)
     .addHelpText(
       'after',
       '\nDefault --symbols:\n  ["func", "var", "class", "method", "iface", "prop"]',
