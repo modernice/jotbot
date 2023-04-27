@@ -2,7 +2,6 @@ import ts from 'typescript'
 import type { RawIdentifier } from './identifier'
 import { parseIdentifier } from './identifier'
 import { findNode } from './nodes'
-import { cloneFile } from './parse'
 import { printComment } from './print'
 
 export type Comments = Record<RawIdentifier, string>
@@ -15,25 +14,19 @@ export function getRawIdentifiers(comments: Comments) {
   return Object.keys(comments) as Array<keyof Comments>
 }
 
-export function applyComments(file: ts.SourceFile, comments: Comments) {
-  const patched = cloneFile(file)
-
-  updateComments(patched, comments)
-
-  return {
-    patched,
-  }
-}
-
-function updateComments(file: ts.SourceFile, comments: Record<string, string>) {
+export function patchComments(
+  file: ts.SourceFile,
+  comments: Record<string, string>,
+) {
   const fileName = file.fileName
   const identifiers = getRawIdentifiers(comments)
 
   for (const identifier of identifiers) {
     const comment = formatComment(comments[identifier])
 
-    if (!updateComment(file, identifier, comment))
+    if (!updateComment(file, identifier, comment)) {
       throw new Error(`Could not find identifier ${identifier} in ${fileName}`)
+    }
   }
 }
 

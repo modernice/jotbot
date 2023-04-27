@@ -1,18 +1,13 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/alecthomas/kong"
-	"github.com/modernice/jotbot"
-	"github.com/modernice/jotbot/generate"
-	"github.com/modernice/jotbot/git"
 	"github.com/modernice/jotbot/internal/nodes"
-	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/services/openai"
 	"golang.org/x/exp/slog"
 )
@@ -61,7 +56,7 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		level = slog.LevelDebug
 	}
 	logHandler := slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)
-	log := slog.New(logHandler)
+	// log := slog.New(logHandler)
 
 	openaiOpts := []openai.Option{
 		openai.WithLogger(logHandler),
@@ -76,52 +71,52 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		}, true))
 	}
 
-	svc := openai.New(cfg.APIKey, openaiOpts...)
+	// svc := openai.New(cfg.APIKey, openaiOpts...)
 
-	opts := []generate.Option{
-		generate.Limit(cfg.Generate.Limit),
-		generate.FileLimit(cfg.Generate.FileLimit),
-		generate.Override(cfg.Generate.Override),
-	}
-	if len(cfg.Generate.Filter) > 0 {
-		opts = append(opts, generate.FindWith(golang.Glob(cfg.Generate.Filter...)))
-	}
+	// opts := []generate.Option{
+	// 	generate.Limit(cfg.Generate.Limit),
+	// 	generate.FileLimit(cfg.Generate.FileLimit),
+	// 	generate.Override(cfg.Generate.Override),
+	// }
+	// if len(cfg.Generate.Filter) > 0 {
+	// 	// opts = append(opts, generate.FindWith(golang.Glob(cfg.Generate.Filter...)))
+	// }
 
-	docs := jotbot.New(svc, jotbot.WithLogger(logHandler))
+	// docs := jotbot.New(svc, jotbot.WithLogger(logHandler))
 
-	patch, err := docs.Generate(
-		context.Background(),
-		cfg.Generate.Root,
-		jotbot.GenerateWith(opts...),
-		jotbot.PatchWith(golang.Override(cfg.Generate.Override)),
-	)
-	if err != nil {
-		return err
-	}
+	// patch, err := docs.Generate(
+	// 	context.Background(),
+	// 	cfg.Generate.Root,
+	// 	jotbot.GenerateWith(opts...),
+	// 	jotbot.PatchWith(golang.Override(cfg.Generate.Override)),
+	// )
+	// if err != nil {
+	// 	return err
+	// }
 
-	if cfg.Generate.DryRun {
-		patchResult, err := patch.DryRun()
-		if err != nil {
-			return fmt.Errorf("dry run: %w", err)
-		}
-		printDryRun(patchResult)
-		return nil
-	}
+	// if cfg.Generate.DryRun {
+	// 	patchResult, err := patch.DryRun()
+	// 	if err != nil {
+	// 		return fmt.Errorf("dry run: %w", err)
+	// 	}
+	// 	printDryRun(patchResult)
+	// 	return nil
+	// }
 
-	if cfg.Generate.Commit {
-		grepo := git.Repo(cfg.Generate.Root, git.WithLogger(logHandler))
-		if err := grepo.Commit(patch, git.Branch(cfg.Generate.Branch)); err != nil {
-			return fmt.Errorf("commit patch: %w", err)
-		}
+	// if cfg.Generate.Commit {
+	// 	grepo := git.Repo(cfg.Generate.Root, git.WithLogger(logHandler))
+	// 	if err := grepo.Commit(patch, git.Branch(cfg.Generate.Branch)); err != nil {
+	// 		return fmt.Errorf("commit patch: %w", err)
+	// 	}
 
-		log.Info("Done.")
+	// 	log.Info("Done.")
 
-		return nil
-	}
+	// 	return nil
+	// }
 
-	if err := patch.Apply(cfg.Generate.Root); err != nil {
-		return fmt.Errorf("apply patch: %w", err)
-	}
+	// if err := patch.Apply(cfg.Generate.Root); err != nil {
+	// 	return fmt.Errorf("apply patch: %w", err)
+	// }
 
 	return nil
 }

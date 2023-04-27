@@ -12,10 +12,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/modernice/jotbot"
 	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
 	"golang.org/x/exp/slog"
 )
+
+var _ (jotbot.Finder) = (*Finder)(nil)
 
 const (
 	Var      = Symbol("var")
@@ -42,17 +45,6 @@ type finderOptionFunc func(*Finder)
 
 func (opt finderOptionFunc) applyFinder(s *Finder) {
 	opt(s)
-}
-
-type Finding struct {
-	Identifier string `json:"identifier"`
-
-	// Natural language description of the identifier, e.g. "function 'foo' of class 'Foo'"
-	Target string `json:"target"`
-}
-
-func (f Finding) GetIdentifier() string {
-	return f.Identifier
 }
 
 func Symbols(symbols ...Symbol) FinderOption {
@@ -90,9 +82,9 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-type findings map[string][]Finding
+type findings map[string][]jotbot.Finding
 
-func (f *Finder) Find(ctx context.Context, code []byte) ([]Finding, error) {
+func (f *Finder) Find(ctx context.Context, code []byte) ([]jotbot.Finding, error) {
 	dir, err := f.createTempFile(code)
 	if err != nil {
 		return nil, err

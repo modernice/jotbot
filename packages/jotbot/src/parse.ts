@@ -1,34 +1,22 @@
 import ts from 'typescript'
-import { printFile } from './print'
 
-export function parseCode(
-  code: string,
-  options?: {
-    fileName?: string
-  },
-) {
+export function parseCode(code: string, options?: { fileName?: string }) {
   return createSourceFile(options?.fileName ?? 'example.ts', code)
 }
 
 export function createSourceFile(filename: string, content: string) {
-  return ts.createSourceFile(
-    filename,
-    content,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  )
+  return ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, true)
 }
 
-export function readFile(fileName: string) {
-  const content = ts.sys.readFile(fileName)
-  if (!content)
-    throw new Error(`Could not read ${fileName}`)
-
-  return createSourceFile(fileName, content)
+export function readSource(file: string) {
+  const content = ts.sys.readFile(file, 'utf8')
+  if (!content) {
+    throw new Error(`Could not read ${file}`)
+  }
+  return content
 }
 
-export function cloneFile(file: ts.SourceFile) {
-  const content = printFile(file)
-  return createSourceFile(file.fileName, content)
+export function readFile(file: string) {
+  const content = readSource(file)
+  return createSourceFile(file, content)
 }

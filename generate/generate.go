@@ -4,12 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"runtime"
-	"sync"
-	"sync/atomic"
 
-	"github.com/modernice/jotbot/internal"
-	"github.com/modernice/jotbot/langs/golang"
 	"golang.org/x/exp/slog"
 )
 
@@ -20,6 +15,24 @@ import (
 // should be generated, as well as the files in which it appears.
 type Service interface {
 	GenerateDoc(Context) (string, error)
+}
+
+type Finding struct {
+	Identifier string
+
+	// Natural language description of the finding (e.g. "function 'foo' of class 'Foo'").
+	Target string
+}
+
+func (f Finding) GetIdentifier() string {
+	return f.Identifier
+}
+
+func (f Finding) String() string {
+	if f.Target != "" {
+		return f.Target
+	}
+	return f.Identifier
 }
 
 // Context [Context](https://golang.org/pkg/context/) is an interface that
@@ -121,23 +134,23 @@ func Override(override bool) Option {
 	}
 }
 
-// FindWith returns an Option that can be passed to Generator.Generate to
-// configure the Find operation used to identify code elements for documentation
-// generation. The Option takes one or more golang.Options from the
-// "github.com/modernice/jotbot/find" package.
-func FindWith(opts ...golang.FinderOption) Option {
-	return func(g *generation) {
-		g.findOpts = append(g.findOpts, opts...)
-	}
-}
+// // FindWith returns an Option that can be passed to Generator.Generate to
+// // configure the Find operation used to identify code elements for documentation
+// // generation. The Option takes one or more golang.Options from the
+// // "github.com/modernice/jotbot/find" package.
+// func FindWith(opts ...golang.FinderOption) Option {
+// 	return func(g *generation) {
+// 		g.findOpts = append(g.findOpts, opts...)
+// 	}
+// }
 
 type generation struct {
 	limit     int
 	fileLimit int
 	footer    string
 	override  bool
-	findOpts  []golang.FinderOption
-	log       *slog.Logger
+	// findOpts  []golang.FinderOption
+	log *slog.Logger
 }
 
 // Generate generates documentation for Go code by analyzing the code in a given
@@ -152,125 +165,126 @@ type generation struct {
 // channels: one that streams all generated files [<-chan File] and one that
 // streams any errors that occurred during generation [<-chan error].
 func (g *Generator) Generate(ctx context.Context, repo fs.FS, opts ...Option) (<-chan File, <-chan error, error) {
-	var cfg generation
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-	if cfg.log == nil {
-		cfg.log = internal.NopLogger()
-	}
+	return nil, nil, nil
+	// var cfg generation
+	// for _, opt := range opts {
+	// 	opt(&cfg)
+	// }
+	// if cfg.log == nil {
+	// 	cfg.log = internal.NopLogger()
+	// }
 
-	findOpts := append([]golang.FinderOption{golang.WithLogger(cfg.log.Handler())}, cfg.findOpts...)
+	// findOpts := append([]golang.FinderOption{golang.WithLogger(cfg.log.Handler())}, cfg.findOpts...)
 
-	var (
-		result golang.Findings
-		err    error
-	)
+	// var (
+	// 	result Findings
+	// 	err    error
+	// )
 
-	if cfg.override {
-		result, err = golang.NewFinder(repo, findOpts...).All()
-	} else {
-		result, err = golang.NewFinder(repo, findOpts...).Uncommented()
-	}
-	if err != nil {
-		return nil, nil, fmt.Errorf("find identifiers: %w", err)
-	}
+	// if cfg.override {
+	// 	result, err = golang.NewFinder(repo, findOpts...).All()
+	// } else {
+	// 	result, err = golang.NewFinder(repo, findOpts...).Uncommented()
+	// }
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("find identifiers: %w", err)
+	// }
 
-	files, errs := make(chan File), make(chan error)
+	// files, errs := make(chan File), make(chan error)
 
-	ctx, cancel := context.WithCancel(ctx)
+	// ctx, cancel := context.WithCancel(ctx)
 
-	var (
-		nFiles     int64
-		nGenerated int64
-	)
+	// var (
+	// 	nFiles     int64
+	// 	nGenerated int64
+	// )
 
-	canGenerate := func() bool {
-		ng := atomic.LoadInt64(&nGenerated)
-		if cfg.limit > 0 && ng >= int64(cfg.limit) {
-			return false
-		}
-		return true
-	}
+	// canGenerate := func() bool {
+	// 	ng := atomic.LoadInt64(&nGenerated)
+	// 	if cfg.limit > 0 && ng >= int64(cfg.limit) {
+	// 		return false
+	// 	}
+	// 	return true
+	// }
 
-	onGenerated := func() { atomic.AddInt64(&nGenerated, 1) }
+	// onGenerated := func() { atomic.AddInt64(&nGenerated, 1) }
 
-	push := func(file string, gens []Generation) bool {
-		select {
-		case <-ctx.Done():
-			return false
-		case files <- File{file, gens}:
-			atomic.AddInt64(&nFiles, 1)
-			return true
-		}
-	}
+	// push := func(file string, gens []Generation) bool {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		return false
+	// 	case files <- File{file, gens}:
+	// 		atomic.AddInt64(&nFiles, 1)
+	// 		return true
+	// 	}
+	// }
 
-	workers := runtime.NumCPU()
-	if cfg.fileLimit > 0 && cfg.fileLimit < workers {
-		cfg.log.Debug(fmt.Sprintf("File limit (%d) is lower than number of workers (%d). Reducing workers to %d.", cfg.fileLimit, workers, cfg.fileLimit))
-		workers = cfg.fileLimit
-	}
+	// workers := runtime.NumCPU()
+	// if cfg.fileLimit > 0 && cfg.fileLimit < workers {
+	// 	cfg.log.Debug(fmt.Sprintf("File limit (%d) is lower than number of workers (%d). Reducing workers to %d.", cfg.fileLimit, workers, cfg.fileLimit))
+	// 	workers = cfg.fileLimit
+	// }
 
-	queue := make(chan string)
-	var wg sync.WaitGroup
-	wg.Add(workers)
+	// queue := make(chan string)
+	// var wg sync.WaitGroup
+	// wg.Add(workers)
 
-	go func() {
-		defer cancel()
-		wg.Wait()
-		close(files)
-		close(errs)
-	}()
+	// go func() {
+	// 	defer cancel()
+	// 	wg.Wait()
+	// 	close(files)
+	// 	close(errs)
+	// }()
 
-	go func() {
-		defer close(queue)
-		for file := range result {
-			select {
-			case <-ctx.Done():
-				return
-			case queue <- file:
-			}
-		}
-	}()
+	// go func() {
+	// 	defer close(queue)
+	// 	for file := range result {
+	// 		select {
+	// 		case <-ctx.Done():
+	// 			return
+	// 		case queue <- file:
+	// 		}
+	// 	}
+	// }()
 
-	cfg.log.Debug(fmt.Sprintf("Generating docs using %d workers ...", workers))
+	// cfg.log.Debug(fmt.Sprintf("Generating docs using %d workers ...", workers))
 
-	// root context is only used to create child contexts
-	rootGenCtx, err := newCtx(ctx, repo, "", "")
-	if err != nil {
-		return nil, nil, fmt.Errorf("create generation context: %w", err)
-	}
+	// // root context is only used to create child contexts
+	// rootGenCtx, err := newCtx(ctx, repo, "", "")
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("create generation context: %w", err)
+	// }
 
-	for i := 0; i < workers; i++ {
-		go func() {
-			defer wg.Done()
-			for file := range queue {
-				gens, err := g.generateFile(rootGenCtx, ctx, file, result[file], repo, cfg, canGenerate, onGenerated)
-				if err != nil {
-					cfg.log.Debug(fmt.Sprintf("generate %s: %v", file, err))
-					cfg.log.Warn(fmt.Sprintf("Generation of %s failed. Skipping.", file))
-					continue
-				}
+	// for i := 0; i < workers; i++ {
+	// 	go func() {
+	// 		defer wg.Done()
+	// 		for file := range queue {
+	// 			gens, err := g.generateFile(rootGenCtx, ctx, file, result[file], repo, cfg, canGenerate, onGenerated)
+	// 			if err != nil {
+	// 				cfg.log.Debug(fmt.Sprintf("generate %s: %v", file, err))
+	// 				cfg.log.Warn(fmt.Sprintf("Generation of %s failed. Skipping.", file))
+	// 				continue
+	// 			}
 
-				if !push(file, gens) {
-					return
-				}
+	// 			if !push(file, gens) {
+	// 				return
+	// 			}
 
-				if n := atomic.LoadInt64(&nFiles); cfg.fileLimit > 0 && n >= int64(cfg.fileLimit) {
-					return
-				}
-			}
-		}()
-	}
+	// 			if n := atomic.LoadInt64(&nFiles); cfg.fileLimit > 0 && n >= int64(cfg.fileLimit) {
+	// 				return
+	// 			}
+	// 		}
+	// 	}()
+	// }
 
-	return files, errs, nil
+	// return files, errs, nil
 }
 
 func (g *Generator) generateFile(
 	ctx *genCtx,
 	parent context.Context,
 	file string,
-	findings []golang.Finding,
+	findings []Finding,
 	repo fs.FS,
 	cfg generation,
 	canGenerate func() bool,
@@ -303,15 +317,16 @@ func (g *Generator) generateFile(
 	return generations, nil
 }
 
-func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, finding golang.Finding) (*genCtx, error) {
-	if ctx == nil {
-		return newCtx(parent, repo, finding.Path, finding.Identifier)
-	}
-	return ctx.new(parent, finding.Path, finding.Identifier), nil
+func (g *Generator) context(ctx *genCtx, parent context.Context, repo fs.FS, finding Finding) (*genCtx, error) {
+	return nil, nil
+	// if ctx == nil {
+	// 	return newCtx(parent, repo, finding.Path, finding.Identifier)
+	// }
+	// return ctx.new(parent, finding.Path, finding.Identifier), nil
 }
 
-func (g *Generator) generateFinding(ctx *genCtx, cfg generation, finding golang.Finding) (Generation, error) {
-	cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
+func (g *Generator) generateFinding(ctx *genCtx, cfg generation, finding Finding) (Generation, error) {
+	// cfg.log.Info("Generating docs ...", "path", finding.Path, "identifier", finding.Identifier)
 
 	doc, err := g.svc.GenerateDoc(ctx)
 	if err != nil {
@@ -323,7 +338,7 @@ func (g *Generator) generateFinding(ctx *genCtx, cfg generation, finding golang.
 	}
 
 	return Generation{
-		File:       finding.Path,
+		// File:       finding.Path,
 		Identifier: finding.Identifier,
 		Doc:        doc,
 	}, nil

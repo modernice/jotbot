@@ -5,9 +5,6 @@
   "author": "Saman Hosseini <bounoable@gmail.com>",
   "license": "MIT",
   "keywords": [],
-  "bin": {
-    "jotbot-es": "./bin/jotbot-es.mjs"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,14 +18,17 @@
     },
     "./package.json": "./package.json"
   },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "jotbot-es": "./bin/jotbot-es.mjs"
+  },
   "files": [
     "dist",
     "package.json",
     "LICENSE"
   ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "vitest",
     "play": "tsx ./src/play.ts",
@@ -38,9 +38,7 @@
   },
   "dependencies": {
     "commander": "^10.0.1",
-    "consola": "^3.1.0",
-    "minimatch": "^9.0.0",
-    "typescript": "^5.0.4"
+    "consola": "^3.1.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.38.5",
@@ -52,6 +50,7 @@
     "lodash": "^4.17.21",
     "pkg-types": "^1.0.2",
     "tsx": "^3.12.6",
+    "typescript": "^5.0.4",
     "vite": "^4.3.1",
     "vite-plugin-dts": "^2.3.0",
     "vitest": "^0.30.1"

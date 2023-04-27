@@ -3,8 +3,7 @@ import { findClass, findFunction, findMethod, findVariable } from '../src/nodes'
 import { formatComment, updateNodeComments } from '../src/comments'
 import { heredoc } from '../src/utils'
 import { parseCode } from '../src/parse'
-import { printFile } from '../src/print'
-import { withFixture } from './testutils'
+import { printComment } from '../src'
 
 describe('updateNodeComments', () => {
   it("puts the comment before an 'export const' variable declaration", () => {
@@ -21,13 +20,10 @@ describe('updateNodeComments', () => {
 
     updateNodeComments(commentTarget, [formatComment("foo is always 'bar'.")])
 
-    const text = printFile(file)
-
-    expect(text).toBe(heredoc.withNewline`
+    expect(printComment(commentTarget)).toBe(heredoc`
       /**
        * foo is always 'bar'.
        */
-      export const foo = 'bar';
     `)
   })
 
@@ -45,13 +41,10 @@ describe('updateNodeComments', () => {
 
     updateNodeComments(commentTarget, [formatComment('foo is a function.')])
 
-    const text = printFile(file)
-
-    expect(text).toBe(heredoc.withNewline`
+    expect(printComment(commentTarget)).toBe(heredoc`
       /**
        * foo is a function.
        */
-      export function foo() { }
     `)
   })
 
@@ -69,14 +62,10 @@ describe('updateNodeComments', () => {
 
     updateNodeComments(commentTarget, [formatComment('Foo is a class.')])
 
-    const text = printFile(file)
-
-    expect(text).toBe(heredoc.withNewline`
+    expect(printComment(commentTarget)).toBe(heredoc`
       /**
        * Foo is a class.
        */
-      export class Foo {
-      }
     `)
   })
 
@@ -96,93 +85,10 @@ describe('updateNodeComments', () => {
 
     updateNodeComments(commentTarget, [formatComment('foo is a method.')])
 
-    const text = printFile(file)
-
-    expect(text).toBe(heredoc.withNewline`
-      export class Foo {
-          /**
-           * foo is a method.
-           */
-          foo() { }
-      }
+    expect(printComment(commentTarget)).toBe(heredoc`
+      /**
+       * foo is a method.
+       */
     `)
-  })
-})
-
-describe('applyComments', () => {
-  it('applies variable comments', () => {
-    withFixture('basic', ({ testPatch }) => {
-      testPatch('foo.ts', {
-        'var:foobar': {
-          comment: 'foobar is a const string.',
-          want: heredoc`
-            /**
-             * foobar is a const string.
-             */
-          `,
-        },
-      })
-    })
-  })
-
-  it('applies function comments', () => {
-    withFixture('basic', ({ testPatch }) => {
-      testPatch('foo.ts', {
-        'func:foo': {
-          comment: 'foo is a function that returns "foo".',
-          want: heredoc`
-            /**
-             * foo is a function that returns "foo".
-             */
-          `,
-        },
-      })
-    })
-  })
-
-  it('applies class comments', () => {
-    withFixture('basic', ({ testPatch }) => {
-      testPatch('bar.ts', {
-        'class:Bar': {
-          comment: 'Bar is a class that has a method bar.',
-          want: heredoc`
-            /**
-             * Bar is a class that has a method bar.
-             */
-          `,
-        },
-        'method:Bar.bar': {
-          comment: 'bar is a method that returns "bar".',
-          want: heredoc`
-            /**
-             * bar is a method that returns "bar".
-             */
-          `,
-        },
-      })
-    })
-  })
-
-  it('applies interface comments', () => {
-    withFixture('iface', ({ testPatch }) => {
-      testPatch('foo.ts', {
-        'iface:Foo': {
-          comment: 'Foo is an interface.',
-          want: heredoc`
-            /**
-             * Foo is an interface.
-             */
-          `,
-        },
-        'method:Foo.foo': {
-          comment: 'foo is a method that returns a string.',
-          want: heredoc`
-            /**
-             * foo is a method that returns a string.
-             */
-          `,
-        },
-      })
-    })
   })
 })

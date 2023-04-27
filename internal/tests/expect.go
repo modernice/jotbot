@@ -39,7 +39,7 @@ func ExpectFound[Finding interface{ GetIdentifier() string }](t *testing.T, want
 	slices.SortFunc(got, less)
 
 	if !cmp.Equal(want, got) {
-		t.Fatalf("unexpected findings:\n%s", cmp.Diff(want, got))
+		t.Fatalf("unexpected findings:\n%s\n\nwant:\n%v\n\ngot:\n%v", cmp.Diff(want, got), want, got)
 	}
 }
 

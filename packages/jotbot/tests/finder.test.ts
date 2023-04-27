@@ -1,249 +1,137 @@
 import { describe, it } from 'vitest'
 import { createFinder } from '../src/finder'
-import { symbolTypes } from '../src/symbols'
-import { fixtureRoot } from './fixtures'
-import {
-  expectFiles,
-  expectFindings,
-  expectNoFiles,
-  expectNotFound,
-  without,
-} from './testutils'
+import { SymbolType, symbolTypes } from '../src/symbols'
+import { expectFindings } from './testutils'
+import { heredoc } from '../src/utils'
+import { RawIdentifier } from '../src'
 
 describe('finder', () => {
   it('finds uncommented types', () => {
-    const root = fixtureRoot('basic')
-    const { findUncommented } = createFinder(root)
+    const code = heredoc`
+      export var foo = 'foo'
+      export const bar = 'bar'
+      export function baz() {}
+      export const foobar = () => {}
+      export interface Foo {
+        foo: string
+        bar(): string
+        baz: () => string
+      }
+      export class Bar {
+        foo = 'foo'
+        bar() { return 'bar' }
+        baz = () => 'baz'
+      }
+    `
+    const { find } = createFinder()
 
-    const nodes = findUncommented()
+    const findings = find(code)
 
-    expectFindings(nodes, {
-      'foo.ts': ['var:foobar', 'func:foo'],
-      'bar.ts': ['class:Bar', 'method:Bar.bar'],
-      'baz/baz.ts': ['var:baz', 'func:foobar'],
-    })
-  })
-
-  it("doesn't find unexported types", () => {
-    const root = fixtureRoot('unexported')
-    const { findUncommented } = createFinder(root)
-
-    const nodes = findUncommented()
-
-    expectFindings(nodes, {
-      'foo.ts': ['class:Foo', 'func:baz'],
-    })
-
-    expectNotFound(nodes, ['class:Bar', 'func:baz.foobar', 'method:Foo.foo'])
-  })
-
-  it('supports glob include patterns', () => {
-    const root = fixtureRoot('tree')
-    const { findUncommented } = createFinder(root, {
-      include: ['**/foo.ts'],
-    })
-
-    const nodes = findUncommented()
-
-    expectFiles(nodes, [
-      'foo/foo/foo.ts',
-      'foo/bar/foo.ts',
-      'foo/baz/foo.ts',
-      'bar/foo/foo.ts',
-      'bar/bar/foo.ts',
-      'bar/baz/foo.ts',
-      'baz/foo/foo.ts',
-      'baz/bar/foo.ts',
-      'baz/baz/foo.ts',
-    ])
-  })
-
-  it('supports multiple glob include patterns', () => {
-    const root = fixtureRoot('tree')
-    const { findUncommented } = createFinder(root, {
-      include: ['**/foo.ts', '**/bar.ts'],
-    })
-
-    const nodes = findUncommented()
-
-    expectFiles(nodes, [
-      'foo/foo/foo.ts',
-      'foo/bar/foo.ts',
-      'foo/baz/foo.ts',
-      'bar/foo/foo.ts',
-      'bar/bar/foo.ts',
-      'bar/baz/foo.ts',
-      'baz/foo/foo.ts',
-      'baz/bar/foo.ts',
-      'baz/baz/foo.ts',
-      'foo/foo/bar.ts',
-      'foo/bar/bar.ts',
-      'foo/baz/bar.ts',
-      'bar/foo/bar.ts',
-      'bar/bar/bar.ts',
-      'bar/baz/bar.ts',
-      'baz/foo/bar.ts',
-      'baz/bar/bar.ts',
-      'baz/baz/bar.ts',
-    ])
-  })
-
-  it('excludes test files by default', () => {
-    const root = fixtureRoot('test-files')
-    const { findUncommented } = createFinder(root)
-
-    const nodes = findUncommented()
-
-    expectFiles(nodes, ['foo.ts'])
-    expectNoFiles(nodes, ['foo.test.ts'])
-  })
-
-  it('excludes d.ts files', () => {
-    const root = fixtureRoot('dts')
-    const { findUncommented } = createFinder(root)
-
-    const nodes = findUncommented()
-
-    expectFiles(nodes, ['foo.ts'])
-    expectNoFiles(nodes, ['foo.d.ts'])
-  })
-
-  it('supports glob exclude patterns', () => {
-    const root = fixtureRoot('tree')
-    const { findUncommented } = createFinder(root, {
-      exclude: ['**/{foo,baz}.ts'],
-    })
-
-    const nodes = findUncommented()
-
-    expectFiles(nodes, [
-      'foo/foo/bar.ts',
-      'foo/bar/bar.ts',
-      'foo/baz/bar.ts',
-      'bar/foo/bar.ts',
-      'bar/bar/bar.ts',
-      'bar/baz/bar.ts',
-      'baz/foo/bar.ts',
-      'baz/bar/bar.ts',
-      'baz/baz/bar.ts',
-    ])
-  })
-
-  it('finds interface properties', () => {
-    const root = fixtureRoot('iface')
-    const { findUncommented } = createFinder(root, {
-      include: ['foo.ts'],
-    })
-
-    const nodes = findUncommented()
-
-    expectFindings(nodes, {
-      'foo.ts': [
-        'iface:Foo',
-        'method:Foo.foo',
-        'prop:Foo.bar',
-        'prop:Foo.foobar',
-      ],
-    })
-  })
-
-  it('finds class properties', () => {
-    const root = fixtureRoot('iface')
-    const { findUncommented } = createFinder(root, {
-      include: ['bar.ts'],
-    })
-
-    const nodes = findUncommented()
-
-    expectFindings(nodes, {
-      'bar.ts': ['class:Foo', 'prop:Foo.foo', 'prop:Foo.foobar'],
-    })
-  })
-
-  describe(`'symbols' option`, () => {
-    const root = fixtureRoot('exclude-symbols')
-
-    const all = [
-      'iface:Foo',
-      'method:Foo.foo',
-      'class:Bar',
-      'method:Bar.foo',
-      'var:foobar',
-      'func:foo',
+    expectFindings(findings, [
+      'var:foo',
       'var:bar',
-    ] as const
+      'func:baz',
+      'var:foobar',
+      'iface:Foo',
+      'prop:Foo.foo',
+      'method:Foo.bar',
+      'prop:Foo.baz',
+      'class:Bar',
+      'prop:Bar.foo',
+      'method:Bar.bar',
+      'prop:Bar.baz',
+    ])
+  })
 
-    const tests = [
-      {
-        symbols: symbolTypes,
-        want: all,
-      },
-      {
-        symbols: [],
-        want: all,
-      },
-      {
-        symbols: without(['class'], symbolTypes),
-        want: without(['class:Bar'], all),
-      },
-      {
-        symbols: without(['var'], symbolTypes),
-        want: without(['var:foobar', 'var:bar'], all),
-      },
-      {
-        symbols: without(['func'], symbolTypes),
-        want: without(['func:foo'], all),
-      },
-      {
-        symbols: without(['method'], symbolTypes),
-        want: without(['method:Foo.foo', 'method:Bar.foo'], all),
-      },
-      {
-        symbols: without(['iface'], symbolTypes),
-        want: without(['iface:Foo'], all),
-      },
-      {
-        symbols: without(['class', 'var'], symbolTypes),
-        want: without(['class:Bar', 'var:foobar', 'var:bar'], all),
-      },
-      {
-        symbols: without(['class', 'var', 'func'], symbolTypes),
-        want: without(['class:Bar', 'var:foobar', 'var:bar', 'func:foo'], all),
-      },
-      {
-        symbols: without(['class', 'var', 'func', 'method'], symbolTypes),
-        want: without(
-          [
-            'class:Bar',
-            'var:foobar',
-            'var:bar',
-            'func:foo',
-            'method:Foo.foo',
-            'method:Bar.foo',
-          ],
-          all,
-        ),
-      },
-    ] as const
+  it("doesn't find unexported symbols", () => {
+    const code = heredoc`
+      var foo = 'foo'
+      const bar = 'bar'
+      function baz() {}
+      const foobar = () => {}
+      interface Foo {
+        foo: string
+      }
+      class Bar {
+        foo = 'foo'
+      }
+      export const hello = 'hello'
+    `
 
-    for (const [i, tt] of tests.entries()) {
-      it(`allows configuring the symbols types to search for (#${i})`, () => {
-        const { findUncommented } = createFinder(root, { symbols: tt.symbols })
-        const nodes = findUncommented()
+    const { find } = createFinder()
 
-        expectFindings(nodes, { 'foo.ts': tt.want })
-      })
+    const findings = find(code)
+
+    expectFindings(findings, ['var:hello'])
+  })
+})
+
+describe(`'symbols' option`, () => {
+  const code = heredoc`
+    export var foo = 'foo'
+    export const bar = 'bar'
+    export function baz() {}
+    export const foobar = () => {}
+    export interface Foo {
+      foo: string
+      bar(): string
+      baz: () => string
     }
-  })
+    export class Bar {
+      foo = 'foo'
+      bar() { return 'bar' }
+      baz = () => 'baz'
+    }
+  `
 
-  it('works with JS code', () => {
-    const root = fixtureRoot('js')
-    const { findUncommented } = createFinder(root)
+  const all = [
+    'var:foo',
+    'var:bar',
+    'func:baz',
+    'var:foobar',
+    'iface:Foo',
+    'prop:Foo.foo',
+    'method:Foo.bar',
+    'prop:Foo.baz',
+    'class:Bar',
+    'prop:Bar.foo',
+    'method:Bar.bar',
+    'prop:Bar.baz',
+  ] as RawIdentifier[]
 
-    const nodes = findUncommented()
+  function filter(symbols: SymbolType[]) {
+    return all.filter((id) => symbols.some((sym) => id.startsWith(sym)))
+  }
 
-    expectFindings(nodes, {
-      'foo.mjs': ['func:foo', 'class:Foo', 'prop:Foo.foo', 'method:Foo.foobar'],
+  const tests = [
+    {
+      name: 'finds all symbols by default',
+      symbols: [],
+      expected: all,
+    },
+    {
+      name: 'finds all symbols when all are specified',
+      symbols: symbolTypes,
+      expected: all,
+    },
+    {
+      name: 'finds only specified symbols (1)',
+      symbols: ['var', 'iface', 'class'],
+      expected: filter(['var', 'iface', 'class']),
+    },
+    {
+      name: 'finds only specified symbols (2)',
+      symbols: ['prop', 'method'],
+      expected: filter(['prop', 'method']),
+    },
+  ] as const
+
+  for (const tt of tests) {
+    it(tt.name, () => {
+      const { find } = createFinder({ symbols: tt.symbols })
+      const findings = find(code)
+
+      expectFindings(findings, tt.expected)
     })
-  })
+  }
 })
