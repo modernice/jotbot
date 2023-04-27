@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { findClass, findFunction, findMethod, findVariable } from '../src/nodes'
 import { heredoc } from '../src/utils'
-import { applyComments } from '../src/comments'
 import { parseCode } from '../src/parse'
 import { printSourceFileComments, printSyntheticComments } from '../src/print'
+import { patchComments } from '../src'
 
 describe('findVariable', () => {
-  it('doesn\'t find unexported variables', () => {
+  it("doesn't find unexported variables", () => {
     const code = heredoc`
       const foo = 'foo';
       var bar = 'bar';
@@ -40,7 +40,7 @@ describe('findVariable', () => {
     }
   })
 
-  it('doesn\'t find nested variables within exported functions', () => {
+  it("doesn't find nested variables within exported functions", () => {
     const code = heredoc`
       export function foo() {
         const bar = 'bar';
@@ -54,7 +54,7 @@ describe('findVariable', () => {
     expect(findVariable(file, 'bar')).toBeNull() // not exported
   })
 
-  it('doesn\'t find nested functions within exported functions', () => {
+  it("doesn't find nested functions within exported functions", () => {
     const code = heredoc`
       export function foo() {
         function bar() {}
@@ -69,7 +69,7 @@ describe('findVariable', () => {
 })
 
 describe('findFunction', () => {
-  it('doesn\'t find unexported functions', () => {
+  it("doesn't find unexported functions", () => {
     const code = heredoc`
       function foo() {}
       function bar() {}
@@ -102,7 +102,7 @@ describe('findFunction', () => {
 })
 
 describe('findClass', () => {
-  it('doesn\'t find unexported classes', () => {
+  it("doesn't find unexported classes", () => {
     const code = heredoc`
       class Foo {}
       const Bar = class {};
@@ -147,7 +147,7 @@ describe('findClass', () => {
 })
 
 describe('findMethod', () => {
-  it('doesn\'t find unexported methods', () => {
+  it("doesn't find unexported methods", () => {
     const code = heredoc`
       class Foo {
         foo() {}
@@ -173,7 +173,7 @@ describe('findMethod', () => {
     expect(result).toBeTruthy()
   })
 
-  it('doesn\'t find private methods', () => {
+  it("doesn't find private methods", () => {
     const code = heredoc`
       export class Foo {
         private foo() {}
@@ -232,13 +232,13 @@ describe('printSyntheticComments', () => {
 
     const file = parseCode(code)
 
-    const { patched } = applyComments(file, {
+    patchComments(file, {
       'func:foo': 'foo is a function.',
       'class:Bar': 'Bar is a class.',
     })
 
-    const foo = findFunction(patched, 'foo')!
-    const bar = findClass(patched, 'Bar')!
+    const foo = findFunction(file, 'foo')!
+    const bar = findClass(file, 'Bar')!
 
     const fooComment = printSyntheticComments(foo.commentTarget)
     const barComment = printSyntheticComments(bar.commentTarget)
