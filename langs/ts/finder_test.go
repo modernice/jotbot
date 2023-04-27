@@ -11,7 +11,6 @@ import (
 )
 
 func TestFinder_Find(t *testing.T) {
-	t.SkipNow()
 	code := heredoc.Doc(`
 		export const foo = 'foo'
 
@@ -54,7 +53,6 @@ func TestFinder_Find(t *testing.T) {
 }
 
 func TestSymbols(t *testing.T) {
-	t.SkipNow()
 	code := heredoc.Doc(`
 		export const foo = 'foo'
 
@@ -76,9 +74,9 @@ func TestSymbols(t *testing.T) {
 		}
 	`)
 
-	svc := ts.NewFinder(ts.Symbols(ts.Var, ts.Method))
+	f := ts.NewFinder(ts.Symbols(ts.Var, ts.Method))
 
-	findings, err := svc.Find(context.Background(), []byte(code))
+	findings, err := f.Find(context.Background(), []byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
@@ -88,4 +86,27 @@ func TestSymbols(t *testing.T) {
 		{Identifier: "method:Foo.bar", Target: "method 'bar' of 'Foo'"},
 		{Identifier: "method:Bar.bar", Target: "method 'bar' of 'Bar'"},
 	}, findings)
+}
+
+func TestFinder_Position(t *testing.T) {
+	code := heredoc.Doc(`
+		export const foo = 'foo'
+
+		export function bar() {}
+	`)
+
+	f := ts.NewFinder()
+
+	pos, err := f.Position(context.Background(), "func:bar", []byte(code))
+	if err != nil {
+		t.Fatalf("Position() failed: %v", err)
+	}
+
+	if pos.Line != 2 {
+		t.Errorf("Position() returned wrong line; want %d; got %d", 2, pos.Line)
+	}
+
+	if pos.Character != 0 {
+		t.Errorf("Position() returned wrong character; want %d; got %d", 9, pos.Character)
+	}
 }

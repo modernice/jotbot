@@ -6,11 +6,6 @@ import (
 	"unicode"
 )
 
-type Position struct {
-	Line      int
-	Character int
-}
-
 func InsertComment(comment string, code []byte, pos Position) ([]byte, error) {
 	lines := strings.Split(string(code), "\n")
 	commentLines := strings.Split(comment, "\n")

@@ -17,6 +17,9 @@ importers:
       consola:
         specifier: ^3.1.0
         version: 3.1.0
+      typescript:
+        specifier: ^5.0.4
+        version: 5.0.4
     devDependencies:
       '@antfu/eslint-config':
         specifier: ^0.38.5
@@ -45,9 +48,6 @@ importers:
       tsx:
         specifier: ^3.12.6
         version: 3.12.6
-      typescript:
-        specifier: ^5.0.4
-        version: 5.0.4
       vite:
         specifier: ^4.3.1
         version: 4.3.1(@types/node@18.15.13)
@@ -3183,7 +3183,6 @@ packages:
     resolution: {integrity: sha512-cW9T5W9xY37cc+jfEnaUvX91foxtHkza3Nw3wkoF4sSlKn0MONdkdEndig/qPBWXNkmplh3NzayQzCiHM4/hqw==}
     engines: {node: '>=12.20'}
     hasBin: true
-    dev: true
 
   /ufo@1.1.1:
     resolution: {integrity: sha512-MvlCc4GHrmZdAllBc0iUDowff36Q9Ndw/UzqmEKyrfSzokTd9ZCy1i+IIk5hrYKkjoYVQyNbrw7/F8XJ2rEwTg==}

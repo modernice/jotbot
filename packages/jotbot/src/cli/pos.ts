@@ -9,7 +9,9 @@ import {
 import { createLogger } from './logger'
 import type { WithSourceOption, WithVerboseOption } from './options'
 import { verboseOption } from './options'
-import { print } from './print'
+import { out } from './print'
+
+const { log: print } = out
 
 interface Options extends WithSourceOption, WithVerboseOption {}
 

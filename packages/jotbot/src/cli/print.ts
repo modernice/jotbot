@@ -1,5 +1,4 @@
+import type { ConsolaInstance } from 'consola'
 import { createLogger } from './logger'
 
-const { log: print } = createLogger(process.stdout)
-
-export { print }
+export const out: ConsolaInstance = createLogger(process.stdout)

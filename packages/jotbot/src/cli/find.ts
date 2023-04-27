@@ -11,7 +11,9 @@ import { createLogger } from './logger'
 import { commaSeparated } from './utils'
 import type { WithSourceOption, WithVerboseOption } from './options'
 import { verboseOption } from './options'
-import { print } from './print'
+import { out } from './print'
+
+const { log: print } = out
 
 interface Options extends FinderOptions, WithSourceOption, WithVerboseOption {
   format?: 'json' | 'list'

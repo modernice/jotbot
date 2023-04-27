@@ -38,7 +38,8 @@
   },
   "dependencies": {
     "commander": "^10.0.1",
-    "consola": "^3.1.0"
+    "consola": "^3.1.0",
+    "typescript": "^5.0.4"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.38.5",
@@ -50,7 +51,6 @@
     "lodash": "^4.17.21",
     "pkg-types": "^1.0.2",
     "tsx": "^3.12.6",
-    "typescript": "^5.0.4",
     "vite": "^4.3.1",
     "vite-plugin-dts": "^2.3.0",
     "vitest": "^0.30.1"

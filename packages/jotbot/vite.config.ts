@@ -7,6 +7,7 @@ export default defineConfig(async () => {
 
   function isExternal(dep: string) {
     return (
+      ['perf_hooks'].includes(dep) ||
       dep.startsWith('node:') ||
       [
         ...Object.keys(pkg.dependencies ?? {}),
