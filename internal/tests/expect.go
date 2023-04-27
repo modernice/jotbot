@@ -17,6 +17,17 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+func ExpectFiles(t *testing.T, want, got []string) {
+	t.Helper()
+
+	slices.Sort(want)
+	slices.Sort(got)
+
+	if !cmp.Equal(want, got) {
+		t.Fatalf("unexpected files:\n%s", cmp.Diff(want, got))
+	}
+}
+
 func ExpectFound[Finding interface{ GetIdentifier() string }](t *testing.T, want, got []Finding) {
 	t.Helper()
 
