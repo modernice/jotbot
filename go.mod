@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/alecthomas/kong v0.7.1
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/bmatcuk/doublestar/v4 v4.6.0
@@ -22,7 +23,6 @@ require (
 )
 
 require (
-	github.com/MakeNowJust/heredoc/v2 v2.0.1 // indirect
 	github.com/dlclark/regexp2 v1.9.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	golang.org/x/mod v0.6.0 // indirect
