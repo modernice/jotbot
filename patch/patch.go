@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-type LanguageService interface {
+type Language interface {
 	Patch(ctx context.Context, identifier, doc string, code []byte) ([]byte, error)
 }
 
@@ -35,7 +35,7 @@ func New(files <-chan generate.File, opts ...Option) *Patch {
 	return p
 }
 
-func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(string) (LanguageService, error)) error {
+func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(string) (Language, error)) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -60,7 +60,7 @@ func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(strin
 	}
 }
 
-func (p *Patch) applyFile(ctx context.Context, repo afero.Fs, svc LanguageService, file generate.File) error {
+func (p *Patch) applyFile(ctx context.Context, repo afero.Fs, svc Language, file generate.File) error {
 	code, err := readFile(repo, file.Path)
 	if err != nil {
 		return err

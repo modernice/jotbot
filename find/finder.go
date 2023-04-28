@@ -44,8 +44,32 @@ type Options struct {
 	Exclude    []string
 }
 
-func Files(ctx context.Context, files fs.FS) ([]string, error) {
-	return Default.Find(context.Background(), files)
+type Option func(*Options)
+
+func Extensions(exts ...string) Option {
+	return func(o *Options) {
+		o.Extensions = exts
+	}
+}
+
+func Include(patterns ...string) Option {
+	return func(o *Options) {
+		o.Include = append(o.Include, patterns...)
+	}
+}
+
+func Exclude(patterns ...string) Option {
+	return func(o *Options) {
+		o.Exclude = append(o.Exclude, patterns...)
+	}
+}
+
+func Files(ctx context.Context, files fs.FS, opts ...Option) ([]string, error) {
+	cfg := Default
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	return cfg.Find(ctx, files)
 }
 
 func (f Options) Find(ctx context.Context, files fs.FS) ([]string, error) {

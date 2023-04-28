@@ -9,6 +9,7 @@ import (
 
 	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
 	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/patch"
@@ -17,28 +18,21 @@ import (
 )
 
 var (
-	Default = Options{
-		Languages: map[string]LanguageService{
-			".go": golang.New(golang.NewFinder()),
-		},
+	DefaultLanguages = map[string]Language{
+		".go": golang.New(golang.NewFinder()),
 	}
 )
 
-type LanguageService interface {
-	patch.LanguageService
+type Language interface {
+	patch.Language
 
 	Find(context.Context, []byte) ([]find.Finding, error)
-}
-
-type Options struct {
-	Languages map[string]LanguageService
 }
 
 type JotBot struct {
 	root      string
 	fs        afero.Fs
-	languages map[string]LanguageService
-	find      find.Options
+	languages map[string]Language
 	log       *slog.Logger
 }
 
@@ -53,31 +47,33 @@ type Finding struct {
 type Patch struct {
 	*patch.Patch
 
-	getLanguage func(string) (LanguageService, error)
+	getLanguage func(string) (Language, error)
 }
 
-func FindWith(opts find.Options) Option {
-	return func(bot *JotBot) {
-		bot.find = opts
+func New(root string, opts ...Option) *JotBot {
+	bot := &JotBot{
+		root: root,
+		fs:   afero.NewBasePathFs(afero.NewOsFs(), root),
 	}
-}
-
-func (opts Options) New(root string) *JotBot {
-	return &JotBot{
-		root:      root,
-		fs:        afero.NewBasePathFs(afero.NewOsFs(), root),
-		languages: opts.Languages,
-		log:       slog.New(slog.NewTextHandler(os.Stdout)),
+	for _, opt := range opts {
+		opt(bot)
 	}
+	if bot.languages == nil {
+		bot.languages = DefaultLanguages
+	}
+	if bot.log == nil {
+		bot.log = internal.NopLogger()
+	}
+	return bot
 }
 
-func (bot *JotBot) ConfigureLanguage(ext string, svc LanguageService) {
+func (bot *JotBot) ConfigureLanguage(ext string, svc Language) {
 	bot.languages[ext] = svc
 }
 
-func (bot *JotBot) Find(ctx context.Context) ([]Finding, error) {
+func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, error) {
 	repo := os.DirFS(bot.root)
-	files, err := bot.find.Find(ctx, repo)
+	files, err := find.Files(ctx, repo, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +107,7 @@ func (bot *JotBot) Find(ctx context.Context) ([]Finding, error) {
 	return out, nil
 }
 
-func (bot *JotBot) language(ext string) (LanguageService, error) {
+func (bot *JotBot) language(ext string) (Language, error) {
 	if lang, ok := bot.languages[ext]; ok {
 		return lang, nil
 	}
@@ -164,7 +160,7 @@ func (bot *JotBot) makeInput(ctx context.Context, finding Finding) (generate.Inp
 }
 
 func (p *Patch) Apply(ctx context.Context, root string) error {
-	return p.Patch.Apply(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.LanguageService, error) {
+	return p.Patch.Apply(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.Language, error) {
 		return p.getLanguage(s)
 	})
 }

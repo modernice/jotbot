@@ -17,7 +17,7 @@ func TestJotBot_Find(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "find")
 	tests.InitRepo("basic", root)
 
-	bot := jotbot.Default.New(root)
+	bot := jotbot.New(root)
 
 	findings, err := bot.Find(context.Background())
 	if err != nil {
@@ -42,7 +42,7 @@ func TestJotBot_Generate(t *testing.T) {
 
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generate")
 	tests.WithRepo("basic", root, func(repo fs.FS) {
-		bot := jotbot.Default.New(root)
+		bot := jotbot.New(root)
 
 		findings := append(
 			makeFindings(
