@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -28,11 +27,11 @@ func ExpectFiles(t *testing.T, want, got []string) {
 	}
 }
 
-func ExpectFound[Finding interface{ GetIdentifier() string }](t *testing.T, want, got []Finding) {
+func ExpectFound[Finding interface{ String() string }](t *testing.T, want, got []Finding) {
 	t.Helper()
 
 	less := func(a, b Finding) bool {
-		return a.GetIdentifier() <= b.GetIdentifier()
+		return a.String() <= b.String()
 	}
 
 	slices.SortFunc(want, less)
@@ -71,9 +70,23 @@ func ExpectFindings[Findings ~map[string][]Finding, Finding interface{ GetIdenti
 	}
 }
 
-// ExpectPatch compares two *golang.Patch structs and fails the test if their
+// func ExpectPatch(t *testing.T, want, got generate.Patch) {
+// 	t.Helper()
+
+// 	want = maps.Clone(want)
+// 	got = maps.Clone(got)
+
+// 	sortPatch(want)
+// 	sortPatch(got)
+
+// 	if !cmp.Equal(want, got) {
+// 		t.Fatalf("unexpected patch:\n%s", cmp.Diff(want, got))
+// 	}
+// }
+
+// ExpectGoPatch compares two *golang.Patch structs and fails the test if their
 // DryRun output differs.
-func ExpectPatch(t *testing.T, want *golang.Patch, got *golang.Patch) {
+func ExpectGoPatch(t *testing.T, want *golang.Patch, got *golang.Patch) {
 	t.Helper()
 
 	wantDryRun, err := want.DryRun()
@@ -91,14 +104,31 @@ func ExpectPatch(t *testing.T, want *golang.Patch, got *golang.Patch) {
 	}
 }
 
-// ExpectGenerations compares two slices of generate.Generation and fails the
-// test if they are not equal.
-func ExpectGenerations(t *testing.T, want, got []generate.Generation) {
+func ExpectGeneratedFiles(t *testing.T, want, got []generate.File) {
 	t.Helper()
 
-	less := func(a, b generate.Generation) bool {
-		return fmt.Sprintf("%s@%s", a.File, a.Identifier) <= fmt.Sprintf("%s@%s", b.File, b.Identifier)
+	if len(got) != len(want) {
+		t.Fatalf("unexpected number of generated files:\n%s", cmp.Diff(want, got))
 	}
+
+	less := func(a, b generate.File) bool { return a.Path <= b.Path }
+	slices.SortFunc(want, less)
+
+	for i, file := range got {
+		want := want[i]
+		if want.Path != file.Path {
+			t.Fatalf("unexpected generated file:\n%s", cmp.Diff(want, file))
+		}
+		ExpectGenerations(t, want.Docs, file.Docs)
+	}
+}
+
+// ExpectGenerations compares two slices of generate.Generation and fails the
+// test if they are not equal.
+func ExpectGenerations(t *testing.T, want, got []generate.Documentation) {
+	t.Helper()
+
+	less := func(a, b generate.Documentation) bool { return a.Identifier <= b.Identifier }
 
 	slices.SortFunc(want, less)
 	slices.SortFunc(got, less)
@@ -135,3 +165,12 @@ func ExpectComment(t *testing.T, identifier, comment string, file io.Reader) {
 		t.Fatalf("unexpected comment for identifier %s:\n%s\n\nwant:\n%s\n\ngot:\n%s", identifier, dif, comment, foundComment)
 	}
 }
+
+// func sortPatch(patch generate.Patch) {
+// 	for file, edits := range patch {
+// 		slices.SortFunc(edits, func(a, b generate.Generation) bool {
+// 			return a.Identifier <= b.Identifier
+// 		})
+// 		patch[file] = edits
+// 	}
+// }

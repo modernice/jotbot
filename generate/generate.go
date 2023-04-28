@@ -16,14 +16,14 @@ type Service interface {
 }
 
 type Input struct {
-	Code                      []byte
-	Identifier                string
-	NaturalLanguageIdentifier string // e.g. "function 'foo' of class 'Foo'"
+	Code       []byte
+	Identifier string
+	Target     string // e.g. "function 'foo' of class 'Foo'"
 }
 
 func (f Input) String() string {
-	if f.NaturalLanguageIdentifier != "" {
-		return f.NaturalLanguageIdentifier
+	if f.Target != "" {
+		return f.Target
 	}
 	return f.Identifier
 }
@@ -218,5 +218,4 @@ func (g *Generator) Generate(ctx context.Context, input Input, opts ...Option) (
 	}
 
 	return doc, nil
-
 }

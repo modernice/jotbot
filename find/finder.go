@@ -24,6 +24,20 @@ var (
 	}
 )
 
+type Finding struct {
+	// File       string
+	Identifier string
+	// Natural language description of the identifier.
+	Target string
+}
+
+func (f Finding) String() string {
+	if f.Target != "" {
+		return f.Target
+	}
+	return f.Identifier
+}
+
 type Options struct {
 	Extensions []string
 	Include    []string

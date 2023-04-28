@@ -148,25 +148,13 @@ func NewFrom(opts ...Option) *Service {
 	return &svc
 }
 
-// GenerateDoc generates a concise documentation for a given function or type
-// identified by the provided identifier in GoDoc format. The function takes a
-// generate.Context as input, reads the file from the context and minifies the
-// code using MinifyOptions. The prompt is then created using the file,
-// identifier and longIdentifier. The createCompletion function is called to
-// generate documentation from the prompt using OpenAI's GPT models. The
-// resulting text is normalized and returned as a string along with an error, if
-// any.
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
-	file := ctx.File()
 	longIdentifier := ctx.Identifier()
 
-	code, err := ctx.Read(file)
-	if err != nil {
-		return "", err
-	}
+	code := ctx.File()
 
 	identifier := normalizeIdentifier(longIdentifier)
-	prompt := promptWithoutCode(file, identifier, longIdentifier)
+	prompt := promptWithoutCode(code, identifier, longIdentifier)
 
 	result, steps, err := MinifyOptions{
 		MaxTokens: svc.minifyTokens,
@@ -190,14 +178,14 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 		svc.log.Debug(fmt.Sprintf("[OpenAI] Code has %d tokens. Not minified.", len(result.Tokens)))
 	}
 
-	svc.log.Debug("[OpenAI] Generating documentation ...", "file", file, "identifier", identifier, "model", svc.model)
+	svc.log.Debug("[OpenAI] Generating documentation ...", "identifier", identifier, "model", svc.model)
 
 	answer, err := svc.createCompletion(ctx, prompt, maxCompletionTokens)
 	if err != nil {
 		return "", fmt.Errorf("create completion: %w", err)
 	}
 
-	svc.log.Debug("[OpenAI] Documentation generated", "file", file, "identifier", identifier, "docs", answer)
+	svc.log.Debug("[OpenAI] Documentation generated", "identifier", identifier, "docs", answer)
 
 	return answer, nil
 }
@@ -320,12 +308,12 @@ func normalizeIdentifier(identifier string) string {
 	return parts[1]
 }
 
-func promptWithoutCode(file, identifier, longIdentifier string) string {
+func promptWithoutCode(code []byte, identifier, longIdentifier string) string {
 	return fmt.Sprintf(
 		"Write a concise documentation for symbol %q in GoDoc format. Do not output any links. Do not output the source code code or code examples. Use brackets to enclose symbol references. Start the first sentence with %q. Write in the style of Go library documentation. This is the source code of the file:\n\n%s",
 		longIdentifier,
 		fmt.Sprintf("%s ", identifier),
-		file,
+		code,
 	)
 }
 

@@ -25,9 +25,9 @@ func TestGenerator_Generate(t *testing.T) {
 
 	g := generate.New(svc)
 	in := generate.Input{
-		Code:                      []byte(code),
-		Identifier:                "Add",
-		NaturalLanguageIdentifier: "function 'Add'",
+		Code:       []byte(code),
+		Identifier: "Add",
+		Target:     "function 'Add'",
 	}
 
 	got, err := g.Generate(context.Background(), in)
@@ -68,9 +68,9 @@ func TestFooter(t *testing.T) {
 	g := generate.New(svc)
 
 	doc, err := g.Generate(context.Background(), generate.Input{
-		Code:                      []byte("package foo\n\nfunc Foo() {}"),
-		Identifier:                "Foo",
-		NaturalLanguageIdentifier: "function 'Foo'",
+		Code:       []byte("package foo\n\nfunc Foo() {}"),
+		Identifier: "Foo",
+		Target:     "function 'Foo'",
 	}, generate.Footer("This is a footer."))
 	if err != nil {
 		t.Fatalf("Generate() failed: %v", err)

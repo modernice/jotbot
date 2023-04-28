@@ -47,13 +47,6 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 		identifier = node.Name.Name
 
 		if node.Recv != nil && len(node.Recv.List) > 0 {
-			// if identifier == "Foo" {
-			// 	log.Printf("%#v", node.Recv.List[0].Type)
-			// }
-			// if identifier == "Bar" {
-			// 	log.Printf("%#v", node.Recv.List[0].Type)
-			// }
-			// ident, ok := getIdent(node.Recv.List[0].Type)
 			identifier, _ = methodIdentifier(identifier, node.Recv.List[0].Type)
 		}
 	case *dst.GenDecl:

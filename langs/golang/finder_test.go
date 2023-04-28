@@ -5,12 +5,10 @@ import (
 	"testing"
 
 	"github.com/MakeNowJust/heredoc/v2"
-	"github.com/modernice/jotbot"
+	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/tests"
 	"github.com/modernice/jotbot/langs/golang"
 )
-
-var _ jotbot.Finder = (*golang.Finder)(nil)
 
 func TestFinder_Find(t *testing.T) {
 	code := heredoc.Doc(`
@@ -42,7 +40,7 @@ func TestFinder_Find(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "X", Target: "const 'X'"},
 		{Identifier: "Foo", Target: "variable 'Foo'"},
 		{Identifier: "Bar", Target: "function 'Bar'"},
@@ -77,7 +75,7 @@ func TestFinder_Find_onlyUncommented(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "Foo", Target: "const 'Foo'"},
 		{Identifier: "Baz", Target: "function 'Baz'"},
 	}, findings)
@@ -107,7 +105,7 @@ func TestFinder_Find_pointerReceiver(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "Foo", Target: "type 'Foo'"},
 		{Identifier: "(*Foo).Foo", Target: "method '(*Foo).Foo'"},
 		{Identifier: "Foo.Bar", Target: "method 'Foo.Bar'"},
@@ -146,7 +144,7 @@ func TestFinder_Find_generics(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "Foobar", Target: "function 'Foobar'"},
 		{Identifier: "Foo", Target: "type 'Foo'"},
 		{Identifier: "Foo.Foo", Target: "method 'Foo.Foo'"},
@@ -175,7 +173,7 @@ func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "Foobar", Target: "function 'Foobar'"},
 	}, findings)
 }
@@ -200,7 +198,7 @@ func TestFindTests(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "TestFoo", Target: "function 'TestFoo'"},
 		{Identifier: "TestBar", Target: "function 'TestBar'"},
 		{Identifier: "Foobar", Target: "function 'Foobar'"},

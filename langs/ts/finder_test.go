@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/MakeNowJust/heredoc/v2"
-	"github.com/modernice/jotbot"
+	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/tests"
 	"github.com/modernice/jotbot/langs/ts"
 )
@@ -39,7 +39,7 @@ func TestFinder_Find(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "var:foo", Target: "variable 'foo'"},
 		{Identifier: "func:foobar", Target: "function 'foobar'"},
 		{Identifier: "iface:Foo", Target: "interface 'Foo'"},
@@ -81,7 +81,7 @@ func TestSymbols(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []jotbot.Finding{
+	tests.ExpectFound(t, []find.Finding{
 		{Identifier: "var:foo", Target: "variable 'foo'"},
 		{Identifier: "method:Foo.bar", Target: "method 'bar' of 'Foo'"},
 		{Identifier: "method:Bar.bar", Target: "method 'bar' of 'Bar'"},

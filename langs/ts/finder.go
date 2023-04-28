@@ -10,13 +10,11 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/modernice/jotbot"
+	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
 	"golang.org/x/exp/slog"
 )
-
-var _ (jotbot.Finder) = (*Finder)(nil)
 
 const (
 	Var      = Symbol("var")
@@ -71,13 +69,13 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-func (f *Finder) Find(ctx context.Context, code []byte) ([]jotbot.Finding, error) {
+func (f *Finder) Find(ctx context.Context, code []byte) ([]find.Finding, error) {
 	raw, err := f.executeFind(ctx, code)
 	if err != nil {
 		return nil, err
 	}
 
-	var found []jotbot.Finding
+	var found []find.Finding
 	if err := json.Unmarshal(raw, &found); err != nil {
 		return nil, fmt.Errorf("unmarshal findings: %w\n%s", err, raw)
 	}

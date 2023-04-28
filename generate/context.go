@@ -24,7 +24,7 @@ func (ctx *genCtx) Identifier() string {
 }
 
 func (ctx *genCtx) Target() string {
-	return ctx.input.NaturalLanguageIdentifier
+	return ctx.input.Target
 }
 
 func (ctx *genCtx) File() []byte {
