@@ -2,6 +2,7 @@ package tests
 
 import (
 	"io"
+	"io/fs"
 	"strings"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
-	"github.com/modernice/jotbot/langs/golang"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -70,40 +70,6 @@ func ExpectFindings[Findings ~map[string][]Finding, Finding interface{ GetIdenti
 	}
 }
 
-// func ExpectPatch(t *testing.T, want, got generate.Patch) {
-// 	t.Helper()
-
-// 	want = maps.Clone(want)
-// 	got = maps.Clone(got)
-
-// 	sortPatch(want)
-// 	sortPatch(got)
-
-// 	if !cmp.Equal(want, got) {
-// 		t.Fatalf("unexpected patch:\n%s", cmp.Diff(want, got))
-// 	}
-// }
-
-// ExpectGoPatch compares two *golang.Patch structs and fails the test if their
-// DryRun output differs.
-func ExpectGoPatch(t *testing.T, want *golang.Patch, got *golang.Patch) {
-	t.Helper()
-
-	wantDryRun, err := want.DryRun()
-	if err != nil {
-		t.Fatalf("dry run 'want': %v", err)
-	}
-
-	dryRun, err := got.DryRun()
-	if err != nil {
-		t.Fatalf("dry run 'got': %v", err)
-	}
-
-	if !cmp.Equal(wantDryRun, dryRun) {
-		t.Fatalf("dry run mismatch:\n%s", cmp.Diff(wantDryRun, dryRun))
-	}
-}
-
 func ExpectGeneratedFiles(t *testing.T, want, got []generate.File) {
 	t.Helper()
 
@@ -138,11 +104,25 @@ func ExpectGenerations(t *testing.T, want, got []generate.Documentation) {
 	}
 }
 
+func ExpectCommentIn(t *testing.T, repo fs.FS, file, identifier, comment string) {
+	t.Helper()
+
+	f, err := repo.Open(file)
+	if err != nil {
+		t.Fatalf("open file %s: %v", file, err)
+	}
+	defer f.Close()
+
+	ExpectComment(t, identifier, comment, f)
+}
+
 // ExpectComment verifies that the comment for the specified identifier in the
 // provided file matches the expected comment. If the comments do not match,
 // ExpectComment will fail the test with a detailed diff of the expected and
 // found comments.
 func ExpectComment(t *testing.T, identifier, comment string, file io.Reader) {
+	t.Helper()
+
 	root, err := decorator.Parse(file)
 	if err != nil {
 		t.Fatalf("parse file: %v", err)
@@ -165,12 +145,3 @@ func ExpectComment(t *testing.T, identifier, comment string, file io.Reader) {
 		t.Fatalf("unexpected comment for identifier %s:\n%s\n\nwant:\n%s\n\ngot:\n%s", identifier, dif, comment, foundComment)
 	}
 }
-
-// func sortPatch(patch generate.Patch) {
-// 	for file, edits := range patch {
-// 		slices.SortFunc(edits, func(a, b generate.Generation) bool {
-// 			return a.Identifier <= b.Identifier
-// 		})
-// 		patch[file] = edits
-// 	}
-// }

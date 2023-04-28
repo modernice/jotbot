@@ -1,5 +1,16 @@
 package internal
 
+func Stream[T any](values ...T) <-chan T {
+	ch := make(chan T, len(values))
+	go func() {
+		defer close(ch)
+		for _, v := range values {
+			ch <- v
+		}
+	}()
+	return ch
+}
+
 // Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) function reads
 // from the channel vals until it is closed and stores the read values into a
 // slice of type T. If errs channel is closed, the function returns the stored
