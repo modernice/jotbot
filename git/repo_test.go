@@ -35,14 +35,7 @@ func TestRepo_Commit(t *testing.T) {
 	}
 
 	g.AssertBranchPrefix(t, "jotbot-patch")
-	g.AssertCommit(t, git.Commit{
-		Msg: "docs: add missing documentation",
-		Desc: []string{
-			"Updated docs:",
-			"  - foo.go@Foo",
-		},
-		Footer: "This commit was created by jotbot.",
-	})
+	g.AssertCommit(t, git.DefaultCommit())
 
 	repoFS := os.DirFS(repoRoot)
 
