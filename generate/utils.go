@@ -1,11 +1,9 @@
 package generate
 
-// Flatten returns a flattened slice of [Generation](#Generation) structs 
-// generated from the input slice of [File](#File) structs.
-func Flatten(files []File) []Generation {
-	var all []Generation
+func Flatten(files []File) []Documentation {
+	var all []Documentation
 	for _, file := range files {
-		all = append(all, file.Generations...)
+		all = append(all, file.Docs...)
 	}
 	return all
 }
