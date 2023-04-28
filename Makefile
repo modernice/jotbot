@@ -1,8 +1,7 @@
 .PHONY: test
 test:
-	@find . -type d -name gen -delete
 	@go test ./...
-	@find . -type d -name gen -delete
+	@find . -type d -name gen -print0 | xargs -0 rm -r
 
 .PHONY: clear
 clear:
