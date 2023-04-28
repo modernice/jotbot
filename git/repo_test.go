@@ -8,6 +8,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/modernice/jotbot/git"
+	igit "github.com/modernice/jotbot/internal/git"
 	"github.com/modernice/jotbot/internal/git/gittest"
 	"github.com/modernice/jotbot/internal/patch"
 	"github.com/modernice/jotbot/internal/tests"
@@ -17,6 +18,11 @@ var (
 	repoRoot = filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "repo")
 	g        = gittest.Git(repoRoot)
 )
+
+func init() {
+	os.MkdirAll(repoRoot, 0755)
+	igit.Git(repoRoot).Cmd("init")
+}
 
 func TestRepo_Commit(t *testing.T) {
 	repo := git.Repo(repoRoot)
