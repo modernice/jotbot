@@ -3,6 +3,7 @@ package jotbot
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/modernice/jotbot/internal/slice"
 	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/patch"
+	"github.com/spf13/afero"
 	"golang.org/x/exp/slog"
 )
 
@@ -23,8 +25,9 @@ var (
 )
 
 type LanguageService interface {
+	patch.LanguageService
+
 	Find(context.Context, []byte) ([]find.Finding, error)
-	// Patch(context.Context, string, []byte) ([]byte, error)
 }
 
 type Options struct {
@@ -33,6 +36,7 @@ type Options struct {
 
 type JotBot struct {
 	root      string
+	fs        afero.Fs
 	languages map[string]LanguageService
 	find      find.Options
 	log       *slog.Logger
@@ -46,6 +50,12 @@ type Finding struct {
 	File string
 }
 
+type Patch struct {
+	*patch.Patch
+
+	getLanguage func(string) (LanguageService, error)
+}
+
 func FindWith(opts find.Options) Option {
 	return func(bot *JotBot) {
 		bot.find = opts
@@ -55,6 +65,7 @@ func FindWith(opts find.Options) Option {
 func (opts Options) New(root string) *JotBot {
 	return &JotBot{
 		root:      root,
+		fs:        afero.NewBasePathFs(afero.NewOsFs(), root),
 		languages: opts.Languages,
 		log:       slog.New(slog.NewTextHandler(os.Stdout)),
 	}
@@ -74,9 +85,9 @@ func (bot *JotBot) Find(ctx context.Context) ([]Finding, error) {
 	var out []Finding
 	for _, file := range files {
 		ext := filepath.Ext(file)
-		lang, ok := bot.languages[ext]
-		if !ok {
-			bot.log.Warn(fmt.Sprintf("no language service for extension %q", ext))
+		lang, err := bot.language(ext)
+		if err != nil {
+			bot.log.Warn(err.Error())
 			continue
 		}
 
@@ -100,24 +111,60 @@ func (bot *JotBot) Find(ctx context.Context) ([]Finding, error) {
 	return out, nil
 }
 
-func (bot *JotBot) Generate(ctx context.Context, findings []find.Finding, svc generate.Service, opts ...generate.Option) (*patch.Patch, error) {
-	return nil, nil
-	// gen := generate.New(svc)
+func (bot *JotBot) language(ext string) (LanguageService, error) {
+	if lang, ok := bot.languages[ext]; ok {
+		return lang, nil
+	}
+	return nil, fmt.Errorf("no language service defined for file extension %q", ext)
+}
 
-	// results, errs, err := gen.Generate(ctx, os.DirFS(bot.root), opts...)
-	// if err != nil {
-	// 	return nil, err
-	// }
+func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.Option) (*Patch, error) {
+	g := generate.New(svc)
 
-	// files, err := internal.Drain(results, errs)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	files := make(map[string][]generate.Input)
+	for _, finding := range findings {
+		input, err := bot.makeInput(ctx, finding)
+		if err != nil {
+			return nil, fmt.Errorf("prepare generator input for %q: %w", finding, err)
+		}
+		files[finding.File] = append(files[finding.File], input)
+	}
 
-	// patch := make(generate.Patch)
-	// for _, file := range files {
-	// 	patch[file.Path] = append(patch[file.Path], file.Generations...)
-	// }
+	generated, errs, err := g.Files(ctx, files, opts...)
+	if err != nil {
+		return nil, err
+	}
 
-	// return patch, nil
+	return &Patch{
+		Patch: patch.New(generated, patch.WithErrors(errs)),
+		// repo:        bot.fs,
+		getLanguage: bot.language,
+	}, nil
+}
+
+func (bot *JotBot) makeInput(ctx context.Context, finding Finding) (generate.Input, error) {
+	f, err := bot.fs.Open(finding.File)
+	if err != nil {
+		return generate.Input{}, err
+	}
+	defer f.Close()
+
+	code, err := io.ReadAll(f)
+	if err != nil {
+		return generate.Input{}, err
+	}
+
+	input := generate.Input{
+		Code:       code,
+		Identifier: finding.Identifier,
+		Target:     finding.Target,
+	}
+
+	return input, nil
+}
+
+func (p *Patch) Apply(ctx context.Context, root string) error {
+	return p.Patch.Apply(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.LanguageService, error) {
+		return p.getLanguage(s)
+	})
 }
