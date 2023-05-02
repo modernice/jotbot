@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { heredoc } from '../src/utils'
-import { minify } from '../src/minify'
+import {
+  MinifyFlags,
+  defaultMinificationSteps,
+  minify,
+  minifyTo,
+} from '../src/minify'
+import { encoding_for_model } from '@dqbd/tiktoken'
 
 describe('minify', () => {
   describe('by default', () => {
@@ -17,7 +23,7 @@ describe('minify', () => {
 				export const bar = 'bar'
 			`
 
-      const minified = minify(code)
+      const { minified } = minify(code)
 
       expect(minified).toEqual(heredoc`
 				const foo = 'foo'
@@ -42,7 +48,7 @@ describe('minify', () => {
 				}
 			`
 
-      const minified = minify(code)
+      const { minified } = minify(code)
 
       expect(minified).toEqual(heredoc`
 				function foo() {
@@ -67,7 +73,7 @@ describe('minify', () => {
 			export class Bar {}
 		`
 
-      const minified = minify(code)
+      const { minified } = minify(code)
 
       expect(minified).toEqual(heredoc`
 				class Foo {}
@@ -88,7 +94,7 @@ describe('minify', () => {
 				export interface Bar {}
 			`
 
-      const minified = minify(code)
+      const { minified } = minify(code)
 
       expect(minified).toEqual(heredoc`
 				interface Foo {}
@@ -113,7 +119,7 @@ describe('minify', () => {
 				}
 			`
 
-      const minified = minify(code)
+      const { minified } = minify(code)
 
       expect(minified).toEqual(heredoc`
 				interface Foo {
@@ -142,7 +148,7 @@ describe('minify', () => {
 				}
 			`
 
-      const minified = minify(code)
+      const { minified } = minify(code)
 
       expect(minified).toEqual(heredoc`
 				interface Foo {
@@ -169,7 +175,7 @@ describe('minify', () => {
   			export const bar = 'bar'
   		`
 
-      const minified = minify(code, { variables: false, emptyLines: false })
+      const { minified } = minify(code, { variables: false, emptyLines: false })
 
       expect(minified).toEqual(code)
     })
@@ -191,7 +197,7 @@ describe('minify', () => {
 				}
 			`
 
-      const minified = minify(code, { functions: false, emptyLines: false })
+      const { minified } = minify(code, { functions: false, emptyLines: false })
 
       expect(minified).toEqual(code)
     })
@@ -209,7 +215,7 @@ describe('minify', () => {
 				export class Bar {}
 			`
 
-      const minified = minify(code, { classes: false, emptyLines: false })
+      const { minified } = minify(code, { classes: false, emptyLines: false })
 
       expect(minified).toEqual(code)
     })
@@ -227,7 +233,10 @@ describe('minify', () => {
 				export interface Bar {}
 			`
 
-      const minified = minify(code, { interfaces: false, emptyLines: false })
+      const { minified } = minify(code, {
+        interfaces: false,
+        emptyLines: false,
+      })
 
       expect(minified).toEqual(code)
     })
@@ -249,7 +258,10 @@ describe('minify', () => {
 				}
 			`
 
-      const minified = minify(code, { properties: false, emptyLines: false })
+      const { minified } = minify(code, {
+        properties: false,
+        emptyLines: false,
+      })
 
       expect(minified).toEqual(code)
     })
@@ -271,9 +283,163 @@ describe('minify', () => {
 				}
 			`
 
-      const minified = minify(code, { methods: false, emptyLines: false })
+      const { minified } = minify(code, { methods: false, emptyLines: false })
 
       expect(minified).toEqual(code)
     })
   })
+
+  describe('with token limit', () => {
+    it("doesn't compute tokens by default", () => {
+      const code = heredoc`
+				/**
+				 * foo is a function.
+				 */
+				function foo() {}
+			`
+
+      // @ts-expect-error
+      const { inputTokens, tokens } = minify(code)
+
+      expect(inputTokens).toBeUndefined()
+      expect(tokens).toBeUndefined()
+    })
+
+    it('returns the tokens of the input code and minified code', () => {
+      const code = heredoc`
+				/**
+				 * foo is a function.
+				 */
+				function foo() {}
+			` // 15 tokens
+
+      const wantMinified = heredoc`
+				function foo() {}
+			` // 4 tokens
+
+      const { tokens, inputTokens, minified } = minify(code, {
+        computeTokens: true,
+      })
+
+      expect(minified).toEqual(wantMinified)
+      expect(inputTokens).toHaveLength(15)
+      expect(tokens).toHaveLength(4)
+    })
+  })
 })
+
+describe('minifyTo', () => {
+  it("doesn't minify if input doesn't hit maxTokens limit", () => {
+    const code = heredoc`
+			/**
+			 * foo is a function.
+			 */
+			function foo() {}
+		` // 15 tokens
+
+    const { tokens, inputTokens, minified, steps } = minifyTo(15, code)
+
+    expect(minified).toEqual(code)
+    expect(inputTokens).toHaveLength(15)
+    expect(tokens).toHaveLength(15)
+    expect(steps).toHaveLength(0)
+  })
+
+  it('minifies if input hits maxTokens limit', () => {
+    const code = heredoc`
+			/**
+			 * foo is a function.
+			 */
+			function foo() {}
+		` // 15 tokens
+
+    const wantMinified = heredoc`
+			function foo() {}
+		` // 4 tokens
+
+    const { tokens, inputTokens, minified, steps } = minifyTo(14, code)
+
+    expect(minified).toEqual(wantMinified)
+    expect(inputTokens).toHaveLength(15)
+    expect(tokens).toHaveLength(4)
+    expect(steps).toHaveLength(3)
+
+    expect(steps[0]).toEqual({
+      flags: minifyFlags(defaultMinificationSteps[0]),
+      input: code,
+      minified: code,
+      inputTokens: computeTokens(code),
+      tokens: computeTokens(code),
+    })
+
+    expect(steps[1]).toEqual({
+      flags: minifyFlags(defaultMinificationSteps[1]),
+      input: code,
+      minified: code,
+      inputTokens: computeTokens(code),
+      tokens: computeTokens(code),
+    })
+
+    expect(steps[2]).toEqual({
+      flags: minifyFlags(defaultMinificationSteps[2]),
+      input: code,
+      minified: wantMinified,
+      inputTokens: computeTokens(code),
+      tokens: computeTokens(wantMinified),
+    })
+  })
+
+  it('accepts custom minification steps', () => {
+    const code = heredoc`
+			/**
+			 * foo is a function.
+			 */
+			function foo() {}
+		` // 15 tokens
+
+    const wantMinified = heredoc`
+			function foo() {}
+		` // 4 tokens
+
+    const { tokens, inputTokens, minified, steps } = minifyTo(14, code, {
+      steps: [{ functions: true }],
+    })
+
+    expect(minified).toEqual(wantMinified)
+    expect(inputTokens).toHaveLength(15)
+    expect(tokens).toHaveLength(4)
+    expect(steps).toHaveLength(1)
+
+    expect(steps[0]).toEqual({
+      flags: minifyFlags({ functions: true }),
+      input: code,
+      minified: wantMinified,
+      inputTokens: computeTokens(code),
+      tokens: computeTokens(wantMinified),
+    })
+  })
+})
+
+function minifyFlags(flags: Partial<MinifyFlags>): MinifyFlags {
+  return {
+    variables: flags.variables ?? false,
+    functions: flags.functions ?? false,
+    classes: flags.classes ?? false,
+    interfaces: flags.interfaces ?? false,
+    properties: flags.properties ?? false,
+    methods: flags.methods ?? false,
+    emptyLines: flags.emptyLines ?? false,
+  }
+}
+
+const enc = encoding_for_model('text-davinci-003')
+const tokenCache = new Map<string, Uint32Array>()
+function computeTokens(code: string) {
+  const cached = tokenCache.get(code)
+  if (cached) {
+    return cached
+  }
+  const tokens = enc.encode(code)
+  tokenCache.set(code, tokens)
+  return tokens
+}

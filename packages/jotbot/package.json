@@ -37,8 +37,10 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@dqbd/tiktoken": "^1.0.7",
     "commander": "^10.0.1",
     "consola": "^3.1.0",
+    "tiktoken-node": "^0.0.6",
     "typescript": "^5.0.4"
   },
   "devDependencies": {

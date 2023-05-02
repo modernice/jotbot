@@ -11,12 +11,18 @@ importers:
 
   jotbot:
     dependencies:
+      '@dqbd/tiktoken':
+        specifier: ^1.0.7
+        version: 1.0.7
       commander:
         specifier: ^10.0.1
         version: 10.0.1
       consola:
         specifier: ^3.1.0
         version: 3.1.0
+      tiktoken-node:
+        specifier: ^0.0.6
+        version: 0.0.6
       typescript:
         specifier: ^5.0.4
         version: 5.0.4
@@ -198,6 +204,10 @@ packages:
       '@babel/helper-validator-identifier': 7.19.1
       to-fast-properties: 2.0.0
     dev: true
+
+  /@dqbd/tiktoken@1.0.7:
+    resolution: {integrity: sha512-bhR5k5W+8GLzysjk8zTMVygQZsgvf7W1F0IlL4ZQ5ugjo5rCyiwGM5d8DYriXspytfu98tv59niang3/T+FoDw==}
+    dev: false
 
   /@esbuild-kit/cjs-loader@2.4.2:
     resolution: {integrity: sha512-BDXFbYOJzT/NBEtp71cvsrGPwGAMGRB/349rwKuoxNSiKjPraNNnlK6MIIabViCjqZugu6j+xeMDlEkWdHHJSg==}
@@ -3060,6 +3070,11 @@ packages:
   /text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
+
+  /tiktoken-node@0.0.6:
+    resolution: {integrity: sha512-MiprfzPhoKhCflzl0Jyds0VKibAgUGHfJLvBCAXPpum6Lru6ZoKQGsl8lJP0B94LPpby2B2WveOB2tZVfEZQOQ==}
+    engines: {node: '>= 14'}
+    dev: false
 
   /time-zone@1.0.0:
     resolution: {integrity: sha512-TIsDdtKo6+XrPtiTm1ssmMngN1sAhyKnTO2kunQWqNPWIVvCm15Wmw4SWInwTVgJ5u/Tr04+8Ei9TNcw4x4ONA==}
