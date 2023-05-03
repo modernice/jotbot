@@ -2,7 +2,6 @@ export function toArray<T>(value?: T | readonly T[]): T[] {
   if (!value) {
     return []
   }
-   
   return Array.isArray(value) ? (value as any) : [value]
 }
 
