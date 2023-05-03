@@ -1,27 +1,27 @@
 import type { Command } from 'commander'
 import type { FinderOptions, SymbolType } from '..'
-import {
-  createFinder,
-  isSymbol,
-  printFindings,
-  readSource,
-  symbolTypes,
-} from '..'
+import { createFinder, printFindings, readSource } from '..'
+import { isSymbol, symbolTypes } from '../symbols'
 import { createLogger } from './logger'
 import { commaSeparated } from './utils'
-import type { WithSourceOption, WithVerboseOption } from './options'
-import { verboseOption } from './options'
+import type {
+  WithFormatOption,
+  WithSourceOption,
+  WithVerboseOption,
+} from './options'
+import { formatOptions, verboseOption } from './options'
 import { out } from './print'
 
 const { log: print } = out
 
-interface Options extends FinderOptions, WithSourceOption, WithVerboseOption {
-  format?: 'json' | 'list'
-  json?: boolean
-}
+interface Options
+  extends FinderOptions,
+    WithFormatOption<'json' | 'list'>,
+    WithSourceOption,
+    WithVerboseOption {}
 
 export function withFindCmd(program: Command) {
-  program
+  const cmd = program
     .command('find')
     .description('Find uncommented symbols in TS/JS source code')
     .argument('[code]', 'TS/JS source code', '')
@@ -32,19 +32,15 @@ export function withFindCmd(program: Command) {
       commaSeparated({ validate: isSymbol }),
       [] as SymbolType[],
     )
-    .option('-f, --format', 'Configure formatting (default: "list")', 'list')
-    .option(
-      '--json',
-      'Output findings as JSON (same as `--format json`)',
-      false,
-    )
     .option(...verboseOption)
     .addHelpText(
       'after',
       '\nDefault --symbols:\n  ["func", "var", "class", "method", "iface", "prop"]',
     )
-    .addHelpText('after', '\nSupported formats:\n  ["list", "json"]')
-    .action(run)
+
+  formatOptions(['list', 'json'])(cmd)
+
+  cmd.action(run)
 
   return program
 }

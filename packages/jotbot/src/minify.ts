@@ -43,6 +43,11 @@ export interface MinifyFlags {
   emptyLines: boolean
 }
 
+const _defaultFlags = minifyFlags()
+export function isMinifyFlag(s: string): s is keyof MinifyFlags {
+  return s in _defaultFlags
+}
+
 export type MinifyResult<
   ComputeTokens extends boolean = never,
   WithTokens = true extends ComputeTokens ? true : false,
@@ -59,6 +64,8 @@ export interface MinificationStep extends MinifyResult<true> {
 }
 
 type Merge<A, B> = Omit<A, keyof B> & B
+
+export type MinifyToResult = ReturnType<typeof minifyTo>
 
 export function minifyTo(
   maxTokens: number,
@@ -160,14 +167,14 @@ export function removeEmptyLines(code: string) {
   return code.replace(emptyLineRE, '').trim()
 }
 
-function minifyFlags(flags: Partial<MinifyFlags>): MinifyFlags {
+function minifyFlags(flags?: Partial<MinifyFlags>): MinifyFlags {
   return {
-    variables: flags.variables ?? false,
-    functions: flags.functions ?? false,
-    classes: flags.classes ?? false,
-    interfaces: flags.interfaces ?? false,
-    properties: flags.properties ?? false,
-    methods: flags.methods ?? false,
-    emptyLines: flags.emptyLines ?? false,
+    variables: flags?.variables ?? false,
+    functions: flags?.functions ?? false,
+    classes: flags?.classes ?? false,
+    interfaces: flags?.interfaces ?? false,
+    properties: flags?.properties ?? false,
+    methods: flags?.methods ?? false,
+    emptyLines: flags?.emptyLines ?? false,
   }
 }
