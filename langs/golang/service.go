@@ -10,6 +10,7 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/modernice/jotbot/find"
+	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
 )
@@ -18,12 +19,31 @@ type Service struct {
 	finder *Finder
 }
 
-func New(finder *Finder) *Service {
-	return &Service{finder: finder}
+type Option func(*Service)
+
+func WithFinder(f *Finder) Option {
+	return func(s *Service) {
+		s.finder = f
+	}
+}
+
+func New(opts ...Option) *Service {
+	var svc Service
+	for _, opt := range opts {
+		opt(&svc)
+	}
+	if svc.finder == nil {
+		svc.finder = NewFinder()
+	}
+	return &svc
 }
 
 func (svc *Service) Find(code []byte) ([]find.Finding, error) {
 	return svc.finder.Find(code)
+}
+
+func (svc *Service) Prompt(input generate.Input) string {
+	return Prompt(input)
 }
 
 func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []byte) ([]byte, error) {

@@ -10,3 +10,7 @@ clear:
 .PHONY: docs
 docs: clear
 	@./scripts/dogfood.sh
+
+.PHONY: generate
+generate:
+	go generate ./...

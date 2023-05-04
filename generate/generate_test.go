@@ -65,13 +65,13 @@ func TestGenerator_Files(t *testing.T) {
 
 func TestFooter(t *testing.T) {
 	svc := igen.MockService().WithDoc("Foo", "Foo is a dummy function.")
-	g := generate.New(svc)
+	g := generate.New(svc, generate.Footer("This is a footer."))
 
 	doc, err := g.Generate(context.Background(), generate.Input{
 		Code:       []byte("package foo\n\nfunc Foo() {}"),
 		Identifier: "Foo",
 		Target:     "function 'Foo'",
-	}, generate.Footer("This is a footer."))
+	})
 	if err != nil {
 		t.Fatalf("Generate() failed: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestLimit(t *testing.T) {
 	svc := igen.MockService().
 		WithDoc("Foo", "Foo is a dummy function.").
 		WithDoc("Bar", "Bar is a dummy struct.")
-	g := generate.New(svc)
+	g := generate.New(svc, generate.Limit(2))
 
 	files := map[string][]generate.Input{
 		"foo.go": {{Identifier: "Foo"}},
@@ -95,7 +95,7 @@ func TestLimit(t *testing.T) {
 		"baz.go": {{Identifier: "Foo"}, {Identifier: "Bar"}, {Identifier: "Baz"}},
 	}
 
-	gens, errs, err := g.Files(context.Background(), files, generate.Limit(2))
+	gens, errs, err := g.Files(context.Background(), files)
 	if err != nil {
 		t.Fatalf("Files() failed: %v", err)
 	}
@@ -106,6 +106,23 @@ func TestLimit(t *testing.T) {
 		t.Fatalf("Files() returned %d files; want 2\n%v", n, got)
 	}
 }
+
+// func TestWithLanguage_Prompt(t *testing.T) {
+// 	svc := mockgenerate.NewMockService()
+// 	svc.GenerateDocFunc.PushHook(func(ctx generate.Context) (string, error) {
+// 	})
+
+// 	g := generate.New(svc, generate.WithLanguage(".go", golang.New()))
+
+// 	doc, err := g.Generate(context.Background(), generate.Input{
+// 		Code:       []byte("package foo\n\nfunc Foo() {}"),
+// 		Identifier: "Foo",
+// 		Target:     "function 'Foo'",
+// 	})
+// 	if err != nil {
+// 		t.Fatalf("Generate() failed: %v", err)
+// 	}
+// }
 
 func expectGenerated(t *testing.T, gens []generate.File, identifier, doc string) {
 	t.Helper()

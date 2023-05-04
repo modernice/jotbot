@@ -19,7 +19,7 @@ import (
 
 var (
 	DefaultLanguages = map[string]Language{
-		".go": golang.New(golang.NewFinder()),
+		".go": golang.New(),
 	}
 )
 
@@ -114,8 +114,8 @@ func (bot *JotBot) language(ext string) (Language, error) {
 	return nil, fmt.Errorf("no language service defined for file extension %q", ext)
 }
 
-func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.FilesOption) (*Patch, error) {
-	g := generate.New(svc)
+func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.Option) (*Patch, error) {
+	g := generate.New(svc, opts...)
 
 	files := make(map[string][]generate.Input)
 	for _, finding := range findings {
@@ -126,7 +126,7 @@ func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generat
 		files[finding.File] = append(files[finding.File], input)
 	}
 
-	generated, errs, err := g.Files(ctx, files, opts...)
+	generated, errs, err := g.Files(ctx, files)
 	if err != nil {
 		return nil, err
 	}

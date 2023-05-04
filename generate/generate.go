@@ -1,5 +1,7 @@
 package generate
 
+//go:generate go-mockgen -f github.com/modernice/jotbot/generate -i Service -i Minifier -o ./mockgenerate/generate.go
+
 import (
 	"context"
 	"fmt"
@@ -13,6 +15,14 @@ import (
 
 type Service interface {
 	GenerateDoc(Context) (string, error)
+}
+
+type Language interface {
+	Prompt(Input) string
+}
+
+type Minifier interface {
+	Minify([]byte) ([]byte, error)
 }
 
 type Input struct {
@@ -48,73 +58,51 @@ type Documentation struct {
 }
 
 type Generator struct {
-	svc Service
+	svc       Service
+	languages map[string]Language
+	limit     int
+	footer    string
+	log       *slog.Logger
 }
 
-func New(svc Service) *Generator {
-	return &Generator{svc: svc}
-}
-
-type Option interface {
-	apply(*config)
-}
-
-type optionFunc func(*config)
-
-func (f optionFunc) apply(cfg *config) {
-	f(cfg)
-}
+type Option func(*Generator)
 
 func WithLogger(h slog.Handler) Option {
-	return optionFunc(func(g *config) {
+	return func(g *Generator) {
 		g.log = slog.New(h)
-	})
+	}
 }
 
 func Footer(msg string) Option {
-	return optionFunc(func(g *config) {
+	return func(g *Generator) {
 		g.footer = msg
-	})
+	}
 }
 
-type config struct {
-	limit  int
-	footer string
-	log    *slog.Logger
-}
-
-type FilesOption interface {
-	Option
-	filesOption()
-}
-
-func Limit(n int) FilesOption {
-	return filesOption(func(g *config) {
+func Limit(n int) Option {
+	return func(g *Generator) {
 		g.limit = n
-	})
+	}
 }
 
-type filesOption func(*config)
-
-func (opt filesOption) apply(cfg *config) {
-	opt(cfg)
+func WithLanguage(ext string, lang Language) Option {
+	return func(g *Generator) {
+		g.languages[ext] = lang
+	}
 }
 
-func (opt filesOption) filesOption() {}
-
-func configure[Opt Option](opts ...Opt) (cfg config) {
+func New(svc Service, opts ...Option) *Generator {
+	g := &Generator{svc: svc}
 	for _, opt := range opts {
-		opt.apply(&cfg)
+		opt(g)
 	}
-	if cfg.log == nil {
-		cfg.log = internal.NopLogger()
+	if g.log == nil {
+		g.log = internal.NopLogger()
 	}
-	return
+	return g
 }
 
-func (g *Generator) Files(ctx context.Context, files map[string][]Input, opts ...FilesOption) (<-chan File, <-chan error, error) {
-	cfg := configure(opts...)
-
+func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan File, <-chan error, error) {
 	out, errs := make(chan File), make(chan error)
 
 	push := func(f File) bool {
@@ -133,7 +121,7 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input, opts ..
 		}
 	}
 
-	work, done := g.distributeWork(files, cfg)
+	work, done := g.distributeWork(files)
 	go work(ctx, func(file string, inputs []Input) bool {
 		docs := make([]Documentation, 0, len(inputs))
 		for _, input := range inputs {
@@ -159,16 +147,16 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input, opts ..
 	return out, errs, nil
 }
 
-func (g *Generator) distributeWork(files map[string][]Input, cfg config) (func(context.Context, func(string, []Input) bool), <-chan struct{}) {
+func (g *Generator) distributeWork(files map[string][]Input) (func(context.Context, func(string, []Input) bool), <-chan struct{}) {
 	done := make(chan struct{})
 	return func(ctx context.Context, work func(string, []Input) bool) {
 		workers := runtime.NumCPU()
 		if workers > len(files) {
-			cfg.log.Debug(fmt.Sprintf("Setting workers to file count: %d", len(files)))
+			g.log.Debug(fmt.Sprintf("Setting workers to file count: %d", len(files)))
 			workers = len(files)
 		}
 
-		cfg.log.Debug(fmt.Sprintf("Generating using %d workers.", workers))
+		g.log.Debug(fmt.Sprintf("Generating using %d workers.", workers))
 
 		type job struct {
 			file   string
@@ -204,9 +192,9 @@ func (g *Generator) distributeWork(files map[string][]Input, cfg config) (func(c
 					if !ok {
 						return
 					}
-					if cfg.limit > 0 {
+					if g.limit > 0 {
 						n := nFiles.Load()
-						if n >= int64(cfg.limit) {
+						if n >= int64(g.limit) {
 							return
 						}
 						nFiles.Add(1)
@@ -226,16 +214,14 @@ func (g *Generator) distributeWork(files map[string][]Input, cfg config) (func(c
 	}, done
 }
 
-func (g *Generator) Generate(ctx context.Context, input Input, opts ...Option) (string, error) {
-	cfg := configure(opts...)
-
+func (g *Generator) Generate(ctx context.Context, input Input) (string, error) {
 	doc, err := g.svc.GenerateDoc(newCtx(ctx, input))
 	if err != nil {
 		return "", err
 	}
 
-	if cfg.footer != "" {
-		doc = fmt.Sprintf("%s\n\n%s", doc, cfg.footer)
+	if g.footer != "" {
+		doc = fmt.Sprintf("%s\n\n%s", doc, g.footer)
 	}
 
 	return doc, nil
