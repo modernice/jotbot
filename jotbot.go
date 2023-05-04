@@ -44,7 +44,12 @@ type Option func(*JotBot)
 type Finding struct {
 	find.Finding
 
-	File string
+	File     string
+	Language string
+}
+
+func (f Finding) String() string {
+	return fmt.Sprintf("%s@%s (%s)", f.File, f.Identifier, f.Language)
 }
 
 type Patch struct {
@@ -124,8 +129,11 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 		}
 
 		out = append(out, slice.Map(findings, func(f find.Finding) Finding {
-			f.Language = langName
-			return Finding{f, file}
+			return Finding{
+				Finding:  f,
+				File:     file,
+				Language: langName,
+			}
 		})...)
 	}
 
@@ -186,7 +194,6 @@ func (bot *JotBot) makeInput(ctx context.Context, finding Finding) (generate.Inp
 		Code:       code,
 		Language:   finding.Language,
 		Identifier: finding.Identifier,
-		Target:     finding.Target,
 	}
 
 	return input, nil

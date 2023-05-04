@@ -29,7 +29,6 @@ type Input struct {
 	Code       []byte
 	Language   string
 	Identifier string
-	Target     string // e.g. "function 'foo' of class 'Foo'"
 }
 
 func (f Input) String() string {

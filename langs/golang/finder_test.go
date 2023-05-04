@@ -40,13 +40,13 @@ func TestFinder_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "X", Target: "const 'X'"},
-		{Identifier: "Foo", Target: "variable 'Foo'"},
-		{Identifier: "Bar", Target: "function 'Bar'"},
-		{Identifier: "Baz", Target: "type 'Baz'"},
-		{Identifier: "Baz.Baz", Target: "method 'Baz.Baz'"},
-		{Identifier: "Foobar", Target: "type 'Foobar'"},
-		{Identifier: "Foobar.Foobar", Target: "method 'Foobar.Foobar'"},
+		{Identifier: "X"},
+		{Identifier: "Foo"},
+		{Identifier: "Bar"},
+		{Identifier: "Baz"},
+		{Identifier: "Baz.Baz"},
+		{Identifier: "Foobar"},
+		{Identifier: "Foobar.Foobar"},
 	}, findings)
 }
 
@@ -75,8 +75,8 @@ func TestFinder_Find_onlyUncommented(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foo", Target: "const 'Foo'"},
-		{Identifier: "Baz", Target: "function 'Baz'"},
+		{Identifier: "Foo"},
+		{Identifier: "Baz"},
 	}, findings)
 }
 
@@ -105,9 +105,9 @@ func TestFinder_Find_pointerReceiver(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foo", Target: "type 'Foo'"},
-		{Identifier: "(*Foo).Foo", Target: "method '(*Foo).Foo'"},
-		{Identifier: "Foo.Bar", Target: "method 'Foo.Bar'"},
+		{Identifier: "Foo"},
+		{Identifier: "(*Foo).Foo"},
+		{Identifier: "Foo.Bar"},
 	}, findings)
 }
 
@@ -144,11 +144,11 @@ func TestFinder_Find_generics(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foobar", Target: "function 'Foobar'"},
-		{Identifier: "Foo", Target: "type 'Foo'"},
-		{Identifier: "Foo.Foo", Target: "method 'Foo.Foo'"},
-		{Identifier: "(*Foo).Bar", Target: "method '(*Foo).Bar'"},
-		{Identifier: "(*Foo).Baz", Target: "method '(*Foo).Baz'"},
+		{Identifier: "Foobar"},
+		{Identifier: "Foo"},
+		{Identifier: "Foo.Foo"},
+		{Identifier: "(*Foo).Bar"},
+		{Identifier: "(*Foo).Baz"},
 	}, findings)
 }
 
@@ -173,7 +173,7 @@ func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foobar", Target: "function 'Foobar'"},
+		{Identifier: "Foobar"},
 	}, findings)
 }
 
@@ -198,8 +198,8 @@ func TestFindTests(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "TestFoo", Target: "function 'TestFoo'"},
-		{Identifier: "TestBar", Target: "function 'TestBar'"},
-		{Identifier: "Foobar", Target: "function 'Foobar'"},
+		{Identifier: "TestFoo"},
+		{Identifier: "TestBar"},
+		{Identifier: "Foobar"},
 	}, findings)
 }

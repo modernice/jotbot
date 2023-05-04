@@ -18,26 +18,18 @@ type Finder struct {
 }
 
 // FinderOption is an interface for configuring a *Finder.
-type FinderOption interface {
-	applyFinder(*Finder)
-}
+type FinderOption func(*Finder)
 
 func FindTests(find bool) FinderOption {
-	return finderOptionFunc(func(f *Finder) {
+	return func(f *Finder) {
 		f.findTests = find
-	})
-}
-
-type finderOptionFunc func(*Finder)
-
-func (opt finderOptionFunc) applyFinder(f *Finder) {
-	opt(f)
+	}
 }
 
 func NewFinder(opts ...FinderOption) *Finder {
 	var f Finder
 	for _, opt := range opts {
-		opt.applyFinder(&f)
+		opt(&f)
 	}
 	return &f
 }
@@ -54,7 +46,6 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 	for _, node := range node.Decls {
 		var (
 			identifier string
-			target     string
 			exported   bool
 		)
 
@@ -69,7 +60,6 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 			}
 
 			identifier, exported = nodes.Identifier(node)
-			target = funcTarget(identifier)
 		case *dst.GenDecl:
 			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
@@ -85,7 +75,6 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 			case *dst.TypeSpec:
 				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
 					identifier, exported = nodes.Identifier(spec)
-					target = typeTarget(identifier)
 				}
 
 				if isInterface(spec) {
@@ -94,7 +83,6 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 			case *dst.ValueSpec:
 				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
 					identifier, exported = nodes.Identifier(spec)
-					target = valueTarget(identifier, node)
 				}
 			}
 		}
@@ -102,7 +90,6 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 		if exported {
 			findings = append(findings, find.Finding{
 				Identifier: identifier,
-				Target:     target,
 			})
 		}
 	}
@@ -154,7 +141,6 @@ func findInterfaceMethods(spec *dst.TypeSpec) []find.Finding {
 		if nodes.IsExportedIdentifier(ident) && !nodes.HasDoc(method.Decs.Start) {
 			findings = append(findings, find.Finding{
 				Identifier: ident,
-				Target:     funcTarget(ident),
 			})
 		}
 	}

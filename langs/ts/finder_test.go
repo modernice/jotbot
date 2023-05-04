@@ -40,15 +40,15 @@ func TestFinder_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "var:foo", Target: "variable 'foo'"},
-		{Identifier: "func:foobar", Target: "function 'foobar'"},
-		{Identifier: "iface:Foo", Target: "interface 'Foo'"},
-		{Identifier: "prop:Foo.foo", Target: "property 'foo' of 'Foo'"},
-		{Identifier: "method:Foo.bar", Target: "method 'bar' of 'Foo'"},
-		{Identifier: "prop:Foo.baz", Target: "property 'baz' of 'Foo'"},
-		{Identifier: "class:Bar", Target: "class 'Bar'"},
-		{Identifier: "prop:Bar.foo", Target: "property 'foo' of 'Bar'"},
-		{Identifier: "method:Bar.bar", Target: "method 'bar' of 'Bar'"},
+		{Identifier: "var:foo"},
+		{Identifier: "func:foobar"},
+		{Identifier: "iface:Foo"},
+		{Identifier: "prop:Foo.foo"},
+		{Identifier: "method:Foo.bar"},
+		{Identifier: "prop:Foo.baz"},
+		{Identifier: "class:Bar"},
+		{Identifier: "prop:Bar.foo"},
+		{Identifier: "method:Bar.bar"},
 	}, findings)
 }
 
@@ -82,9 +82,9 @@ func TestSymbols(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "var:foo", Target: "variable 'foo'"},
-		{Identifier: "method:Foo.bar", Target: "method 'bar' of 'Foo'"},
-		{Identifier: "method:Bar.bar", Target: "method 'bar' of 'Bar'"},
+		{Identifier: "var:foo"},
+		{Identifier: "method:Foo.bar"},
+		{Identifier: "method:Bar.bar"},
 	}, findings)
 }
 

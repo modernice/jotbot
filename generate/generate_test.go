@@ -31,7 +31,6 @@ func TestGenerator_Generate(t *testing.T) {
 		Code:       []byte(code),
 		Language:   "go",
 		Identifier: "Add",
-		Target:     "function 'Add'",
 	}
 
 	got, err := g.Generate(context.Background(), in)
@@ -85,7 +84,6 @@ func TestFooter(t *testing.T) {
 		Code:       []byte("package foo\n\nfunc Foo() {}"),
 		Language:   "go",
 		Identifier: "Foo",
-		Target:     "function 'Foo'",
 	})
 	if err != nil {
 		t.Fatalf("Generate() failed: %v", err)

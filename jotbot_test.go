@@ -27,13 +27,13 @@ func TestJotBot_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []jotbot.Finding{
-		{File: "foo.go", Finding: find.Finding{Identifier: "Foo", Language: "go", Target: "function 'Foo'"}},
-		{File: "bar.go", Finding: find.Finding{Identifier: "Foo", Language: "go", Target: "const 'Foo'"}},
-		{File: "bar.go", Finding: find.Finding{Identifier: "Bar", Language: "go", Target: "type 'Bar'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "X", Language: "go", Target: "type 'X'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "X.Foo", Language: "go", Target: "method 'X.Foo'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "(*X).Bar", Language: "go", Target: "method '(*X).Bar'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "Y.Foo", Language: "go", Target: "method 'Y.Foo'"}},
+		{File: "foo.go", Finding: find.Finding{Identifier: "Foo"}, Language: "go"},
+		{File: "bar.go", Finding: find.Finding{Identifier: "Foo"}, Language: "go"},
+		{File: "bar.go", Finding: find.Finding{Identifier: "Bar"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "X"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "X.Foo"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "(*X).Bar"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "Y.Foo"}, Language: "go"},
 	}, findings)
 }
 
@@ -57,24 +57,12 @@ func TestJotBot_Generate(t *testing.T) {
 		findings := append(
 			makeFindings(
 				"foo.go",
-				find.Finding{
-					Language:   "go",
-					Identifier: "Foo",
-					Target:     "function 'Foo'",
-				},
+				find.Finding{Identifier: "Foo"},
 			),
 			makeFindings(
 				"bar.go",
-				find.Finding{
-					Language:   "go",
-					Identifier: "Foo",
-					Target:     "const 'Foo'",
-				},
-				find.Finding{
-					Language:   "go",
-					Identifier: "Bar",
-					Target:     "type 'Bar'",
-				},
+				find.Finding{Identifier: "Foo"},
+				find.Finding{Identifier: "Bar"},
 			)...,
 		)
 
@@ -96,7 +84,7 @@ func TestJotBot_Generate(t *testing.T) {
 func makeFindings(file string, findings ...find.Finding) []jotbot.Finding {
 	out := make([]jotbot.Finding, len(findings))
 	for i, f := range findings {
-		out[i] = jotbot.Finding{File: file, Finding: f}
+		out[i] = jotbot.Finding{File: file, Finding: f, Language: "go"}
 	}
 	return out
 }
