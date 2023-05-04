@@ -22,8 +22,8 @@ func New(finder *Finder) *Service {
 	return &Service{finder: finder}
 }
 
-func (svc *Service) Find(ctx context.Context, code []byte) ([]find.Finding, error) {
-	return svc.finder.Find(ctx, code)
+func (svc *Service) Find(code []byte) ([]find.Finding, error) {
+	return svc.finder.Find(code)
 }
 
 func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []byte) ([]byte, error) {

@@ -26,7 +26,7 @@ var (
 type Language interface {
 	patch.Language
 
-	Find(context.Context, []byte) ([]find.Finding, error)
+	Find([]byte) ([]find.Finding, error)
 }
 
 type JotBot struct {
@@ -94,7 +94,7 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 			return nil, fmt.Errorf("read file %s: %w", path, err)
 		}
 
-		findings, err := lang.Find(ctx, b)
+		findings, err := lang.Find(b)
 		if err != nil {
 			return nil, fmt.Errorf("find in %s: %w", path, err)
 		}

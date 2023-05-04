@@ -1,7 +1,6 @@
 package golang
 
 import (
-	"context"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -43,7 +42,7 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-func (f *Finder) Find(ctx context.Context, code []byte) ([]find.Finding, error) {
+func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 	var findings []find.Finding
 
 	fset := token.NewFileSet()

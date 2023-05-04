@@ -1,7 +1,6 @@
 package golang_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/MakeNowJust/heredoc/v2"
@@ -35,7 +34,7 @@ func TestFinder_Find(t *testing.T) {
 
 	f := golang.NewFinder()
 
-	findings, err := f.Find(context.Background(), []byte(code))
+	findings, err := f.Find([]byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
@@ -70,7 +69,7 @@ func TestFinder_Find_onlyUncommented(t *testing.T) {
 
 	f := golang.NewFinder()
 
-	findings, err := f.Find(context.Background(), []byte(code))
+	findings, err := f.Find([]byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
@@ -100,7 +99,7 @@ func TestFinder_Find_pointerReceiver(t *testing.T) {
 
 	f := golang.NewFinder()
 
-	findings, err := f.Find(context.Background(), []byte(code))
+	findings, err := f.Find([]byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
@@ -139,7 +138,7 @@ func TestFinder_Find_generics(t *testing.T) {
 
 	f := golang.NewFinder()
 
-	findings, err := f.Find(context.Background(), []byte(code))
+	findings, err := f.Find([]byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
@@ -168,7 +167,7 @@ func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
 
 	f := golang.NewFinder()
 
-	findings, err := f.Find(context.Background(), []byte(code))
+	findings, err := f.Find([]byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
@@ -193,7 +192,7 @@ func TestFindTests(t *testing.T) {
 
 	f := golang.NewFinder(golang.FindTests(true))
 
-	findings, err := f.Find(context.Background(), []byte(code))
+	findings, err := f.Find([]byte(code))
 	if err != nil {
 		t.Fatalf("Find() failed: %v", err)
 	}
