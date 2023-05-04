@@ -55,24 +55,26 @@ func New(svc Service) *Generator {
 	return &Generator{svc: svc}
 }
 
-type Option func(*config)
+type Option interface {
+	apply(*config)
+}
 
-func Limit(n int) Option {
-	return func(g *config) {
-		g.limit = n
-	}
+type optionFunc func(*config)
+
+func (f optionFunc) apply(cfg *config) {
+	f(cfg)
 }
 
 func WithLogger(h slog.Handler) Option {
-	return func(g *config) {
+	return optionFunc(func(g *config) {
 		g.log = slog.New(h)
-	}
+	})
 }
 
 func Footer(msg string) Option {
-	return func(g *config) {
+	return optionFunc(func(g *config) {
 		g.footer = msg
-	}
+	})
 }
 
 type config struct {
@@ -81,9 +83,28 @@ type config struct {
 	log    *slog.Logger
 }
 
-func configure(opts ...Option) (cfg config) {
+type FilesOption interface {
+	Option
+	filesOption()
+}
+
+func Limit(n int) FilesOption {
+	return filesOption(func(g *config) {
+		g.limit = n
+	})
+}
+
+type filesOption func(*config)
+
+func (opt filesOption) apply(cfg *config) {
+	opt(cfg)
+}
+
+func (opt filesOption) filesOption() {}
+
+func configure[Opt Option](opts ...Opt) (cfg config) {
 	for _, opt := range opts {
-		opt(&cfg)
+		opt.apply(&cfg)
 	}
 	if cfg.log == nil {
 		cfg.log = internal.NopLogger()
@@ -91,7 +112,7 @@ func configure(opts ...Option) (cfg config) {
 	return
 }
 
-func (g *Generator) Files(ctx context.Context, files map[string][]Input, opts ...Option) (<-chan File, <-chan error, error) {
+func (g *Generator) Files(ctx context.Context, files map[string][]Input, opts ...FilesOption) (<-chan File, <-chan error, error) {
 	cfg := configure(opts...)
 
 	out, errs := make(chan File), make(chan error)

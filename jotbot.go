@@ -114,7 +114,7 @@ func (bot *JotBot) language(ext string) (Language, error) {
 	return nil, fmt.Errorf("no language service defined for file extension %q", ext)
 }
 
-func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.Option) (*Patch, error) {
+func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.FilesOption) (*Patch, error) {
 	g := generate.New(svc)
 
 	files := make(map[string][]generate.Input)
