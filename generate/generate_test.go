@@ -2,18 +2,21 @@ package generate_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/generate/mockgenerate"
 	"github.com/modernice/jotbot/internal"
-	igen "github.com/modernice/jotbot/internal/generate"
+	"github.com/modernice/jotbot/langs/golang"
 )
 
 func TestGenerator_Generate(t *testing.T) {
 	doc := "Add adds two integers."
-	svc := igen.MockService().WithDoc("Add", doc)
+	svc := mockgenerate.NewMockService()
+	svc.GenerateDocFunc.PushReturn(doc, nil)
 
 	code := heredoc.Doc(`
 		package foo
@@ -23,9 +26,10 @@ func TestGenerator_Generate(t *testing.T) {
 		}
 	`)
 
-	g := generate.New(svc)
+	g := generate.New(svc, generate.WithLanguage("go", golang.New()))
 	in := generate.Input{
 		Code:       []byte(code),
+		Language:   "go",
 		Identifier: "Add",
 		Target:     "function 'Add'",
 	}
@@ -41,15 +45,23 @@ func TestGenerator_Generate(t *testing.T) {
 }
 
 func TestGenerator_Files(t *testing.T) {
-	svc := igen.MockService().
-		WithDoc("Foo", "Foo is a function.").
-		WithDoc("Bar", "Bar is a struct.")
+	svc := mockgenerate.NewMockService()
+	svc.GenerateDocFunc.SetDefaultHook(func(ctx generate.Context) (string, error) {
+		switch ctx.Input().Identifier {
+		case "Foo":
+			return "Foo is a function.", nil
+		case "Bar":
+			return "Bar is a struct.", nil
+		default:
+			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
+		}
+	})
 
-	g := generate.New(svc)
+	g := generate.New(svc, generate.WithLanguage("go", golang.New()))
 
 	files := map[string][]generate.Input{
-		"foo.go": {{Identifier: "Foo"}},
-		"bar.go": {{Identifier: "Foo"}, {Identifier: "Bar"}},
+		"foo.go": {{Identifier: "Foo", Language: "go"}},
+		"bar.go": {{Identifier: "Foo", Language: "go"}, {Identifier: "Bar", Language: "go"}},
 	}
 
 	gens, errs, err := g.Files(context.Background(), files)
@@ -64,11 +76,14 @@ func TestGenerator_Files(t *testing.T) {
 }
 
 func TestFooter(t *testing.T) {
-	svc := igen.MockService().WithDoc("Foo", "Foo is a dummy function.")
-	g := generate.New(svc, generate.Footer("This is a footer."))
+	svc := mockgenerate.NewMockService()
+	svc.GenerateDocFunc.PushReturn("Foo is a dummy function.", nil)
+
+	g := generate.New(svc, generate.Footer("This is a footer."), generate.WithLanguage("go", golang.New()))
 
 	doc, err := g.Generate(context.Background(), generate.Input{
 		Code:       []byte("package foo\n\nfunc Foo() {}"),
+		Language:   "go",
 		Identifier: "Foo",
 		Target:     "function 'Foo'",
 	})
@@ -84,15 +99,25 @@ func TestFooter(t *testing.T) {
 }
 
 func TestLimit(t *testing.T) {
-	svc := igen.MockService().
-		WithDoc("Foo", "Foo is a dummy function.").
-		WithDoc("Bar", "Bar is a dummy struct.")
-	g := generate.New(svc, generate.Limit(2))
+	svc := mockgenerate.NewMockService()
+	svc.GenerateDocFunc.SetDefaultHook(func(ctx generate.Context) (string, error) {
+		switch ctx.Input().Identifier {
+		case "Foo":
+			return "Foo is a dummy.", nil
+		case "Bar":
+			return "Bar is a dummy.", nil
+		case "Baz":
+			return "Baz is a dummy.", nil
+		default:
+			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
+		}
+	})
+	g := generate.New(svc, generate.Limit(2), generate.WithLanguage("go", golang.New()))
 
 	files := map[string][]generate.Input{
-		"foo.go": {{Identifier: "Foo"}},
-		"bar.go": {{Identifier: "Foo"}, {Identifier: "Bar"}},
-		"baz.go": {{Identifier: "Foo"}, {Identifier: "Bar"}, {Identifier: "Baz"}},
+		"foo.go": {{Identifier: "Foo", Language: "go"}},
+		"bar.go": {{Identifier: "Foo", Language: "go"}, {Identifier: "Bar", Language: "go"}},
+		"baz.go": {{Identifier: "Foo", Language: "go"}, {Identifier: "Bar", Language: "go"}, {Identifier: "Baz", Language: "go"}},
 	}
 
 	gens, errs, err := g.Files(context.Background(), files)
@@ -106,23 +131,6 @@ func TestLimit(t *testing.T) {
 		t.Fatalf("Files() returned %d files; want 2\n%v", n, got)
 	}
 }
-
-// func TestWithLanguage_Prompt(t *testing.T) {
-// 	svc := mockgenerate.NewMockService()
-// 	svc.GenerateDocFunc.PushHook(func(ctx generate.Context) (string, error) {
-// 	})
-
-// 	g := generate.New(svc, generate.WithLanguage(".go", golang.New()))
-
-// 	doc, err := g.Generate(context.Background(), generate.Input{
-// 		Code:       []byte("package foo\n\nfunc Foo() {}"),
-// 		Identifier: "Foo",
-// 		Target:     "function 'Foo'",
-// 	})
-// 	if err != nil {
-// 		t.Fatalf("Generate() failed: %v", err)
-// 	}
-// }
 
 func expectGenerated(t *testing.T, gens []generate.File, identifier, doc string) {
 	t.Helper()

@@ -2,6 +2,7 @@ package jotbot_test
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -9,7 +10,8 @@ import (
 
 	"github.com/modernice/jotbot"
 	"github.com/modernice/jotbot/find"
-	igen "github.com/modernice/jotbot/internal/generate"
+	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/generate/mockgenerate"
 	"github.com/modernice/jotbot/internal/tests"
 )
 
@@ -25,20 +27,28 @@ func TestJotBot_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []jotbot.Finding{
-		{File: "foo.go", Finding: find.Finding{Identifier: "Foo", Target: "function 'Foo'"}},
-		{File: "bar.go", Finding: find.Finding{Identifier: "Foo", Target: "const 'Foo'"}},
-		{File: "bar.go", Finding: find.Finding{Identifier: "Bar", Target: "type 'Bar'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "X", Target: "type 'X'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "X.Foo", Target: "method 'X.Foo'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "(*X).Bar", Target: "method '(*X).Bar'"}},
-		{File: "baz.go", Finding: find.Finding{Identifier: "Y.Foo", Target: "method 'Y.Foo'"}},
+		{File: "foo.go", Finding: find.Finding{Identifier: "Foo", Language: "go", Target: "function 'Foo'"}},
+		{File: "bar.go", Finding: find.Finding{Identifier: "Foo", Language: "go", Target: "const 'Foo'"}},
+		{File: "bar.go", Finding: find.Finding{Identifier: "Bar", Language: "go", Target: "type 'Bar'"}},
+		{File: "baz.go", Finding: find.Finding{Identifier: "X", Language: "go", Target: "type 'X'"}},
+		{File: "baz.go", Finding: find.Finding{Identifier: "X.Foo", Language: "go", Target: "method 'X.Foo'"}},
+		{File: "baz.go", Finding: find.Finding{Identifier: "(*X).Bar", Language: "go", Target: "method '(*X).Bar'"}},
+		{File: "baz.go", Finding: find.Finding{Identifier: "Y.Foo", Language: "go", Target: "method 'Y.Foo'"}},
 	}, findings)
 }
 
 func TestJotBot_Generate(t *testing.T) {
-	svc := igen.MockService().
-		WithDoc("Foo", "Foo is a foo.").
-		WithDoc("Bar", "Bar is a bar.")
+	svc := mockgenerate.NewMockService()
+	svc.GenerateDocFunc.SetDefaultHook(func(ctx generate.Context) (string, error) {
+		switch ctx.Input().Identifier {
+		case "Foo":
+			return "Foo is a foo.", nil
+		case "Bar":
+			return "Bar is a bar.", nil
+		default:
+			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
+		}
+	})
 
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generate")
 	tests.WithRepo("basic", root, func(repo fs.FS) {
@@ -48,6 +58,7 @@ func TestJotBot_Generate(t *testing.T) {
 			makeFindings(
 				"foo.go",
 				find.Finding{
+					Language:   "go",
 					Identifier: "Foo",
 					Target:     "function 'Foo'",
 				},
@@ -55,10 +66,12 @@ func TestJotBot_Generate(t *testing.T) {
 			makeFindings(
 				"bar.go",
 				find.Finding{
+					Language:   "go",
 					Identifier: "Foo",
 					Target:     "const 'Foo'",
 				},
 				find.Finding{
+					Language:   "go",
 					Identifier: "Bar",
 					Target:     "type 'Bar'",
 				},

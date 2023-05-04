@@ -15,6 +15,8 @@ import (
 	"github.com/modernice/jotbot/internal/slice"
 )
 
+var FileExtensions = []string{".go"}
+
 type Service struct {
 	finder *Finder
 }
@@ -36,6 +38,10 @@ func New(opts ...Option) *Service {
 		svc.finder = NewFinder()
 	}
 	return &svc
+}
+
+func (svc *Service) Extensions() []string {
+	return append([]string{}, FileExtensions...)
 }
 
 func (svc *Service) Find(code []byte) ([]find.Finding, error) {

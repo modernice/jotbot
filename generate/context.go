@@ -1,30 +1,30 @@
 package generate
 
-import (
-	"context"
-)
+import "context"
 
 var _ Context = (*genCtx)(nil)
 
 type genCtx struct {
 	context.Context
 
-	input Input
+	input  Input
+	prompt string
 }
 
-func newCtx(parent context.Context, input Input) *genCtx {
+func newCtx(parent context.Context, input Input, prompt string) *genCtx {
 	return &genCtx{
 		Context: parent,
 		input:   input,
+		prompt:  prompt,
 	}
 }
 
-func (ctx *genCtx) Identifier() string {
-	return ctx.input.Identifier
+func (ctx *genCtx) Input() Input {
+	return ctx.input
 }
 
-func (ctx *genCtx) Target() string {
-	return ctx.input.Target
+func (ctx *genCtx) Prompt() string {
+	return ctx.prompt
 }
 
 func (ctx *genCtx) File() []byte {

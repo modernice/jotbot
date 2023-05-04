@@ -25,7 +25,7 @@ var (
 )
 
 type Finding struct {
-	// File       string
+	Language   string
 	Identifier string
 	// Natural language description of the identifier.
 	Target string

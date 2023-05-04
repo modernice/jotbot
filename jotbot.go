@@ -19,21 +19,24 @@ import (
 
 var (
 	DefaultLanguages = map[string]Language{
-		".go": golang.New(),
+		"go": golang.New(),
 	}
 )
 
 type Language interface {
 	patch.Language
+	generate.Language
 
+	Extensions() []string
 	Find([]byte) ([]find.Finding, error)
 }
 
 type JotBot struct {
-	root      string
-	fs        afero.Fs
-	languages map[string]Language
-	log       *slog.Logger
+	root          string
+	fs            afero.Fs
+	languages     map[string]Language
+	extToLanguage map[string]string
+	log           *slog.Logger
 }
 
 type Option func(*JotBot)
@@ -50,25 +53,40 @@ type Patch struct {
 	getLanguage func(string) (Language, error)
 }
 
+func WithLanguage(name string, lang Language) Option {
+	return func(bot *JotBot) {
+		bot.ConfigureLanguage(name, lang)
+	}
+}
+
 func New(root string, opts ...Option) *JotBot {
 	bot := &JotBot{
-		root: root,
-		fs:   afero.NewBasePathFs(afero.NewOsFs(), root),
+		root:          root,
+		fs:            afero.NewBasePathFs(afero.NewOsFs(), root),
+		languages:     make(map[string]Language),
+		extToLanguage: make(map[string]string),
 	}
+
+	for name, lang := range DefaultLanguages {
+		bot.ConfigureLanguage(name, lang)
+	}
+
 	for _, opt := range opts {
 		opt(bot)
 	}
-	if bot.languages == nil {
-		bot.languages = DefaultLanguages
-	}
+
 	if bot.log == nil {
 		bot.log = internal.NopLogger()
 	}
+
 	return bot
 }
 
-func (bot *JotBot) ConfigureLanguage(ext string, svc Language) {
-	bot.languages[ext] = svc
+func (bot *JotBot) ConfigureLanguage(name string, lang Language) {
+	bot.languages[name] = lang
+	for _, ext := range lang.Extensions() {
+		bot.extToLanguage[ext] = name
+	}
 }
 
 func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, error) {
@@ -81,7 +99,13 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 	var out []Finding
 	for _, file := range files {
 		ext := filepath.Ext(file)
-		lang, err := bot.language(ext)
+		langName, ok := bot.extToLanguage[ext]
+		if !ok {
+			bot.log.Warn(fmt.Sprintf("no language configured for file extension %q", ext))
+			continue
+		}
+
+		lang, err := bot.languageForExtension(ext)
 		if err != nil {
 			bot.log.Warn(err.Error())
 			continue
@@ -100,6 +124,7 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 		}
 
 		out = append(out, slice.Map(findings, func(f find.Finding) Finding {
+			f.Language = langName
 			return Finding{f, file}
 		})...)
 	}
@@ -107,14 +132,22 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 	return out, nil
 }
 
-func (bot *JotBot) language(ext string) (Language, error) {
-	if lang, ok := bot.languages[ext]; ok {
-		return lang, nil
+func (bot *JotBot) languageForExtension(ext string) (Language, error) {
+	if name, ok := bot.extToLanguage[ext]; ok {
+		if lang, ok := bot.languages[name]; ok {
+			return lang, nil
+		}
 	}
-	return nil, fmt.Errorf("no language service defined for file extension %q", ext)
+	return nil, fmt.Errorf("no language configured for file extension %q", ext)
 }
 
 func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.Option) (*Patch, error) {
+	var baseOpts []generate.Option
+	for name, lang := range bot.languages {
+		baseOpts = append(baseOpts, generate.WithLanguage(name, lang))
+	}
+	opts = append(baseOpts, opts...)
+
 	g := generate.New(svc, opts...)
 
 	files := make(map[string][]generate.Input)
@@ -132,9 +165,8 @@ func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generat
 	}
 
 	return &Patch{
-		Patch: patch.New(generated, patch.WithErrors(errs)),
-		// repo:        bot.fs,
-		getLanguage: bot.language,
+		Patch:       patch.New(generated, patch.WithErrors(errs)),
+		getLanguage: bot.languageForExtension,
 	}, nil
 }
 
@@ -152,6 +184,7 @@ func (bot *JotBot) makeInput(ctx context.Context, finding Finding) (generate.Inp
 
 	input := generate.Input{
 		Code:       code,
+		Language:   finding.Language,
 		Identifier: finding.Identifier,
 		Target:     finding.Target,
 	}

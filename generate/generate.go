@@ -27,23 +27,20 @@ type Minifier interface {
 
 type Input struct {
 	Code       []byte
+	Language   string
 	Identifier string
 	Target     string // e.g. "function 'foo' of class 'Foo'"
 }
 
 func (f Input) String() string {
-	if f.Target != "" {
-		return f.Target
-	}
-	return f.Identifier
+	return fmt.Sprintf("%s (%s)", f.Identifier, f.Language)
 }
 
 type Context interface {
 	context.Context
 
-	Identifier() string
-	Target() string
-	File() []byte
+	Input() Input
+	Prompt() string
 }
 
 type File struct {
@@ -92,7 +89,7 @@ func WithLanguage(ext string, lang Language) Option {
 }
 
 func New(svc Service, opts ...Option) *Generator {
-	g := &Generator{svc: svc}
+	g := &Generator{svc: svc, languages: make(map[string]Language)}
 	for _, opt := range opts {
 		opt(g)
 	}
@@ -127,7 +124,7 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 		for _, input := range inputs {
 			doc, err := g.Generate(ctx, input)
 			if err != nil {
-				fail(fmt.Errorf("generate %s: %w", input, err))
+				fail(fmt.Errorf("generate %q: %w", input.Identifier, err))
 				continue
 			}
 			docs = append(docs, Documentation{Input: input, Text: doc})
@@ -215,7 +212,14 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 }
 
 func (g *Generator) Generate(ctx context.Context, input Input) (string, error) {
-	doc, err := g.svc.GenerateDoc(newCtx(ctx, input))
+	lang, ok := g.languages[input.Language]
+	if !ok {
+		return "", fmt.Errorf("unknown language %q", input.Language)
+	}
+
+	genCtx := newCtx(ctx, input, lang.Prompt(input))
+
+	doc, err := g.svc.GenerateDoc(genCtx)
 	if err != nil {
 		return "", err
 	}
