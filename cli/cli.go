@@ -70,6 +70,7 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 	openaiOpts := []openai.Option{
 		openai.Model(cfg.Generate.Model),
 		openai.MaxTokens(cfg.Generate.MaxTokens),
+		openai.WithLogger(logHandler),
 	}
 
 	oai, err := openai.New(cfg.APIKey, openaiOpts...)

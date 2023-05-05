@@ -110,6 +110,9 @@ func findInterfaceMethods(spec *dst.TypeSpec) []find.Finding {
 
 	ifaceName := spec.Name.Name
 	for _, method := range spec.Type.(*dst.InterfaceType).Methods.List {
+		if len(method.Names) == 0 {
+			continue
+		}
 		name := method.Names[0].Name
 		ident := fmt.Sprintf("func:%s.%s", ifaceName, name)
 		if nodes.IsExportedIdentifier(ident) && !nodes.HasDoc(method.Decs.Start) {

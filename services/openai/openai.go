@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
 	"github.com/sashabaranov/go-openai"
 	"github.com/tiktoken-go/tokenizer"
 	"golang.org/x/exp/slog"
@@ -45,6 +46,12 @@ func MaxTokens(max int) Option {
 	}
 }
 
+func WithLogger(h slog.Handler) Option {
+	return func(s *Service) {
+		s.log = slog.New(h)
+	}
+}
+
 func New(apiKey string, opts ...Option) (*Service, error) {
 	svc := Service{maxTokens: DefaultMaxTokens}
 	for _, opt := range opts {
@@ -65,10 +72,16 @@ func New(apiKey string, opts ...Option) (*Service, error) {
 	}
 	svc.codec = codec
 
+	if svc.log == nil {
+		svc.log = internal.NopLogger()
+	}
+
 	return &svc, nil
 }
 
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
+	svc.log.Debug(fmt.Sprintf("[OpenAI] Generating docs for %s (%s)", ctx.Input().Identifier, ctx.Input().Language))
+
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:            string(svc.model),
