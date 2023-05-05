@@ -13,12 +13,29 @@ import (
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
+	"github.com/modernice/jotbot/services/openai"
+	"github.com/tiktoken-go/tokenizer"
 )
 
-var FileExtensions = []string{".go"}
+var (
+	FileExtensions      = []string{".go"}
+	DefaultMinification = []nodes.MinifyOptions{
+		nodes.MinifyUnexported,
+		{
+			FuncBody: true,
+			Exported: true,
+		},
+		nodes.MinifyExported,
+		nodes.MinifyAll,
+	}
+)
 
 type Service struct {
-	finder *Finder
+	model       tokenizer.Model
+	maxTokens   int
+	codec       tokenizer.Codec
+	finder      *Finder
+	minifySteps []nodes.MinifyOptions
 }
 
 type Option func(*Service)
@@ -29,15 +46,49 @@ func WithFinder(f *Finder) Option {
 	}
 }
 
-func New(opts ...Option) *Service {
-	var svc Service
+func Model(m tokenizer.Model) Option {
+	return func(s *Service) {
+		s.model = m
+	}
+}
+
+func Minify(steps []nodes.MinifyOptions) Option {
+	return func(s *Service) {
+		s.minifySteps = steps
+	}
+}
+
+func Must(opts ...Option) *Service {
+	svc, err := New(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return svc
+}
+
+func New(opts ...Option) (*Service, error) {
+	svc := Service{minifySteps: DefaultMinification}
 	for _, opt := range opts {
 		opt(&svc)
 	}
+
+	if svc.model == "" {
+		svc.model = openai.DefaultModel
+	}
+
+	codec, err := tokenizer.ForModel(svc.model)
+	if err != nil {
+		return nil, fmt.Errorf("create tokenizer: %w", err)
+	}
+	svc.codec = codec
+
+	svc.maxTokens = openai.MaxTokensForModel(string(svc.model))
+
 	if svc.finder == nil {
 		svc.finder = NewFinder()
 	}
-	return &svc
+
+	return &svc, err
 }
 
 func (svc *Service) Extensions() []string {
@@ -46,6 +97,52 @@ func (svc *Service) Extensions() []string {
 
 func (svc *Service) Find(code []byte) ([]find.Finding, error) {
 	return svc.finder.Find(code)
+}
+
+func (svc *Service) Minify(code []byte) ([]byte, error) {
+	if len(svc.minifySteps) == 0 {
+		return code, nil
+	}
+
+	node, err := nodes.Parse(code)
+	if err != nil {
+		return nil, fmt.Errorf("parse code: %w", err)
+	}
+
+	var tokens []uint
+	for _, step := range svc.minifySteps {
+		formatted, err := nodes.Format(node)
+		if err != nil {
+			return nil, fmt.Errorf("format code: %w", err)
+		}
+
+		tokens, _, err = svc.codec.Encode(string(formatted))
+		if err != nil {
+			return nil, fmt.Errorf("encode code: %w", err)
+		}
+
+		if len(tokens) <= svc.maxTokens {
+			return formatted, nil
+		}
+
+		node = nodes.Minify(node, step)
+
+		minified, err := nodes.Format(node)
+		if err != nil {
+			return nil, fmt.Errorf("format minified code: %w", err)
+		}
+
+		tokens, _, err = svc.codec.Encode(string(minified))
+		if err != nil {
+			return nil, fmt.Errorf("encode minified code: %w", err)
+		}
+
+		if len(tokens) <= svc.maxTokens {
+			return minified, nil
+		}
+	}
+
+	return nil, fmt.Errorf("minified code exceeds %d tokens (%d tokens)", svc.maxTokens, len(tokens))
 }
 
 func (svc *Service) Prompt(input generate.Input) string {

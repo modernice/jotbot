@@ -31,7 +31,7 @@ func TestService_Patch(t *testing.T) {
 		func (*X) Foo() {}
 	`)
 
-	svc := golang.New()
+	svc := golang.Must()
 
 	patched, err := svc.Patch(context.Background(), "var:Foobar", "Foobar is foobar.", []byte(code))
 	if err != nil {
@@ -84,7 +84,7 @@ func TestService_Patch_groupDeclaration(t *testing.T) {
 		)
 	`)
 
-	svc := golang.New()
+	svc := golang.Must()
 
 	patched, err := svc.Patch(context.Background(), "var:Bar", "Bar is a bar.", []byte(code))
 	if err != nil {

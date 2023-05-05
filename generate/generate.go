@@ -216,6 +216,14 @@ func (g *Generator) Generate(ctx context.Context, input Input) (string, error) {
 		return "", fmt.Errorf("unknown language %q", input.Language)
 	}
 
+	if min, ok := lang.(Minifier); ok {
+		code, err := min.Minify(input.Code)
+		if err != nil {
+			return "", fmt.Errorf("minify code: %w", err)
+		}
+		input.Code = code
+	}
+
 	genCtx := newCtx(ctx, input, lang.Prompt(input))
 
 	doc, err := g.svc.GenerateDoc(genCtx)

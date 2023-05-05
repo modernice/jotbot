@@ -215,6 +215,13 @@ func isChatModel(model string) bool {
 	return chatModels[model]
 }
 
+func MaxTokensForModel(model string) int {
+	if t, ok := modelMaxTokens[model]; ok {
+		return t
+	}
+	return modelMaxTokens["default"]
+}
+
 var modelMaxTokens = map[string]int{
 	"default":                 2049,
 	openai.GPT432K0314:        32768,

@@ -19,7 +19,7 @@ import (
 
 var (
 	DefaultLanguages = map[string]Language{
-		"go": golang.New(),
+		"go": golang.Must(),
 	}
 )
 

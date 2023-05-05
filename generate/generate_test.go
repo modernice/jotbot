@@ -26,7 +26,7 @@ func TestGenerator_Generate(t *testing.T) {
 		}
 	`)
 
-	g := generate.New(svc, generate.WithLanguage("go", golang.New()))
+	g := generate.New(svc, generate.WithLanguage("go", golang.Must()))
 	in := generate.Input{
 		Code:       []byte(code),
 		Language:   "go",
@@ -56,7 +56,7 @@ func TestGenerator_Files(t *testing.T) {
 		}
 	})
 
-	g := generate.New(svc, generate.WithLanguage("go", golang.New()))
+	g := generate.New(svc, generate.WithLanguage("go", golang.Must()))
 
 	files := map[string][]generate.Input{
 		"foo.go": {{Identifier: "Foo", Language: "go"}},
@@ -78,7 +78,7 @@ func TestFooter(t *testing.T) {
 	svc := mockgenerate.NewMockService()
 	svc.GenerateDocFunc.PushReturn("Foo is a dummy function.", nil)
 
-	g := generate.New(svc, generate.Footer("This is a footer."), generate.WithLanguage("go", golang.New()))
+	g := generate.New(svc, generate.Footer("This is a footer."), generate.WithLanguage("go", golang.Must()))
 
 	doc, err := g.Generate(context.Background(), generate.Input{
 		Code:       []byte("package foo\n\nfunc Foo() {}"),
@@ -110,7 +110,7 @@ func TestLimit(t *testing.T) {
 			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
 		}
 	})
-	g := generate.New(svc, generate.Limit(2), generate.WithLanguage("go", golang.New()))
+	g := generate.New(svc, generate.Limit(2), generate.WithLanguage("go", golang.Must()))
 
 	files := map[string][]generate.Input{
 		"foo.go": {{Identifier: "Foo", Language: "go"}},
