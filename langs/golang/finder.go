@@ -17,7 +17,6 @@ type Finder struct {
 	findTests bool
 }
 
-// FinderOption is an interface for configuring a *Finder.
 type FinderOption func(*Finder)
 
 func FindTests(find bool) FinderOption {
@@ -99,31 +98,6 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 	})
 
 	return findings, nil
-}
-
-func typeTarget(identifier string) string {
-	return fmt.Sprintf("type '%s'", identifier)
-}
-
-func valueTarget(identifier string, decl *dst.GenDecl) string {
-	prefix := "variable"
-	if decl.Tok == token.CONST {
-		prefix = "const"
-	}
-	return fmt.Sprintf("%s '%s'", prefix, identifier)
-}
-
-func funcTarget(identifier string) string {
-	prefix := "function"
-	if isMethodIdentifier(identifier) {
-		prefix = "method"
-	}
-	return fmt.Sprintf("%s '%s'", prefix, identifier)
-}
-
-func isMethodIdentifier(identifier string) bool {
-	parts := strings.Split(identifier, ".")
-	return len(parts) > 1
 }
 
 func isInterface(spec *dst.TypeSpec) bool {
