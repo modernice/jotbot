@@ -17,6 +17,10 @@ func TestFind(t *testing.T) {
 		type Bar struct{}
 
 		func (*Bar) Bar() {}
+
+		type Y interface {
+			Foo() string
+		}
 	`)
 
 	root := nodes.MustParse(code)
@@ -55,6 +59,28 @@ func TestFind(t *testing.T) {
 
 		if node.(*dst.FuncDecl).Name.Name != "Bar" {
 			t.Fatalf("Find() returned wrong declaration; want %q, got %q", "Bar", node.(*dst.FuncDecl).Name.Name)
+		}
+	}
+
+	{
+		_, node, ok := nodes.Find("type:Y", root)
+		if !ok {
+			t.Fatalf("Find() failed to find type:Y")
+		}
+
+		if node.(*dst.GenDecl).Specs[0].(*dst.TypeSpec).Name.Name != "Y" {
+			t.Fatalf("Find() returned wrong declaration; want %q, got %q", "Y", node.(*dst.GenDecl).Specs[0].(*dst.TypeSpec).Name.Name)
+		}
+	}
+
+	{
+		_, node, ok := nodes.Find("func:Y.Foo", root)
+		if !ok {
+			t.Fatalf("Find() failed to find func:Y.Foo")
+		}
+
+		if node.(*dst.Field).Names[0].Name != "Foo" {
+			t.Fatalf("Find() returned wrong declaration; want %q, got %q", "Foo", node.(*dst.Field).Names[0].Name)
 		}
 	}
 }

@@ -195,6 +195,11 @@ func (svc *Service) patch(file *dst.File, identifier, doc string) ([]byte, error
 		if doc != "" {
 			target.Decs.Start.Append(doc)
 		}
+	case *dst.Field:
+		target.Decs.Start.Clear()
+		if doc != "" {
+			target.Decs.Start.Append(doc)
+		}
 	}
 
 	return nodes.Format(file)

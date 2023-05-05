@@ -196,7 +196,7 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 			workers = len(files)
 		}
 
-		g.log.Debug(fmt.Sprintf("Generating using %d workers.", workers))
+		g.log.Debug(fmt.Sprintf("Generating %d file(s) concurrently.", workers))
 
 		type job struct {
 			file   string

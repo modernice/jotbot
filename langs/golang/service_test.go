@@ -29,6 +29,10 @@ func TestService_Patch(t *testing.T) {
 		type X struct{}
 
 		func (*X) Foo() {}
+
+		type Y interface {
+			Foo() string
+		}
 	`)
 
 	svc := golang.Must()
@@ -53,6 +57,16 @@ func TestService_Patch(t *testing.T) {
 		t.Fatalf("Patch() failed: %v", err)
 	}
 
+	patched, err = svc.Patch(context.Background(), "type:Y", "Y is a y.", patched)
+	if err != nil {
+		t.Fatalf("Patch() failed: %v", err)
+	}
+
+	patched, err = svc.Patch(context.Background(), "func:Y.Foo", "Foo is a foo.", patched)
+	if err != nil {
+		t.Fatalf("Patch() failed: %v", err)
+	}
+
 	expect := heredoc.Doc(`
 		package foo
 
@@ -67,6 +81,12 @@ func TestService_Patch(t *testing.T) {
 
 		// Foo is a foo.
 		func (*X) Foo() {}
+
+		// Y is a y.
+		type Y interface {
+			// Foo is a foo.
+			Foo() string
+		}
 	`)
 
 	if string(patched) != expect {

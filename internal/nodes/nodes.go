@@ -85,7 +85,7 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 	return identifier, IsExportedIdentifier(identifier)
 }
 
-func Find(identifier string, root dst.Node) (dst.Spec, dst.Decl, bool) {
+func Find(identifier string, root dst.Node) (dst.Spec, dst.Node, bool) {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {
 		return nil, nil, false
@@ -93,8 +93,13 @@ func Find(identifier string, root dst.Node) (dst.Spec, dst.Decl, bool) {
 
 	switch parts[0] {
 	case "func":
-		decl, ok := FindFunc(identifier, root)
-		return nil, decl, ok
+		if decl, ok := FindFunc(identifier, root); ok {
+			return nil, decl, ok
+		}
+		if decl, ok := FindInterfaceMethod(identifier, root); ok {
+			return nil, decl, ok
+		}
+		return nil, nil, false
 	case "type":
 		return FindType(identifier, root)
 	case "var":
@@ -112,6 +117,46 @@ func FindFunc(identifier string, root dst.Node) (fn *dst.FuncDecl, found bool) {
 				fn = node
 				found = true
 				return false
+			}
+		}
+		return true
+	})
+	return
+}
+
+func FindInterfaceMethod(identifier string, root dst.Node) (method *dst.Field, found bool) {
+	parts := strings.Split(identifier, ":")
+	if len(parts) == 2 {
+		identifier = parts[1]
+	}
+
+	parts = strings.Split(identifier, ".")
+	if len(parts) != 2 {
+		return nil, false
+	}
+
+	owner := parts[0]
+	met := parts[1]
+
+	dst.Inspect(root, func(node dst.Node) bool {
+		switch node := node.(type) {
+		case *dst.TypeSpec:
+			if node.Name.Name != owner {
+				break
+			}
+
+			if iface, ok := node.Type.(*dst.InterfaceType); ok {
+				for _, field := range iface.Methods.List {
+					if len(field.Names) == 0 {
+						continue
+					}
+
+					if field.Names[0].Name == met {
+						method = field
+						found = true
+						return false
+					}
+				}
 			}
 		}
 		return true
@@ -165,25 +210,25 @@ func FindType(identifier string, root dst.Node) (spec *dst.TypeSpec, decl *dst.G
 	return
 }
 
-func CommentTarget(spec dst.Spec, decl dst.Decl) dst.Node {
+func CommentTarget(spec dst.Spec, outer dst.Node) dst.Node {
 	if spec == nil {
-		return decl
+		return outer
 	}
 
 	switch spec := spec.(type) {
 	case *dst.TypeSpec:
-		if decl, ok := decl.(*dst.GenDecl); ok && len(decl.Specs) == 1 {
+		if decl, ok := outer.(*dst.GenDecl); ok && len(decl.Specs) == 1 {
 			return decl
 		}
 		return spec
 	case *dst.ValueSpec:
-		if decl, ok := decl.(*dst.GenDecl); ok && len(decl.Specs) == 1 {
+		if decl, ok := outer.(*dst.GenDecl); ok && len(decl.Specs) == 1 {
 			return decl
 		}
 		return spec
 	}
 
-	return decl
+	return outer
 }
 
 func methodIdentifier(identifier string, recv dst.Expr) (string, bool) {
