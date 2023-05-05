@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/modernice/jotbot/generate"
 	"github.com/sashabaranov/go-openai"
 	"github.com/tiktoken-go/tokenizer"
 	"golang.org/x/exp/slog"
@@ -18,7 +19,7 @@ const (
 
 type Service struct {
 	client    *openai.Client
-	model     tokenizer.Model
+	model     string
 	maxTokens int
 	codec     tokenizer.Codec
 	log       *slog.Logger
@@ -26,7 +27,7 @@ type Service struct {
 
 type Option func(*Service)
 
-func Model(model tokenizer.Model) Option {
+func Model(model string) Option {
 	return func(s *Service) {
 		s.model = model
 	}
@@ -38,8 +39,14 @@ func Client(c *openai.Client) Option {
 	}
 }
 
+func MaxTokens(max int) Option {
+	return func(s *Service) {
+		s.maxTokens = max
+	}
+}
+
 func New(apiKey string, opts ...Option) (*Service, error) {
-	var svc Service
+	svc := Service{maxTokens: DefaultMaxTokens}
 	for _, opt := range opts {
 		opt(&svc)
 	}
@@ -52,7 +59,7 @@ func New(apiKey string, opts ...Option) (*Service, error) {
 		svc.model = DefaultModel
 	}
 
-	codec, err := tokenizer.ForModel(svc.model)
+	codec, err := tokenizer.ForModel(tokenizer.Model(svc.model))
 	if err != nil {
 		return nil, fmt.Errorf("get tokenizer for model %q: %w", svc.model, err)
 	}
@@ -61,14 +68,14 @@ func New(apiKey string, opts ...Option) (*Service, error) {
 	return &svc, nil
 }
 
-func (svc *Service) GenerateDoc(ctx context.Context, prompt string) (string, error) {
+func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	// TODO(bounoable): find optimal values for these parameters
 	req := openai.CompletionRequest{
 		Model:            string(svc.model),
 		Temperature:      0.618,
 		PresencePenalty:  0.2,
 		FrequencyPenalty: 0.35,
-		Prompt:           prompt,
+		Prompt:           ctx.Prompt(),
 	}
 
 	generate := svc.useModel(req.Model)

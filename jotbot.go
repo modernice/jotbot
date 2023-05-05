@@ -11,16 +11,10 @@ import (
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
-	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/patch"
 	"github.com/spf13/afero"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slog"
-)
-
-var (
-	DefaultLanguages = map[string]Language{
-		"go": golang.Must(),
-	}
 )
 
 type Language interface {
@@ -64,16 +58,18 @@ func WithLanguage(name string, lang Language) Option {
 	}
 }
 
+func WithLogger(h slog.Handler) Option {
+	return func(bot *JotBot) {
+		bot.log = slog.New(h)
+	}
+}
+
 func New(root string, opts ...Option) *JotBot {
 	bot := &JotBot{
 		root:          root,
 		fs:            afero.NewBasePathFs(afero.NewOsFs(), root),
 		languages:     make(map[string]Language),
 		extToLanguage: make(map[string]string),
-	}
-
-	for name, lang := range DefaultLanguages {
-		bot.ConfigureLanguage(name, lang)
 	}
 
 	for _, opt := range opts {
@@ -94,7 +90,13 @@ func (bot *JotBot) ConfigureLanguage(name string, lang Language) {
 	}
 }
 
+func (bot *JotBot) Extensions() []string {
+	return maps.Keys(bot.extToLanguage)
+}
+
 func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, error) {
+	opts = append([]find.Option{find.Extensions(bot.Extensions()...)}, opts...)
+
 	repo := os.DirFS(bot.root)
 	files, err := find.Files(ctx, repo, opts...)
 	if err != nil {
@@ -150,7 +152,7 @@ func (bot *JotBot) languageForExtension(ext string) (Language, error) {
 }
 
 func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.Option) (*Patch, error) {
-	var baseOpts []generate.Option
+	baseOpts := []generate.Option{generate.WithLogger(bot.log.Handler())}
 	for name, lang := range bot.languages {
 		baseOpts = append(baseOpts, generate.WithLanguage(name, lang))
 	}
@@ -201,6 +203,12 @@ func (bot *JotBot) makeInput(ctx context.Context, finding Finding) (generate.Inp
 
 func (p *Patch) Apply(ctx context.Context, root string) error {
 	return p.Patch.Apply(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.Language, error) {
+		return p.getLanguage(s)
+	})
+}
+
+func (p *Patch) DryRun(ctx context.Context, root string) (map[string][]byte, error) {
+	return p.Patch.DryRun(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.Language, error) {
 		return p.getLanguage(s)
 	})
 }

@@ -47,9 +47,11 @@ func TestGenerator_Files(t *testing.T) {
 	svc := mockgenerate.NewMockService()
 	svc.GenerateDocFunc.SetDefaultHook(func(ctx generate.Context) (string, error) {
 		switch ctx.Input().Identifier {
-		case "Foo":
+		case "func:Foo":
 			return "Foo is a function.", nil
-		case "Bar":
+		case "var:Foo":
+			return "Foo is a variable.", nil
+		case "type:Bar":
 			return "Bar is a struct.", nil
 		default:
 			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
@@ -59,8 +61,8 @@ func TestGenerator_Files(t *testing.T) {
 	g := generate.New(svc, generate.WithLanguage("go", golang.Must()))
 
 	files := map[string][]generate.Input{
-		"foo.go": {{Identifier: "Foo", Language: "go"}},
-		"bar.go": {{Identifier: "Foo", Language: "go"}, {Identifier: "Bar", Language: "go"}},
+		"foo.go": {{Identifier: "func:Foo", Language: "go"}},
+		"bar.go": {{Identifier: "var:Foo", Language: "go"}, {Identifier: "type:Bar", Language: "go"}},
 	}
 
 	gens, errs, err := g.Files(context.Background(), files)
@@ -70,8 +72,9 @@ func TestGenerator_Files(t *testing.T) {
 
 	got := drain(t, gens, errs)
 
-	expectGenerated(t, got, "Foo", "Foo is a function.")
-	expectGenerated(t, got, "Bar", "Bar is a struct.")
+	expectGenerated(t, got, "func:Foo", "Foo is a function.")
+	expectGenerated(t, got, "var:Foo", "Foo is a variable.")
+	expectGenerated(t, got, "type:Bar", "Bar is a struct.")
 }
 
 func TestFooter(t *testing.T) {

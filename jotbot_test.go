@@ -13,13 +13,14 @@ import (
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/generate/mockgenerate"
 	"github.com/modernice/jotbot/internal/tests"
+	"github.com/modernice/jotbot/langs/golang"
 )
 
 func TestJotBot_Find(t *testing.T) {
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "find")
 	tests.InitRepo("basic", root)
 
-	bot := jotbot.New(root)
+	bot := newJotBot(root)
 
 	findings, err := bot.Find(context.Background())
 	if err != nil {
@@ -54,7 +55,7 @@ func TestJotBot_Generate(t *testing.T) {
 
 	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "generate")
 	tests.WithRepo("basic", root, func(repo fs.FS) {
-		bot := jotbot.New(root)
+		bot := newJotBot(root)
 
 		findings := append(
 			makeFindings(
@@ -89,4 +90,10 @@ func makeFindings(file string, findings ...find.Finding) []jotbot.Finding {
 		out[i] = jotbot.Finding{File: file, Finding: f, Language: "go"}
 	}
 	return out
+}
+
+func newJotBot(root string) *jotbot.JotBot {
+	bot := jotbot.New(root)
+	bot.ConfigureLanguage("go", golang.Must())
+	return bot
 }

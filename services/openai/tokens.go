@@ -10,10 +10,10 @@ import (
 
 var (
 	codecsMux sync.Mutex
-	codecs    = make(map[tokenizer.Model]tokenizer.Codec)
+	codecs    = make(map[string]tokenizer.Codec)
 )
 
-func ChatTokens(model tokenizer.Model, messages []openai.ChatCompletionMessage) (int, error) {
+func ChatTokens(model string, messages []openai.ChatCompletionMessage) (int, error) {
 	codec, err := getCodec(model)
 	if err != nil {
 		return 0, err
@@ -23,7 +23,7 @@ func ChatTokens(model tokenizer.Model, messages []openai.ChatCompletionMessage) 
 		perMessage int
 		perName    int
 	)
-	switch model {
+	switch tokenizer.Model(model) {
 	case tokenizer.GPT4:
 		perMessage = 3
 		perName = 1
@@ -53,14 +53,14 @@ func ChatTokens(model tokenizer.Model, messages []openai.ChatCompletionMessage) 
 	return tokens, nil
 }
 
-func getCodec(model tokenizer.Model) (tokenizer.Codec, error) {
+func getCodec(model string) (tokenizer.Codec, error) {
 	codecsMux.Lock()
 	defer codecsMux.Unlock()
 
 	codec, ok := codecs[model]
 	if !ok {
 		var err error
-		if codec, err = tokenizer.ForModel(model); err != nil {
+		if codec, err = tokenizer.ForModel(tokenizer.Model(model)); err != nil {
 			return nil, err
 		}
 		codecs[model] = codec
@@ -69,7 +69,7 @@ func getCodec(model tokenizer.Model) (tokenizer.Codec, error) {
 	return codec, nil
 }
 
-func PromptTokens(model tokenizer.Model, prompt string) (int, error) {
+func PromptTokens(model string, prompt string) (int, error) {
 	codec, err := getCodec(model)
 	if err != nil {
 		return 0, err

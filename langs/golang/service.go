@@ -31,7 +31,7 @@ var (
 )
 
 type Service struct {
-	model       tokenizer.Model
+	model       string
 	maxTokens   int
 	codec       tokenizer.Codec
 	finder      *Finder
@@ -46,7 +46,7 @@ func WithFinder(f *Finder) Option {
 	}
 }
 
-func Model(m tokenizer.Model) Option {
+func Model(m string) Option {
 	return func(s *Service) {
 		s.model = m
 	}
@@ -76,7 +76,7 @@ func New(opts ...Option) (*Service, error) {
 		svc.model = openai.DefaultModel
 	}
 
-	codec, err := tokenizer.ForModel(svc.model)
+	codec, err := tokenizer.ForModel(tokenizer.Model(svc.model))
 	if err != nil {
 		return nil, fmt.Errorf("create tokenizer: %w", err)
 	}
@@ -100,6 +100,10 @@ func (svc *Service) Find(code []byte) ([]find.Finding, error) {
 }
 
 func (svc *Service) Minify(code []byte) ([]byte, error) {
+	if len(code) == 0 {
+		return code, nil
+	}
+
 	if len(svc.minifySteps) == 0 {
 		return code, nil
 	}

@@ -1,35 +1,34 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 
 	"github.com/alecthomas/kong"
-	"github.com/modernice/jotbot/internal/nodes"
+	"github.com/modernice/jotbot"
+	"github.com/modernice/jotbot/find"
+	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/services/openai"
 	"golang.org/x/exp/slog"
 )
 
-// CLI represents a command-line interface for generating missing documentation.
-// It has options to configure the generation process, such as file filtering,
-// committing changes to Git, and limiting the number of documentations
-// generated. It also allows overriding or clearing existing documentation. The
-// API key for OpenAI is provided as an option. Use New() to create a new CLI
-// instance and Run() to execute it.
 type CLI struct {
 	Generate struct {
 		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
-		Filter    []string `name:"filter" short:"f" env:"JOTBOT_FILTER" help:"Glob pattern(s) to filter files."`
-		Commit    bool     `name:"commit" default:"true" env:"JOTBOT_COMMIT" help:"Commit changes to Git."`
-		Branch    string   `default:"jotbot-patch" env:"JOTBOT_BRANCH" help:"Branch name to commit changes to."`
-		Limit     int      `default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of documentations to generate."`
-		FileLimit int      `default:"0" env:"JOTBOT_FILE_LIMIT" help:"Limit the number of files to generate documentations for."`
+		Include   []string `name:"include" short:"i" env:"JOTBOT_INCLUDE" help:"Glob pattern(s) to include files."`
+		Exclude   []string `name:"exclude" short:"e" env:"JOTBOT_EXCLUDE" help:"Glob pattern(s) to exclude files."`
+		Branch    string   `env:"JOTBOT_BRANCH" help:"Branch name to commit changes to. Leave empty to not commit changes."`
+		Limit     int      `default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of files to generate documentation for."`
 		DryRun    bool     `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
 		Model     string   `default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model to use."`
-		Override  bool     `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
-		Clear     bool     `name:"clear" short:"c" env:"JOTBOT_CLEAR" help:"Clear existing documentation."`
+		MaxTokens int      `default:"512" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
+		// Override bool     `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
+		// Clear    bool     `name:"clear" short:"c" env:"JOTBOT_CLEAR" help:"Clear existing documentation."`
 	} `cmd:"" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -40,7 +39,10 @@ type CLI struct {
 // documentation for exported functions and types in Go source files. It takes a
 // Kong context as an argument and returns an error if one occurred during
 // execution.
-func (cfg *CLI) Run(ctx *kong.Context) error {
+func (cfg *CLI) Run(kctx *kong.Context) error {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
 	if cfg.Generate.Root != "." {
 		if !filepath.IsAbs(cfg.Generate.Root) {
 			wd, err := os.Getwd()
@@ -56,20 +58,51 @@ func (cfg *CLI) Run(ctx *kong.Context) error {
 		level = slog.LevelDebug
 	}
 	logHandler := slog.HandlerOptions{Level: level}.NewTextHandler(os.Stdout)
-	// log := slog.New(logHandler)
+
+	goFinder := golang.NewFinder(golang.FindTests(false))
+	gosvc, err := golang.New(golang.WithFinder(goFinder), golang.Model(cfg.Generate.Model))
+	if err != nil {
+		return fmt.Errorf("create Go language service: %w", err)
+	}
+
+	bot := jotbot.New(cfg.Generate.Root, jotbot.WithLogger(logHandler), jotbot.WithLanguage("go", gosvc))
 
 	openaiOpts := []openai.Option{
-		openai.WithLogger(logHandler),
 		openai.Model(cfg.Generate.Model),
+		openai.MaxTokens(cfg.Generate.MaxTokens),
 	}
 
-	if cfg.Generate.Clear {
-		openaiOpts = append(openaiOpts, openai.MinifyWith([]nodes.MinifyOptions{
-			nodes.MinifyComments,
-			nodes.MinifyExported,
-			nodes.MinifyAll,
-		}, true))
+	oai, err := openai.New(cfg.APIKey, openaiOpts...)
+	if err != nil {
+		return fmt.Errorf("create OpenAI service: %w", err)
 	}
+
+	findings, err := bot.Find(ctx, find.Include(cfg.Generate.Include...), find.Exclude(cfg.Generate.Exclude...))
+	if err != nil {
+		return fmt.Errorf("find uncommented code: %w", err)
+	}
+
+	patch, err := bot.Generate(ctx, findings, oai, generate.Limit(cfg.Generate.Limit))
+	if err != nil {
+		return fmt.Errorf("generate documentation: %w", err)
+	}
+
+	patched, err := patch.DryRun(ctx, cfg.Generate.Root)
+	if err != nil {
+		return fmt.Errorf("dry run: %w", err)
+	}
+
+	for file, code := range patched {
+		log.Printf("Patched %q:\n\n%s\n", file, code)
+	}
+
+	// if cfg.Generate.Clear {
+	// 	openaiOpts = append(openaiOpts, openai.MinifyWith([]nodes.MinifyOptions{
+	// 		nodes.MinifyComments,
+	// 		nodes.MinifyExported,
+	// 		nodes.MinifyAll,
+	// 	}, true))
+	// }
 
 	// svc := openai.New(cfg.APIKey, openaiOpts...)
 

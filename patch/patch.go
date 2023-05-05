@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
 	"github.com/spf13/afero"
 )
 
@@ -35,6 +36,30 @@ func New(files <-chan generate.File, opts ...Option) *Patch {
 	return p
 }
 
+func (p *Patch) DryRun(ctx context.Context, repo afero.Fs, getLanguage func(string) (Language, error)) (map[string][]byte, error) {
+	files, err := internal.Drain(p.files, p.errs)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[string][]byte, len(files))
+	for _, file := range files {
+		ext := filepath.Ext(file.Path)
+		svc, err := getLanguage(ext)
+		if err != nil {
+			return out, fmt.Errorf("get language service for %q files: %w", ext, err)
+		}
+
+		code, err := p.applyFile(ctx, repo, svc, file, false)
+		if err != nil {
+			return out, fmt.Errorf("apply patch to %q: %w", file.Path, err)
+		}
+		out[file.Path] = code
+	}
+
+	return out, nil
+}
+
 func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(string) (Language, error)) error {
 	for {
 		select {
@@ -53,40 +78,44 @@ func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(strin
 				return fmt.Errorf("get language service for %q files: %w", ext, err)
 			}
 
-			if err := p.applyFile(ctx, repo, svc, file); err != nil {
+			if _, err := p.applyFile(ctx, repo, svc, file, true); err != nil {
 				return fmt.Errorf("apply patch to %q: %w", file.Path, err)
 			}
 		}
 	}
 }
 
-func (p *Patch) applyFile(ctx context.Context, repo afero.Fs, svc Language, file generate.File) error {
+func (p *Patch) applyFile(ctx context.Context, repo afero.Fs, svc Language, file generate.File, write bool) ([]byte, error) {
 	code, err := readFile(repo, file.Path)
 	if err != nil {
-		return err
+		return code, err
 	}
 
 	for _, doc := range file.Docs {
 		if code, err = svc.Patch(ctx, doc.Identifier, doc.Text, code); err != nil {
-			return fmt.Errorf("apply patch to %q: %w", doc.Identifier, err)
+			return code, fmt.Errorf("apply patch to %q: %w", doc.Identifier, err)
 		}
+	}
+
+	if !write {
+		return code, nil
 	}
 
 	f, err := repo.Create(file.Path)
 	if err != nil {
-		return fmt.Errorf("create %s: %w", file.Path, err)
+		return code, fmt.Errorf("create %s: %w", file.Path, err)
 	}
 	defer f.Close()
 
 	if _, err := f.Write(code); err != nil {
-		return err
+		return code, err
 	}
 
 	if err := f.Close(); err != nil {
-		return err
+		return code, err
 	}
 
-	return nil
+	return code, nil
 }
 
 func readFile(repo afero.Fs, file string) ([]byte, error) {
