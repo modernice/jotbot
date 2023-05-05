@@ -54,11 +54,12 @@ type Documentation struct {
 }
 
 type Generator struct {
-	svc       Service
-	languages map[string]Language
-	limit     int
-	footer    string
-	log       *slog.Logger
+	svc            Service
+	languages      map[string]Language
+	limit          int
+	workersPerFile int
+	footer         string
+	log            *slog.Logger
 }
 
 type Option func(*Generator)
@@ -81,6 +82,12 @@ func Limit(n int) Option {
 	}
 }
 
+func Workers(n int) Option {
+	return func(g *Generator) {
+		g.workersPerFile = n
+	}
+}
+
 func WithLanguage(ext string, lang Language) Option {
 	return func(g *Generator) {
 		g.languages[ext] = lang
@@ -91,6 +98,9 @@ func New(svc Service, opts ...Option) *Generator {
 	g := &Generator{svc: svc, languages: make(map[string]Language)}
 	for _, opt := range opts {
 		opt(g)
+	}
+	if g.workersPerFile <= 0 {
+		g.workersPerFile = 1
 	}
 	if g.log == nil {
 		g.log = internal.NopLogger()
@@ -119,19 +129,53 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 
 	work, done := g.distributeWork(files)
 	go work(ctx, func(file string, inputs []Input) bool {
-		docs := make([]Documentation, 0, len(inputs))
-		for _, input := range inputs {
-			doc, err := g.Generate(ctx, input)
-			if err != nil {
-				fail(fmt.Errorf("generate %q: %w", input.Identifier, err))
-				continue
+		docs := make(chan Documentation)
+
+		queue := make(chan Input)
+		go func() {
+			defer close(queue)
+			for _, input := range inputs {
+				select {
+				case <-ctx.Done():
+					return
+				case queue <- input:
+				}
 			}
-			docs = append(docs, Documentation{Input: input, Text: doc})
+		}()
+
+		var wg sync.WaitGroup
+		wg.Add(g.workersPerFile)
+		go func() {
+			wg.Wait()
+			close(docs)
+		}()
+
+		for i := 0; i < g.workersPerFile; i++ {
+			go func() {
+				defer wg.Done()
+				for input := range queue {
+					doc, err := g.Generate(ctx, input)
+					if err != nil {
+						fail(fmt.Errorf("generate %q: %w", input.Identifier, err))
+						continue
+					}
+
+					select {
+					case <-ctx.Done():
+						return
+					case docs <- Documentation{Input: input, Text: doc}:
+					}
+				}
+			}()
 		}
-		if len(docs) == 0 {
-			return true
+
+		result, err := internal.Drain(docs, nil)
+		if err != nil {
+			fail(err)
+			return false
 		}
-		return push(File{Path: file, Docs: docs})
+
+		return push(File{Path: file, Docs: result})
 	})
 
 	go func() {

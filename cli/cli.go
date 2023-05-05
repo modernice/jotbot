@@ -27,6 +27,7 @@ type CLI struct {
 		DryRun    bool     `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
 		Model     string   `default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model to use."`
 		MaxTokens int      `default:"512" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
+		Workers   int      `default:"1" env:"JOTBOT_WORKERS" help:"Number of workers to use per file."`
 		// Override bool     `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
 		// Clear    bool     `name:"clear" short:"c" env:"JOTBOT_CLEAR" help:"Clear existing documentation."`
 	} `cmd:"" help:"Generate missing documentation."`
@@ -83,7 +84,7 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 		return fmt.Errorf("find uncommented code: %w", err)
 	}
 
-	patch, err := bot.Generate(ctx, findings, oai, generate.Limit(cfg.Generate.Limit))
+	patch, err := bot.Generate(ctx, findings, oai, generate.Limit(cfg.Generate.Limit), generate.Workers(cfg.Generate.Workers))
 	if err != nil {
 		return fmt.Errorf("generate documentation: %w", err)
 	}
