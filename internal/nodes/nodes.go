@@ -1,9 +1,12 @@
 package nodes
 
 import (
+	"go/parser"
+	"go/token"
 	"strings"
 
 	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"github.com/modernice/jotbot/internal/slice"
 )
 
@@ -22,20 +25,10 @@ func StripIdentifierPrefix(identifier string) string {
 	return identifier
 }
 
-// HasDoc [func] returns a boolean indicating whether a given Go AST node has
-// any associated documentation comments. It takes the Decorations of the node
-// as input.
 func HasDoc(decs dst.Decorations) bool {
 	return len(decs.All()) > 0
 }
 
-// Doc package provides functions for working with Go code documentation. The
-// `HasDoc` function checks whether a node has any associated comments. The
-// `Doc` function retrieves the comment text associated with a node. The
-// `Identifier` function returns the identifier and export status of a node. The
-// `Find` function finds the first node with a matching identifier in the AST
-// rooted at the given node. The `FindT` function is a type-safe version of
-// `Find`.
 func Doc(n dst.Node, removeSlash bool) string {
 	lines := n.Decorations().Start.All()
 	if removeSlash {
@@ -48,10 +41,18 @@ func trimSlash(s string) string {
 	return strings.TrimLeft(strings.TrimPrefix(s, "//"), " ")
 }
 
-// Identifier function in the nodes package returns the identifier and export
-// status of a Go AST node. It takes a dst.Node as input and returns the
-// identifier string and a boolean indicating whether the identifier is exported
-// or not.
+func Parse[Code ~string | ~[]byte](code Code) (*dst.File, error) {
+	return decorator.ParseFile(token.NewFileSet(), "", code, parser.ParseComments|parser.SkipObjectResolution)
+}
+
+func MustParse[Code ~string | ~[]byte](code Code) dst.Node {
+	node, err := Parse(code)
+	if err != nil {
+		panic(err)
+	}
+	return node
+}
+
 func Identifier(node dst.Node) (identifier string, exported bool) {
 	switch node := node.(type) {
 	case *dst.FuncDecl:
@@ -84,31 +85,105 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 	return identifier, IsExportedIdentifier(identifier)
 }
 
-// Find searches for a Go AST [dst.Node] with the given identifier in the root
-// node and its children. If found, it returns the first matching node and true;
-// otherwise, it returns nil and false.
-func Find(identifier string, root dst.Node) (dst.Node, bool) {
-	return FindT[dst.Node](identifier, root)
+func Find(identifier string, root dst.Node) (dst.Spec, dst.Decl, bool) {
+	parts := strings.Split(identifier, ":")
+	if len(parts) != 2 {
+		return nil, nil, false
+	}
+
+	switch parts[0] {
+	case "func":
+		decl, ok := FindFunc(identifier, root)
+		return nil, decl, ok
+	case "type":
+		return FindType(identifier, root)
+	case "var":
+		return FindValue(identifier, root)
+	default:
+		return nil, nil, false
+	}
 }
 
-// FindT[Node dst.Node] searches for the first node in the AST rooted at root
-// with an identifier that matches the given identifier, and returns it as a
-// Node of type Node. If no such node is found, it returns nil and false.
-func FindT[Node dst.Node](identifier string, root dst.Node) (Node, bool) {
-	var (
-		found Node
-		ok    bool
-	)
-
+func FindFunc(identifier string, root dst.Node) (fn *dst.FuncDecl, found bool) {
 	dst.Inspect(root, func(node dst.Node) bool {
-		if ident, hasIdent := Identifier(node); hasIdent && ident == identifier {
-			found, ok = node.(Node)
-			return false
+		switch node := node.(type) {
+		case *dst.FuncDecl:
+			if ident, _ := Identifier(node); ident == identifier {
+				fn = node
+				found = true
+				return false
+			}
 		}
 		return true
 	})
+	return
+}
 
-	return found, ok
+func FindValue(identifier string, root dst.Node) (spec *dst.ValueSpec, decl *dst.GenDecl, found bool) {
+	dst.Inspect(root, func(node dst.Node) bool {
+		switch node := node.(type) {
+		case *dst.GenDecl:
+			if len(node.Specs) == 0 {
+				break
+			}
+
+			for _, s := range node.Specs {
+				switch s := s.(type) {
+				case *dst.ValueSpec:
+					if ident, _ := Identifier(s); ident == identifier {
+						spec = s
+						decl = node
+						found = true
+						return false
+					}
+				}
+			}
+		}
+		return true
+	})
+	return
+}
+
+func FindType(identifier string, root dst.Node) (spec *dst.TypeSpec, decl *dst.GenDecl, found bool) {
+	dst.Inspect(root, func(node dst.Node) bool {
+		switch node := node.(type) {
+		case *dst.GenDecl:
+			for _, s := range node.Specs {
+				switch s := s.(type) {
+				case *dst.TypeSpec:
+					if ident, _ := Identifier(s); ident == identifier {
+						spec = s
+						decl = node
+						found = true
+						return false
+					}
+				}
+			}
+		}
+		return true
+	})
+	return
+}
+
+func CommentTarget(spec dst.Spec, decl dst.Decl) dst.Node {
+	if spec == nil {
+		return decl
+	}
+
+	switch spec := spec.(type) {
+	case *dst.TypeSpec:
+		if decl, ok := decl.(*dst.GenDecl); ok && len(decl.Specs) == 1 {
+			return decl
+		}
+		return spec
+	case *dst.ValueSpec:
+		if decl, ok := decl.(*dst.GenDecl); ok && len(decl.Specs) == 1 {
+			return decl
+		}
+		return spec
+	}
+
+	return decl
 }
 
 func methodIdentifier(identifier string, recv dst.Expr) (string, bool) {

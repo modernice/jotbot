@@ -128,12 +128,14 @@ func ExpectComment(t *testing.T, identifier, comment string, file io.Reader) {
 		t.Fatalf("parse file: %v", err)
 	}
 
-	node, ok := nodes.Find(identifier, root)
+	spec, node, ok := nodes.Find(identifier, root)
 	if !ok {
 		t.Fatalf("find identifier %s: %v", identifier, err)
 	}
 
-	comments := slice.Map(node.Decorations().Start.All(), func(c string) string {
+	target := nodes.CommentTarget(spec, node)
+
+	comments := slice.Map(target.Decorations().Start.All(), func(c string) string {
 		c = strings.TrimPrefix(c, "//")
 		return strings.TrimSpace(c)
 	})
