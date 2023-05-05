@@ -14,6 +14,9 @@ func IsExportedIdentifier(identifier string) bool {
 	if parts := strings.Split(identifier, ":"); len(parts) > 1 {
 		identifier = parts[1]
 	}
+	if parts := strings.Split(identifier, "."); len(parts) > 1 {
+		identifier = parts[1]
+	}
 	return len(identifier) > 0 && identifier != "_" &&
 		strings.ToUpper(identifier[:1]) == identifier[:1]
 }

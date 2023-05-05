@@ -93,7 +93,7 @@ func (p *Patch) applyFile(ctx context.Context, repo afero.Fs, svc Language, file
 
 	for _, doc := range file.Docs {
 		if code, err = svc.Patch(ctx, doc.Identifier, doc.Text, code); err != nil {
-			return code, fmt.Errorf("apply patch to %q: %w", doc.Identifier, err)
+			return code, fmt.Errorf("apply patch to %q: %w\n\n%s", doc.Identifier, err, code)
 		}
 	}
 

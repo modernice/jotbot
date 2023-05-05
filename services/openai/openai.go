@@ -65,6 +65,7 @@ func New(apiKey string, opts ...Option) (*Service, error) {
 		svc.log.Debug(fmt.Sprintf("[OpenAI] No model provided. Using default model %q", DefaultModel))
 		svc.model = DefaultModel
 	}
+	svc.log.Debug(fmt.Sprintf("[OpenAI] Using model %q", svc.model))
 
 	codec, err := tokenizer.ForModel(tokenizer.Model(svc.model))
 	if err != nil {
@@ -86,8 +87,8 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	req := openai.CompletionRequest{
 		Model:            string(svc.model),
 		Temperature:      0.618,
-		PresencePenalty:  0.2,
-		FrequencyPenalty: 0.35,
+		PresencePenalty:  0.1,
+		FrequencyPenalty: 0.2,
 		Prompt:           ctx.Prompt(),
 	}
 
@@ -148,7 +149,7 @@ func (svc *Service) createWithChat(ctx context.Context, req openai.CompletionReq
 	}
 
 	resp, err := svc.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model:            openai.GPT3Dot5Turbo,
+		Model:            req.Model,
 		Temperature:      req.Temperature,
 		MaxTokens:        maxTokens,
 		PresencePenalty:  req.PresencePenalty,

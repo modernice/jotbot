@@ -207,3 +207,29 @@ func TestCommentTarget(t *testing.T) {
 		}
 	}
 }
+
+func TestIdentifier(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		type Y struct{}
+
+		func (*Y) foo() string {}
+	`)
+
+	root := nodes.MustParse(code)
+	node, ok := nodes.FindFunc("func:(*Y).foo", root)
+	if !ok {
+		t.Fatalf("FindFunc() failed to find func:(*Y).foo")
+	}
+
+	ident, exported := nodes.Identifier(node)
+
+	if ident != "func:(*Y).foo" {
+		t.Fatalf("Identifier() returned wrong identifier; want %q, got %q", "func:(*Y).foo", ident)
+	}
+
+	if exported {
+		t.Fatalf("Identifier() should return false for unexported functions")
+	}
+}
