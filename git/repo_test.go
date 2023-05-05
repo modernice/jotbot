@@ -51,5 +51,5 @@ func TestRepo_Commit(t *testing.T) {
 	}
 	defer f.Close()
 
-	tests.ExpectComment(t, "Foo", "Foo does nothing.", f)
+	tests.ExpectComment(t, "func:Foo", "Foo does nothing.", f)
 }

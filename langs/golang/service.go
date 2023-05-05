@@ -64,6 +64,8 @@ func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []by
 func (svc *Service) patch(file *dst.File, identifier, doc string) ([]byte, error) {
 	file = dst.Clone(file).(*dst.File)
 
+	identifier = nodes.StripIdentifierPrefix(identifier)
+
 	if recv, method, isMethod := extractMethod(identifier); isMethod {
 		if err := svc.patchMethod(file, recv, method, doc); err != nil {
 			return nil, fmt.Errorf("patch method %q: %w", identifier, err)

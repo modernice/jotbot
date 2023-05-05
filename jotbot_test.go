@@ -27,13 +27,13 @@ func TestJotBot_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []jotbot.Finding{
-		{File: "foo.go", Finding: find.Finding{Identifier: "Foo"}, Language: "go"},
-		{File: "bar.go", Finding: find.Finding{Identifier: "Foo"}, Language: "go"},
-		{File: "bar.go", Finding: find.Finding{Identifier: "Bar"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "X"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "X.Foo"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "(*X).Bar"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "Y.Foo"}, Language: "go"},
+		{File: "foo.go", Finding: find.Finding{Identifier: "func:Foo"}, Language: "go"},
+		{File: "bar.go", Finding: find.Finding{Identifier: "var:Foo"}, Language: "go"},
+		{File: "bar.go", Finding: find.Finding{Identifier: "type:Bar"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "type:X"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "func:X.Foo"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "func:(*X).Bar"}, Language: "go"},
+		{File: "baz.go", Finding: find.Finding{Identifier: "func:Y.Foo"}, Language: "go"},
 	}, findings)
 }
 
@@ -41,9 +41,11 @@ func TestJotBot_Generate(t *testing.T) {
 	svc := mockgenerate.NewMockService()
 	svc.GenerateDocFunc.SetDefaultHook(func(ctx generate.Context) (string, error) {
 		switch ctx.Input().Identifier {
-		case "Foo":
+		case "func:Foo":
 			return "Foo is a foo.", nil
-		case "Bar":
+		case "var:Foo":
+			return "Foo is a foo.", nil
+		case "type:Bar":
 			return "Bar is a bar.", nil
 		default:
 			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
@@ -57,12 +59,12 @@ func TestJotBot_Generate(t *testing.T) {
 		findings := append(
 			makeFindings(
 				"foo.go",
-				find.Finding{Identifier: "Foo"},
+				find.Finding{Identifier: "func:Foo"},
 			),
 			makeFindings(
 				"bar.go",
-				find.Finding{Identifier: "Foo"},
-				find.Finding{Identifier: "Bar"},
+				find.Finding{Identifier: "var:Foo"},
+				find.Finding{Identifier: "type:Bar"},
 			)...,
 		)
 
@@ -75,9 +77,9 @@ func TestJotBot_Generate(t *testing.T) {
 			t.Fatalf("patch.Apply() failed: %v", err)
 		}
 
-		tests.ExpectCommentIn(t, repo, "foo.go", "Foo", "Foo is a foo.")
-		tests.ExpectCommentIn(t, repo, "bar.go", "Foo", "Foo is a foo.")
-		tests.ExpectCommentIn(t, repo, "bar.go", "Bar", "Bar is a bar.")
+		tests.ExpectCommentIn(t, repo, "foo.go", "func:Foo", "Foo is a foo.")
+		tests.ExpectCommentIn(t, repo, "bar.go", "var:Foo", "Foo is a foo.")
+		tests.ExpectCommentIn(t, repo, "bar.go", "type:Bar", "Bar is a bar.")
 	})
 }
 

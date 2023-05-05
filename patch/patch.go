@@ -54,7 +54,7 @@ func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(strin
 			}
 
 			if err := p.applyFile(ctx, repo, svc, file); err != nil {
-				return fmt.Errorf("apply patch to %s: %w", file.Path, err)
+				return fmt.Errorf("apply patch to %q: %w", file.Path, err)
 			}
 		}
 	}

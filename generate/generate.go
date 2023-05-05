@@ -220,7 +220,7 @@ func (g *Generator) Generate(ctx context.Context, input Input) (string, error) {
 
 	doc, err := g.svc.GenerateDoc(genCtx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("service: %w", err)
 	}
 
 	if g.footer != "" {

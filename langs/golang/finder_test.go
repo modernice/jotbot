@@ -40,13 +40,13 @@ func TestFinder_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "X"},
-		{Identifier: "Foo"},
-		{Identifier: "Bar"},
-		{Identifier: "Baz"},
-		{Identifier: "Baz.Baz"},
-		{Identifier: "Foobar"},
-		{Identifier: "Foobar.Foobar"},
+		{Identifier: "var:X"},
+		{Identifier: "var:Foo"},
+		{Identifier: "func:Bar"},
+		{Identifier: "type:Baz"},
+		{Identifier: "func:Baz.Baz"},
+		{Identifier: "type:Foobar"},
+		{Identifier: "func:Foobar.Foobar"},
 	}, findings)
 }
 
@@ -75,8 +75,8 @@ func TestFinder_Find_onlyUncommented(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foo"},
-		{Identifier: "Baz"},
+		{Identifier: "var:Foo"},
+		{Identifier: "func:Baz"},
 	}, findings)
 }
 
@@ -105,9 +105,9 @@ func TestFinder_Find_pointerReceiver(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foo"},
-		{Identifier: "(*Foo).Foo"},
-		{Identifier: "Foo.Bar"},
+		{Identifier: "type:Foo"},
+		{Identifier: "func:(*Foo).Foo"},
+		{Identifier: "func:Foo.Bar"},
 	}, findings)
 }
 
@@ -144,11 +144,11 @@ func TestFinder_Find_generics(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foobar"},
-		{Identifier: "Foo"},
-		{Identifier: "Foo.Foo"},
-		{Identifier: "(*Foo).Bar"},
-		{Identifier: "(*Foo).Baz"},
+		{Identifier: "func:Foobar"},
+		{Identifier: "type:Foo"},
+		{Identifier: "func:Foo.Foo"},
+		{Identifier: "func:(*Foo).Bar"},
+		{Identifier: "func:(*Foo).Baz"},
 	}, findings)
 }
 
@@ -173,7 +173,7 @@ func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "Foobar"},
+		{Identifier: "func:Foobar"},
 	}, findings)
 }
 
@@ -198,8 +198,8 @@ func TestFindTests(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "TestFoo"},
-		{Identifier: "TestBar"},
-		{Identifier: "Foobar"},
+		{Identifier: "func:TestFoo"},
+		{Identifier: "func:TestBar"},
+		{Identifier: "func:Foobar"},
 	}, findings)
 }

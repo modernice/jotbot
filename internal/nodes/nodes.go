@@ -8,7 +8,18 @@ import (
 )
 
 func IsExportedIdentifier(identifier string) bool {
-	return len(identifier) > 0 && identifier != "_" && strings.ToUpper(identifier[:1]) == identifier[:1]
+	if parts := strings.Split(identifier, ":"); len(parts) > 1 {
+		identifier = parts[1]
+	}
+	return len(identifier) > 0 && identifier != "_" &&
+		strings.ToUpper(identifier[:1]) == identifier[:1]
+}
+
+func StripIdentifierPrefix(identifier string) string {
+	if parts := strings.Split(identifier, ":"); len(parts) > 1 {
+		return parts[1]
+	}
+	return identifier
 }
 
 // HasDoc [func] returns a boolean indicating whether a given Go AST node has
@@ -49,6 +60,8 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 		if node.Recv != nil && len(node.Recv.List) > 0 {
 			identifier, _ = methodIdentifier(identifier, node.Recv.List[0].Type)
 		}
+
+		identifier = "func:" + identifier
 	case *dst.GenDecl:
 		if len(node.Specs) == 0 {
 			break
@@ -58,14 +71,14 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 
 		switch spec := spec.(type) {
 		case *dst.TypeSpec:
-			identifier = spec.Name.Name
+			identifier = "type:" + spec.Name.Name
 		case *dst.ValueSpec:
-			identifier = spec.Names[0].Name
+			identifier = "var:" + spec.Names[0].Name
 		}
 	case *dst.TypeSpec:
-		identifier = node.Name.Name
+		identifier = "type:" + node.Name.Name
 	case *dst.ValueSpec:
-		identifier = node.Names[0].Name
+		identifier = "var:" + node.Names[0].Name
 	}
 
 	return identifier, IsExportedIdentifier(identifier)
@@ -88,7 +101,7 @@ func FindT[Node dst.Node](identifier string, root dst.Node) (Node, bool) {
 	)
 
 	dst.Inspect(root, func(node dst.Node) bool {
-		if ident, _ := Identifier(node); ident == identifier {
+		if ident, hasIdent := Identifier(node); hasIdent && ident == identifier {
 			found, ok = node.(Node)
 			return false
 		}
