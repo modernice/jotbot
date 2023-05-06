@@ -61,14 +61,6 @@ function findNodes<Symbols extends SymbolType = SymbolType>(
       return
     }
 
-    // if (hasComments(node)) {
-    //   console.log(node.getText(), 'has comments')
-    // } else {
-    //   console.log(node.getText(), 'has no comments')
-    // }
-
-    // const commentable = findCommentableNode(node)
-
     if (!hasComments(node) || options?.includeDocumented) {
       found.push(node)
     }

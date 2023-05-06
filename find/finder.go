@@ -15,7 +15,13 @@ var (
 	}
 
 	DefaultExclude = []string{
-		"**/.*/**", // hidden directories
+		"**/.*/**",           // hidden directories
+		"**/dist/**",         // node builds
+		"**/node_modules/**", // node dependencies
+		"**/vendor/**",       // vendored dependencies
+		"**/testdata/**",     // tests
+		"**/test/**",         // tests
+		"**/tests/**",        // tests
 	}
 
 	Default = Options{
