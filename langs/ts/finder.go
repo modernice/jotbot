@@ -29,8 +29,9 @@ type Position struct {
 }
 
 type Finder struct {
-	symbols []Symbol
-	log     *slog.Logger
+	symbols           []Symbol
+	includeDocumented bool
+	log               *slog.Logger
 }
 
 type FinderOption func(*Finder)
@@ -38,6 +39,12 @@ type FinderOption func(*Finder)
 func Symbols(symbols ...Symbol) FinderOption {
 	return func(f *Finder) {
 		f.symbols = append(f.symbols, symbols...)
+	}
+}
+
+func IncludeDocumented(include bool) FinderOption {
+	return func(f *Finder) {
+		f.includeDocumented = include
 	}
 }
 
@@ -78,6 +85,10 @@ func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
 	if len(f.symbols) > 0 {
 		symbols := internal.JoinStrings(slice.Map(f.symbols, unquote[Symbol]), ",")
 		args = append(args, "-s", string(symbols))
+	}
+
+	if f.includeDocumented {
+		args = append(args, "--documented")
 	}
 
 	args = append(args, string(code))

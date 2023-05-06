@@ -19,7 +19,7 @@ interface Options
     WithFormatOption<'json' | 'list'>,
     WithSourceOption,
     WithVerboseOption {
-  commented: boolean
+  documented: boolean
 }
 
 export function withFindCmd(program: Command) {
@@ -34,7 +34,7 @@ export function withFindCmd(program: Command) {
       commaSeparated({ validate: isSymbol }),
       [] as SymbolType[],
     )
-    .option('-c, --commented', 'Also find commented symbols', false)
+    .option('--documented', 'Also find documented symbols', false)
     .option(...verboseOption)
     .addHelpText(
       'after',
@@ -67,10 +67,10 @@ function run(code: string, options: Options) {
 
   const { find } = createFinder({
     ...options,
-    includeDocumented: options.commented,
+    includeDocumented: options.documented,
   })
 
-  let text = `Searching for${options.commented ? ' ' : ' uncommented '}symbols`
+  let text = `Searching for${options.documented ? ' ' : ' uncommented '}symbols`
 
   if (options.path) {
     text += ` in ${options.path}`
