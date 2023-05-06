@@ -5,12 +5,18 @@ package generate
 import (
 	"context"
 	"fmt"
+	"math"
 	"runtime"
 	"sync"
 	"sync/atomic"
 
 	"github.com/modernice/jotbot/internal"
 	"golang.org/x/exp/slog"
+)
+
+var (
+	DefaultFileWorkers   = int(math.Min(4, float64(runtime.NumCPU())))
+	DefaultSymbolWorkers = int(math.Min(2, float64(runtime.NumCPU())))
 )
 
 type Service interface {
@@ -54,12 +60,13 @@ type Documentation struct {
 }
 
 type Generator struct {
-	svc            Service
-	languages      map[string]Language
-	limit          int
-	workersPerFile int
-	footer         string
-	log            *slog.Logger
+	svc           Service
+	languages     map[string]Language
+	limit         int
+	fileWorkers   int
+	symbolWorkers int
+	footer        string
+	log           *slog.Logger
 }
 
 type Option func(*Generator)
@@ -82,9 +89,10 @@ func Limit(n int) Option {
 	}
 }
 
-func Workers(n int) Option {
+func Workers(files, symbols int) Option {
 	return func(g *Generator) {
-		g.workersPerFile = n
+		g.fileWorkers = files
+		g.symbolWorkers = symbols
 	}
 }
 
@@ -95,12 +103,17 @@ func WithLanguage(ext string, lang Language) Option {
 }
 
 func New(svc Service, opts ...Option) *Generator {
-	g := &Generator{svc: svc, languages: make(map[string]Language)}
+	g := &Generator{
+		svc:           svc,
+		fileWorkers:   DefaultFileWorkers,
+		symbolWorkers: DefaultSymbolWorkers,
+		languages:     make(map[string]Language),
+	}
 	for _, opt := range opts {
 		opt(g)
 	}
-	if g.workersPerFile <= 0 {
-		g.workersPerFile = 1
+	if g.symbolWorkers <= 0 {
+		g.symbolWorkers = 1
 	}
 	if g.log == nil {
 		g.log = internal.NopLogger()
@@ -144,13 +157,13 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 		}()
 
 		var wg sync.WaitGroup
-		wg.Add(g.workersPerFile)
+		wg.Add(g.symbolWorkers)
 		go func() {
 			wg.Wait()
 			close(docs)
 		}()
 
-		for i := 0; i < g.workersPerFile; i++ {
+		for i := 0; i < g.symbolWorkers; i++ {
 			go func() {
 				defer wg.Done()
 				for input := range queue {
@@ -190,13 +203,19 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 func (g *Generator) distributeWork(files map[string][]Input) (func(context.Context, func(string, []Input) bool), <-chan struct{}) {
 	done := make(chan struct{})
 	return func(ctx context.Context, work func(string, []Input) bool) {
-		workers := runtime.NumCPU()
+		workers := g.fileWorkers
+		if workers < 1 {
+			g.log.Debug(fmt.Sprintf("Invalid worker count %d. Setting workers to 1", workers))
+			workers = 1
+		}
 		if workers > len(files) {
 			g.log.Debug(fmt.Sprintf("Setting workers to file count: %d", len(files)))
 			workers = len(files)
 		}
 
-		g.log.Debug(fmt.Sprintf("Generating %d file(s) concurrently.", workers))
+		if workers > 1 {
+			g.log.Debug(fmt.Sprintf("Generating %d files in parallel.", workers))
+		}
 
 		type job struct {
 			file   string

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -23,7 +24,7 @@ import (
 
 const internalDirectoriesGlob = "**/internal/**/*.go"
 
-type CLI struct {
+type Config struct {
 	Generate struct {
 		Root            string      `arg:"" default:"." help:"Root directory of the repository."`
 		Include         []string    `name:"include" short:"i" env:"JOTBOT_INCLUDE" help:"Glob pattern(s) to include files."`
@@ -35,8 +36,9 @@ type CLI struct {
 		Limit           int         `name:"limit" default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of files to generate documentation for."`
 		DryRun          bool        `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
 		Model           string      `name:"model" default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model used to generate documentation."`
-		MaxTokens       int         `name:"maxTokens" default:"512" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
-		Workers         int         `name:"workers" default:"1" env:"JOTBOT_WORKERS" help:"Number of workers to use per file."`
+		MaxTokens       int         `name:"maxTokens" default:"${maxTokens=512}" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
+		Parallel        int         `name:"parallel" short:"p" default:"${parallel=4}" env:"JOTBOT_PARALLEL" help:"Number of files to handle concurrently."`
+		Workers         int         `name:"workers" default:"${workers=2}" env:"JOTBOT_WORKERS" help:"Number of workers to use per file."`
 		Override        bool        `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
 	} `cmd:"" help:"Generate missing documentation."`
 
@@ -44,7 +46,7 @@ type CLI struct {
 	Verbose bool   `name:"verbose" short:"v" env:"JOTBOT_VERBOSE" help:"Enable verbose logging."`
 }
 
-func (cfg *CLI) Run(kctx *kong.Context) error {
+func (cfg *Config) Run(kctx *kong.Context) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
@@ -124,7 +126,13 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 		return fmt.Errorf("find uncommented code: %w", err)
 	}
 
-	patch, err := bot.Generate(ctx, findings, oai, generate.Limit(cfg.Generate.Limit), generate.Workers(cfg.Generate.Workers))
+	patch, err := bot.Generate(
+		ctx,
+		findings,
+		oai,
+		generate.Limit(cfg.Generate.Limit),
+		generate.Workers(cfg.Generate.Parallel, cfg.Generate.Workers),
+	)
 	if err != nil {
 		return fmt.Errorf("generate documentation: %w", err)
 	}
@@ -164,9 +172,12 @@ func New() *kong.Context {
 	if len(os.Args) < 1 {
 		os.Args = append(os.Args, "generate")
 	}
-
-	var cfg CLI
-	return kong.Parse(&cfg)
+	var cfg Config
+	return kong.Parse(&cfg, kong.Vars{
+		"maxTokens": strconv.Itoa(openai.DefaultMaxTokens),
+		"parallel":  strconv.Itoa(generate.DefaultFileWorkers),
+		"workers":   strconv.Itoa(generate.DefaultSymbolWorkers),
+	})
 }
 
 func parseMatchers(raw []string) ([]*regexp.Regexp, error) {
