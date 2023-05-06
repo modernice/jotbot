@@ -63,6 +63,8 @@ func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []by
 }
 
 func formatDoc(doc string, indent int) string {
+	doc = normalizeGeneratedComment(doc)
+
 	lines := splitString(doc, 77-indent)
 	if len(lines) == 1 {
 		return fmt.Sprintf("/** %s */\n", lines[0])
@@ -105,4 +107,15 @@ func splitByWords(str string, maxLen int) []string {
 	lines = append(lines, line)
 
 	return lines
+}
+
+func normalizeGeneratedComment(doc string) string {
+	doc = strings.TrimSpace(doc)
+	doc = strings.TrimPrefix(doc, "/**")
+	doc = strings.TrimSuffix(doc, "*/")
+	lines := strings.Split(doc, "\n")
+	lines = slice.Map(lines, func(l string) string {
+		return strings.TrimPrefix(l, " * ")
+	})
+	return strings.Join(lines, "\n")
 }

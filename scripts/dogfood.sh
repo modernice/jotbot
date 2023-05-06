@@ -14,4 +14,4 @@ if [ -z "$OPENAI_API_KEY" ]; then
 	exit 1
 fi
 
-go run "$ROOT/cmd/jotbot/main.go" generate "$ROOT"
+go run "$ROOT/cmd/jotbot/main.go" generate -v "$ROOT"
