@@ -2,7 +2,6 @@ package find
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ type Finding struct {
 }
 
 func (f Finding) String() string {
-	return fmt.Sprintf("%s", f.Identifier)
+	return f.Identifier
 }
 
 type Options struct {
