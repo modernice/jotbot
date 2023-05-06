@@ -77,7 +77,6 @@ func (f *Finder) Find(ctx context.Context, code []byte) ([]find.Finding, error) 
 }
 
 func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
-
 	var stdout bytes.Buffer
 
 	args := []string{"find", "--json"}

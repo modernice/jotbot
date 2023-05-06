@@ -81,25 +81,6 @@ export interface TypeIdentifier {
   typeName: string
 }
 
-export type NaturalLanguageTarget<Symbols extends SymbolType = SymbolType> =
-  | GlobalTarget<Symbols>
-  | OwnerTarget<Symbols>
-
-export type GlobalTarget<Symbol extends SymbolType = SymbolType> =
-  `${SymbolToName[Symbol]} '${string}'`
-
-export type OwnerTarget<Symbol extends SymbolType = SymbolType> =
-  `${SymbolToName[Symbol]} '${string}' of '${string}`
-
-interface SymbolToName extends Record<SymbolType, string> {
-  var: 'variable'
-  func: 'function'
-  class: 'class'
-  iface: 'interface'
-  method: 'method'
-  prop: 'property'
-}
-
 export function isVariableIdentifier(
   identifier: Identifier,
 ): identifier is VariableIdentifier {
@@ -273,35 +254,6 @@ function parseTypeIdentifier(path: string): TypeIdentifier {
     type: 'type',
     path,
     typeName: path,
-  }
-}
-
-export function describeIdentifier(
-  identifier: RawIdentifier,
-): NaturalLanguageTarget {
-  const [symbol, name] = identifier.split(':') as [SymbolType, string]
-
-  switch (symbol) {
-    case 'var':
-      return `variable '${name}'`
-    case 'func':
-      return `function '${name}'`
-    case 'class':
-      return `class '${name}'`
-    case 'iface':
-      return `interface '${name}'`
-    case 'method': {
-      const [owner, method] = name.split('.')
-      return `method '${method}' of '${owner}'`
-    }
-    case 'prop': {
-      const [owner, prop] = name.split('.')
-      return `property '${prop}' of '${owner}'`
-    }
-    case 'type':
-      return `type '${name}'`
-    default:
-      throw new Error(`Unknown symbol type: ${symbol}`)
   }
 }
 

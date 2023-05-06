@@ -1,11 +1,6 @@
 import type ts from 'typescript'
 import { expect } from 'vitest'
-import {
-  NaturalLanguageTarget,
-  RawIdentifier,
-  describeIdentifier,
-} from '../src/identifier'
-import type { Finding } from '../src/finder'
+import { RawIdentifier } from '../src/identifier'
 import { SymbolType } from '../src'
 
 export function tryOut<Fn extends (...args: any[]) => any>(
@@ -20,21 +15,16 @@ export function tryOut<Fn extends (...args: any[]) => any>(
 }
 
 export function expectFindings<Symbols extends SymbolType = SymbolType>(
-  got: Finding<Symbols>[],
-  want: (RawIdentifier<Symbols> | Finding<Symbols>)[],
+  got: RawIdentifier<Symbols>[],
+  want: (RawIdentifier<Symbols> | RawIdentifier<Symbols>)[],
 ) {
   const _want = want.map(
-    (item): Finding<Symbols> =>
-      isRawIdentifier<Symbols>(item)
-        ? {
-            identifier: item as RawIdentifier<Symbols>,
-            target: describeIdentifier(item) as NaturalLanguageTarget<Symbols>,
-          }
-        : item,
+    (item): RawIdentifier<Symbols> =>
+      isRawIdentifier<Symbols>(item) ? (item as RawIdentifier<Symbols>) : item,
   )
 
-  _want.sort((a, b) => (a.target <= b.target ? -1 : 1))
-  got.sort((a, b) => (a.target <= b.target ? -1 : 1))
+  _want.sort()
+  got.sort()
 
   expect(got).toEqual(_want)
 }

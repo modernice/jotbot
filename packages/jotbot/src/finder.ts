@@ -11,16 +11,11 @@ import {
   isPublicMethodOfExportedClass,
   isPublicPropertyOfExportedOwner,
 } from './nodes'
-import type { NaturalLanguageTarget, RawIdentifier } from './identifier'
-import { createRawIdentifier, describeIdentifier } from './identifier'
+import type { RawIdentifier } from './identifier'
+import { createRawIdentifier } from './identifier'
 import type { SymbolType } from './symbols'
 import { configureSymbols } from './symbols'
 import { createSourceFile } from './parse'
-
-export interface Finding<Symbols extends SymbolType = SymbolType> {
-  identifier: RawIdentifier<Symbols>
-  target: NaturalLanguageTarget<Symbols>
-}
 
 export interface WithSymbolsOption<Symbols extends SymbolType = SymbolType> {
   symbols?: readonly Symbols[]
@@ -36,14 +31,9 @@ export function createFinder<Symbols extends SymbolType = SymbolType>(
 ) {
   function find(code: string) {
     const nodes = findUncommentedNodes(createSourceFile('', code), options)
-    return nodes.map((node): Finding<Symbols> => {
+    return nodes.map((node): RawIdentifier<Symbols> => {
       const identifier = createRawIdentifier(node) as RawIdentifier<Symbols>
-      return {
-        identifier,
-        target: describeIdentifier(
-          identifier,
-        ) as NaturalLanguageTarget<Symbols>,
-      }
+      return identifier
     })
   }
 
@@ -81,7 +71,7 @@ function findUncommentedNodes<Symbols extends SymbolType = SymbolType>(
   return [...uncommented.values()]
 }
 
-export function printFindings(findings: Finding[]) {
+export function printFindings(findings: RawIdentifier[]) {
   return JSON.stringify(findings, null, 2)
 }
 

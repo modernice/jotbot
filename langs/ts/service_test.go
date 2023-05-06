@@ -20,11 +20,7 @@ func TestService_Patch_interfaceFields(t *testing.T) {
 		}
 	`)
 
-	comment := heredoc.Doc(`
-		/**
-		 * This is a comment
-		 */
-	`)
+	comment := "This is a comment"
 
 	svc := ts.New()
 
@@ -35,9 +31,7 @@ func TestService_Patch_interfaceFields(t *testing.T) {
 
 	want := heredoc.Doc(`
 		export interface Foo {
-			/**
-			 * This is a comment
-			 */
+			/** This is a comment */
 			foo: string
 			bar(): string
 		}
@@ -54,13 +48,9 @@ func TestService_Patch_interfaceFields(t *testing.T) {
 
 	want = heredoc.Doc(`
 		export interface Foo {
-			/**
-			 * This is a comment
-			 */
+			/** This is a comment */
 			foo: string
-			/**
-			 * This is a comment
-			 */
+			/** This is a comment */
 			bar(): string
 		}
 	`)

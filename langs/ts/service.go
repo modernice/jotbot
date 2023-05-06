@@ -67,7 +67,7 @@ func formatDoc(doc string, indent int) string {
 
 	lines := splitString(doc, 77-indent)
 	if len(lines) == 1 {
-		return fmt.Sprintf("/** %s */\n", lines[0])
+		return fmt.Sprintf("/** %s */\n", strings.TrimSpace(lines[0]))
 	}
 
 	lines = slice.Map(lines, func(s string) string {
@@ -117,5 +117,5 @@ func normalizeGeneratedComment(doc string) string {
 	lines = slice.Map(lines, func(l string) string {
 		return strings.TrimPrefix(l, " * ")
 	})
-	return strings.Join(lines, "\n")
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
