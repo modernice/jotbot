@@ -76,9 +76,9 @@ func (f Options) Find(ctx context.Context, files fs.FS) ([]string, error) {
 		}
 
 		if d.IsDir() {
-			// if f.excluded(path) {
-			// 	return filepath.SkipDir
-			// }
+			if f.excluded(path) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
