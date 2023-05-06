@@ -212,6 +212,10 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 			g.log.Debug(fmt.Sprintf("Setting workers to file count: %d", len(files)))
 			workers = len(files)
 		}
+		if workers > g.limit {
+			g.log.Debug(fmt.Sprintf("Setting workers to file limit: %d", g.limit))
+			workers = g.limit
+		}
 
 		if workers > 1 {
 			g.log.Debug(fmt.Sprintf("Generating %d files in parallel.", workers))
