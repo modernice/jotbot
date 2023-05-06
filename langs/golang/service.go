@@ -163,8 +163,6 @@ func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []by
 }
 
 func (svc *Service) patch(file *dst.File, identifier, doc string) ([]byte, error) {
-	file = dst.Clone(file).(*dst.File)
-
 	spec, decl, ok := nodes.Find(identifier, file)
 	if !ok {
 		return nil, fmt.Errorf("node %q not found", identifier)

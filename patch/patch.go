@@ -9,6 +9,7 @@ import (
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal"
 	"github.com/spf13/afero"
+	"golang.org/x/exp/slog"
 )
 
 type Language interface {
@@ -18,6 +19,7 @@ type Language interface {
 type Patch struct {
 	files <-chan generate.File
 	errs  <-chan error
+	log   *slog.Logger
 }
 
 type Option func(*Patch)
@@ -28,10 +30,19 @@ func WithErrors(errs <-chan error) Option {
 	}
 }
 
+func WithLogger(h slog.Handler) Option {
+	return func(p *Patch) {
+		p.log = slog.New(h)
+	}
+}
+
 func New(files <-chan generate.File, opts ...Option) *Patch {
 	p := &Patch{files: files}
 	for _, opt := range opts {
 		opt(p)
+	}
+	if p.log == nil {
+		p.log = internal.NopLogger()
 	}
 	return p
 }
@@ -92,8 +103,11 @@ func (p *Patch) applyFile(ctx context.Context, repo afero.Fs, svc Language, file
 	}
 
 	for _, doc := range file.Docs {
-		if code, err = svc.Patch(ctx, doc.Identifier, doc.Text, code); err != nil {
-			return code, fmt.Errorf("apply patch to %q: %w\n\n%s", doc.Identifier, err, code)
+		if patched, err := svc.Patch(ctx, doc.Identifier, doc.Text, code); err != nil {
+			p.log.Debug(fmt.Sprintf("failed to patch %q: %v", doc.Identifier, err), "documentation", doc.Text)
+			return code, fmt.Errorf("apply patch to %q: %w", doc.Identifier, err)
+		} else {
+			code = patched
 		}
 	}
 

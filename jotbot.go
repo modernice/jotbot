@@ -199,7 +199,7 @@ func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generat
 	}
 
 	return &Patch{
-		Patch:       patch.New(generated, patch.WithErrors(errs)),
+		Patch:       patch.New(generated, patch.WithErrors(errs), patch.WithLogger(bot.log.Handler())),
 		getLanguage: bot.languageForExtension,
 	}, nil
 }

@@ -8,10 +8,14 @@ import (
 )
 
 func Prompt(input generate.Input) string {
+	target := Target(input.Identifier)
+	simple := simpleIdentifier(input.Identifier)
 	return fmt.Sprintf(
-		"Write comprehensive and concise documentation for %s in idiomatic GoDoc format. Avoid including links, source code, or code examples. Enclose symbol references within brackets ([]). Begin the first sentence with %q, and maintain the writing style consistent with Go library documentation. Here is the source code of the file for reference:\n\n%s",
-		Target(input.Identifier),
-		fmt.Sprintf("%s ", simpleIdentifier(input.Identifier)),
+		"Write a concise comment for %s in GoDoc format. Do not including links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. You must enclose references to other types within brackets ([]). You must begin the comment with %q, and maintain the writing style consistent with Go library documentation. Here is the source code for reference:\n\n%s",
+		target,
+		target,
+		simple,
+		simple,
 		input.Code,
 	)
 }

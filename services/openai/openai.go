@@ -87,7 +87,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	req := openai.CompletionRequest{
 		Model:            string(svc.model),
 		Temperature:      0.618,
-		TopP:             0.3,
+		TopP:             0.5,
 		PresencePenalty:  0.1,
 		FrequencyPenalty: 0.2,
 		Prompt:           ctx.Prompt(),
