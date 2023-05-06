@@ -17,11 +17,12 @@ import (
 )
 
 const (
-	Var      = Symbol("var")
-	Class    = Symbol("class")
-	Func     = Symbol("func")
-	Method   = Symbol("method")
-	Property = Symbol("property")
+	Var       = Symbol("var")
+	Class     = Symbol("class")
+	Interface = Symbol("iface")
+	Func      = Symbol("func")
+	Method    = Symbol("method")
+	Property  = Symbol("prop")
 )
 
 type Symbol string
@@ -36,32 +37,24 @@ type Finder struct {
 	log     *slog.Logger
 }
 
-type FinderOption interface {
-	applyFinder(*Finder)
-}
-
-type finderOptionFunc func(*Finder)
-
-func (opt finderOptionFunc) applyFinder(s *Finder) {
-	opt(s)
-}
+type FinderOption func(*Finder)
 
 func Symbols(symbols ...Symbol) FinderOption {
-	return finderOptionFunc(func(f *Finder) {
+	return func(f *Finder) {
 		f.symbols = append(f.symbols, symbols...)
-	})
+	}
 }
 
 func WithLogger(log *slog.Logger) FinderOption {
-	return finderOptionFunc(func(f *Finder) {
+	return func(f *Finder) {
 		f.log = log
-	})
+	}
 }
 
 func NewFinder(opts ...FinderOption) *Finder {
 	var f Finder
 	for _, opt := range opts {
-		opt.applyFinder(&f)
+		opt(&f)
 	}
 	if f.log == nil {
 		f.log = internal.NopLogger()
@@ -84,13 +77,13 @@ func (f *Finder) Find(ctx context.Context, code []byte) ([]find.Finding, error) 
 }
 
 func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
-	symbols := internal.JoinStrings(slice.Map(f.symbols, unquote[Symbol]), ",")
 
 	var stdout bytes.Buffer
 
-	args := []string{"find", "-v", "--json"}
+	args := []string{"find", "--json"}
 
-	if symbols != "" {
+	if len(f.symbols) > 0 {
+		symbols := internal.JoinStrings(slice.Map(f.symbols, unquote[Symbol]), ",")
 		args = append(args, "-s", string(symbols))
 	}
 

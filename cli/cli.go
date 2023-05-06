@@ -14,22 +14,24 @@ import (
 	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/langs/golang"
+	"github.com/modernice/jotbot/langs/ts"
 	"github.com/modernice/jotbot/services/openai"
 	"golang.org/x/exp/slog"
 )
 
 type CLI struct {
 	Generate struct {
-		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
-		Include   []string `name:"include" short:"i" env:"JOTBOT_INCLUDE" help:"Glob pattern(s) to include files."`
-		Exclude   []string `name:"exclude" short:"e" env:"JOTBOT_EXCLUDE" help:"Glob pattern(s) to exclude files."`
-		Match     []string `name:"match" short:"m" env:"JOTBOT_MATCH" help:"Regular expression(s) to match identifiers."`
-		Branch    string   `env:"JOTBOT_BRANCH" help:"Branch name to commit changes to. Leave empty to not commit changes."`
-		Limit     int      `default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of files to generate documentation for."`
-		DryRun    bool     `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
-		Model     string   `default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model to use."`
-		MaxTokens int      `default:"512" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
-		Workers   int      `default:"1" env:"JOTBOT_WORKERS" help:"Number of workers to use per file."`
+		Root      string      `arg:"" default:"." help:"Root directory of the repository."`
+		Include   []string    `name:"include" short:"i" env:"JOTBOT_INCLUDE" help:"Glob pattern(s) to include files."`
+		Exclude   []string    `name:"exclude" short:"e" env:"JOTBOT_EXCLUDE" help:"Glob pattern(s) to exclude files."`
+		Match     []string    `name:"match" short:"m" env:"JOTBOT_MATCH" help:"Regular expression(s) to match identifiers."`
+		Symbols   []ts.Symbol `name:"symbol" short:"s" env:"JOTBOT_SYMBOLS" help:"Symbol(s) to search for in code (only for TS/JS)."`
+		Branch    string      `env:"JOTBOT_BRANCH" help:"Branch name to commit changes to. Leave empty to not commit changes."`
+		Limit     int         `default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of files to generate documentation for."`
+		DryRun    bool        `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
+		Model     string      `default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model to use."`
+		MaxTokens int         `default:"512" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
+		Workers   int         `default:"1" env:"JOTBOT_WORKERS" help:"Number of workers to use per file."`
 		// Override bool     `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation."`
 		// Clear    bool     `name:"clear" short:"c" env:"JOTBOT_CLEAR" help:"Clear existing documentation."`
 	} `cmd:"" help:"Generate missing documentation."`
@@ -64,6 +66,9 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 		return fmt.Errorf("create Go language service: %w", err)
 	}
 
+	tsFinder := ts.NewFinder(ts.Symbols(cfg.Generate.Symbols...))
+	tssvc := ts.New(ts.WithFinder(tsFinder))
+
 	matchers, err := parseMatchers(cfg.Generate.Match)
 	if err != nil {
 		return fmt.Errorf("parse matchers: %w", err)
@@ -73,6 +78,7 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 		cfg.Generate.Root,
 		jotbot.WithLogger(logHandler),
 		jotbot.WithLanguage("go", gosvc),
+		jotbot.WithLanguage("ts", tssvc),
 		jotbot.Match(matchers...),
 	)
 

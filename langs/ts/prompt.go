@@ -1,4 +1,4 @@
-package golang
+package ts
 
 import (
 	"fmt"
@@ -11,10 +11,9 @@ func Prompt(input generate.Input) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
 	return fmt.Sprintf(
-		"Write a concise comment for %s in GoDoc format. Do not including links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. You must enclose references to other types within brackets ([]). You must begin the comment with %q, and maintain the writing style consistent with Go library documentation. Here is the source code for reference:\n\n%s",
+		"Write a concise comment for %s in TSDoc format. Do not include links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. You must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
 		target,
 		target,
-		simple,
 		simple,
 		input.Code,
 	)
@@ -27,12 +26,18 @@ func Target(identifier string) string {
 	}
 
 	switch parts[0] {
-	case "func":
-		return fmt.Sprintf(`function "%s()"`, parts[1])
-	case "type":
-		return fmt.Sprintf("type %q", parts[1])
 	case "var":
 		return fmt.Sprintf("variable %q", parts[1])
+	case "class":
+		return fmt.Sprintf("class %q", parts[1])
+	case "interface":
+		return fmt.Sprintf("interface %q", parts[1])
+	case "func":
+		return fmt.Sprintf(`function "%s()"`, parts[1])
+	case "method":
+		return fmt.Sprintf(`method "%s()"`, parts[1])
+	case "prop":
+		return fmt.Sprintf(`property %q`, parts[1])
 	default:
 		return fmt.Sprintf("%q", identifier)
 	}
