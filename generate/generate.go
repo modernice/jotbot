@@ -112,6 +112,9 @@ func New(svc Service, opts ...Option) *Generator {
 	for _, opt := range opts {
 		opt(g)
 	}
+	if g.fileWorkers <= 0 {
+		g.fileWorkers = 1
+	}
 	if g.symbolWorkers <= 0 {
 		g.symbolWorkers = 1
 	}
@@ -167,6 +170,7 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 			go func() {
 				defer wg.Done()
 				for input := range queue {
+					// log.Println(input)
 					doc, err := g.Generate(ctx, input)
 					if err != nil {
 						fail(fmt.Errorf("generate %q: %w", input.Identifier, err))
@@ -212,7 +216,7 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 			g.log.Debug(fmt.Sprintf("Setting workers to file count: %d", len(files)))
 			workers = len(files)
 		}
-		if workers > g.limit {
+		if g.limit > 0 && workers > g.limit {
 			g.log.Debug(fmt.Sprintf("Setting workers to file limit: %d", g.limit))
 			workers = g.limit
 		}

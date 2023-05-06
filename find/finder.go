@@ -76,10 +76,17 @@ func (f Options) Find(ctx context.Context, files fs.FS) ([]string, error) {
 		}
 
 		if d.IsDir() {
+			// if f.excluded(path) {
+			// 	return filepath.SkipDir
+			// }
 			return nil
 		}
 
 		if !f.included(path) {
+			return nil
+		}
+
+		if f.excluded(path) {
 			return nil
 		}
 
@@ -98,27 +105,29 @@ func (f Options) included(path string) bool {
 	}
 
 	if len(f.Include) > 0 {
-		var included bool
 		for _, pattern := range f.Include {
 			if ok, err := doublestar.Match(pattern, path); err == nil && ok {
-				included = true
-				break
+				return true
 			}
 		}
-		if !included {
-			return false
-		}
-	}
-
-	if len(f.Exclude) > 0 {
-		for _, pattern := range f.Exclude {
-			if ok, err := doublestar.Match(pattern, path); err == nil && ok {
-				return false
-			}
-		}
+		return false
 	}
 
 	return true
+}
+
+func (f Options) excluded(path string) bool {
+	if len(f.Exclude) == 0 {
+		return false
+	}
+
+	for _, pattern := range f.Exclude {
+		if ok, err := doublestar.Match(pattern, path); err == nil && ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (f Options) extensionIncluded(ext string) bool {
