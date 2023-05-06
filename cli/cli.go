@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 
 	"github.com/alecthomas/kong"
 	"github.com/modernice/jotbot"
@@ -22,6 +23,7 @@ type CLI struct {
 		Root      string   `arg:"" default:"." help:"Root directory of the repository."`
 		Include   []string `name:"include" short:"i" env:"JOTBOT_INCLUDE" help:"Glob pattern(s) to include files."`
 		Exclude   []string `name:"exclude" short:"e" env:"JOTBOT_EXCLUDE" help:"Glob pattern(s) to exclude files."`
+		Match     []string `name:"match" short:"m" env:"JOTBOT_MATCH" help:"Regular expression(s) to match identifiers."`
 		Branch    string   `env:"JOTBOT_BRANCH" help:"Branch name to commit changes to. Leave empty to not commit changes."`
 		Limit     int      `default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of files to generate documentation for."`
 		DryRun    bool     `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
@@ -36,10 +38,6 @@ type CLI struct {
 	Verbose bool   `name:"verbose" short:"v" env:"JOTBOT_VERBOSE" help:"Enable verbose logging."`
 }
 
-// Run generates missing documentation. It uses OpenAI's GPT to generate
-// documentation for exported functions and types in Go source files. It takes a
-// Kong context as an argument and returns an error if one occurred during
-// execution.
 func (cfg *CLI) Run(kctx *kong.Context) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
@@ -66,7 +64,17 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 		return fmt.Errorf("create Go language service: %w", err)
 	}
 
-	bot := jotbot.New(cfg.Generate.Root, jotbot.WithLogger(logHandler), jotbot.WithLanguage("go", gosvc))
+	matchers, err := parseMatchers(cfg.Generate.Match)
+	if err != nil {
+		return fmt.Errorf("parse matchers: %w", err)
+	}
+
+	bot := jotbot.New(
+		cfg.Generate.Root,
+		jotbot.WithLogger(logHandler),
+		jotbot.WithLanguage("go", gosvc),
+		jotbot.Match(matchers...),
+	)
 
 	openaiOpts := []openai.Option{
 		openai.Model(cfg.Generate.Model),
@@ -79,7 +87,11 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 		return fmt.Errorf("create OpenAI service: %w", err)
 	}
 
-	findings, err := bot.Find(ctx, find.Include(cfg.Generate.Include...), find.Exclude(cfg.Generate.Exclude...))
+	findings, err := bot.Find(
+		ctx,
+		find.Include(cfg.Generate.Include...),
+		find.Exclude(cfg.Generate.Exclude...),
+	)
 	if err != nil {
 		return fmt.Errorf("find uncommented code: %w", err)
 	}
@@ -156,9 +168,6 @@ func (cfg *CLI) Run(kctx *kong.Context) error {
 	return nil
 }
 
-// New creates a new *kong.Context and returns a pointer to it. The
-// *kong.Context is used to parse command-line arguments for the "jotbot" CLI
-// tool.
 func New() *kong.Context {
 	if len(os.Args) < 1 {
 		os.Args = append(os.Args, "generate")
@@ -168,8 +177,13 @@ func New() *kong.Context {
 	return kong.Parse(&cfg)
 }
 
-func printDryRun(result map[string][]byte) {
-	for path, content := range result {
-		log.Printf("\n%s:\n\n%s", path, content)
+func parseMatchers(raw []string) ([]*regexp.Regexp, error) {
+	out := make([]*regexp.Regexp, len(raw))
+	var err error
+	for i, r := range raw {
+		if out[i], err = regexp.Compile(r); err != nil {
+			return out, fmt.Errorf("compile regular expression %q: %w", r, err)
+		}
 	}
+	return out, nil
 }

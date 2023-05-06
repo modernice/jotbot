@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/modernice/jotbot"
@@ -84,6 +85,30 @@ func TestJotBot_Generate(t *testing.T) {
 	})
 }
 
+func TestMatch(t *testing.T) {
+	root := filepath.Join(tests.Must(os.Getwd()), "testdata", "gen", "filter")
+	tests.InitRepo("basic", root)
+
+	filters := []*regexp.Regexp{
+		regexp.MustCompile(`^(var:|type:)`),
+		regexp.MustCompile(`^func:\(\*X\)\.Bar$`),
+	}
+
+	bot := newJotBot(root, jotbot.Match(filters...))
+
+	findings, err := bot.Find(context.Background())
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
+	}
+
+	tests.ExpectFound(t, []jotbot.Finding{
+		{Finding: find.Finding{Identifier: "var:Foo"}, Language: "go", File: "bar.go"},
+		{Finding: find.Finding{Identifier: "type:Bar"}, Language: "go", File: "bar.go"},
+		{Finding: find.Finding{Identifier: "type:X"}, Language: "go", File: "baz.go"},
+		{Finding: find.Finding{Identifier: "func:(*X).Bar"}, Language: "go", File: "baz.go"},
+	}, findings)
+}
+
 func makeFindings(file string, findings ...find.Finding) []jotbot.Finding {
 	out := make([]jotbot.Finding, len(findings))
 	for i, f := range findings {
@@ -92,8 +117,8 @@ func makeFindings(file string, findings ...find.Finding) []jotbot.Finding {
 	return out
 }
 
-func newJotBot(root string) *jotbot.JotBot {
-	bot := jotbot.New(root)
+func newJotBot(root string, opts ...jotbot.Option) *jotbot.JotBot {
+	bot := jotbot.New(root, opts...)
 	bot.ConfigureLanguage("go", golang.Must())
 	return bot
 }

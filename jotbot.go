@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
@@ -27,6 +28,7 @@ type Language interface {
 
 type JotBot struct {
 	root          string
+	filters       []*regexp.Regexp
 	fs            afero.Fs
 	languages     map[string]Language
 	extToLanguage map[string]string
@@ -61,6 +63,12 @@ func WithLanguage(name string, lang Language) Option {
 func WithLogger(h slog.Handler) Option {
 	return func(bot *JotBot) {
 		bot.log = slog.New(h)
+	}
+}
+
+func Match(filters ...*regexp.Regexp) Option {
+	return func(bot *JotBot) {
+		bot.filters = append(bot.filters, filters...)
 	}
 }
 
@@ -130,6 +138,8 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 			return nil, fmt.Errorf("find in %s: %w", path, err)
 		}
 
+		findings = bot.filterFindings(findings)
+
 		out = append(out, slice.Map(findings, func(f find.Finding) Finding {
 			return Finding{
 				Finding:  f,
@@ -140,6 +150,20 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 	}
 
 	return out, nil
+}
+
+func (bot *JotBot) filterFindings(findings []find.Finding) []find.Finding {
+	if len(bot.filters) == 0 {
+		return findings
+	}
+	return slice.Filter(findings, func(f find.Finding) bool {
+		for _, filter := range bot.filters {
+			if filter.MatchString(f.Identifier) {
+				return true
+			}
+		}
+		return false
+	})
 }
 
 func (bot *JotBot) languageForExtension(ext string) (Language, error) {
