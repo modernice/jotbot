@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/git"
+	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/langs/golang"
 	"github.com/modernice/jotbot/langs/ts"
 	"github.com/modernice/jotbot/services/openai"
@@ -64,7 +64,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	if cfg.Verbose {
 		level = slog.LevelDebug
 	}
-	logHandler := slog.HandlerOptions{
+	logHandler := internal.PrettyLogger(slog.HandlerOptions{
 		Level: level,
 		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
@@ -72,7 +72,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 			}
 			return a
 		},
-	}.NewTextHandler(os.Stdout)
+	}.NewTextHandler(os.Stdout))
 	logger := slog.New(logHandler)
 
 	goFinder := golang.NewFinder(golang.FindTests(false))
@@ -144,7 +144,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 		}
 
 		for file, code := range patched {
-			log.Printf("Patched %q:\n\n%s\n", file, code)
+			fmt.Printf("Patched %q:\n\n%s\n", file, code)
 		}
 
 		took := time.Since(start)

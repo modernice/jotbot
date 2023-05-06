@@ -2,6 +2,8 @@ package internal
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"golang.org/x/exp/slog"
 )
@@ -35,3 +37,19 @@ func (nopLogger) WithAttrs([]slog.Attr) slog.Handler { return nop }
 // the group field set to the provided value. The group field is used to
 // categorize log handlers into logical groups.
 func (nopLogger) WithGroup(string) slog.Handler { return nop }
+
+type prettyLogger struct {
+	slog.Handler
+}
+
+func PrettyLogger(h slog.Handler) slog.Handler {
+	return &prettyLogger{h}
+}
+
+func (l *prettyLogger) Handle(ctx context.Context, r slog.Record) error {
+	if r.Level == slog.LevelInfo {
+		fmt.Fprintf(os.Stdout, "%s\n", r.Message)
+		return nil
+	}
+	return l.Handler.Handle(ctx, r)
+}
