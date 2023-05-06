@@ -138,6 +138,24 @@ export function isMethodOfExportedInterface(
   return !!interfaceNode && isExported(interfaceNode)
 }
 
+export function isMethodOfExportedTypeAlias(
+  node: ts.Node,
+): node is SupportedMethod {
+  if (!isMethod(node)) {
+    return false
+  }
+
+  const mustBeExported = findParentThatMustBeExported(node)
+  if (
+    !mustBeExported ||
+    mustBeExported.kind !== ts.SyntaxKind.TypeAliasDeclaration
+  ) {
+    return false
+  }
+
+  return !!mustBeExported && isExported(mustBeExported)
+}
+
 export type SupportedProperty = ts.PropertyDeclaration | ts.PropertySignature
 
 export function isProperty(node: ts.Node): node is SupportedProperty {
@@ -153,28 +171,7 @@ export function isPublicPropertyOfExportedOwner(
 
   const mustBeExported = findParentThatMustBeExported(node)
 
-  if (!mustBeExported || !isExported(mustBeExported)) {
-    return false
-  }
-
-  // if (!isProperty(node) || isPrivate(node) || !isExported(node.parent)) {
-  //   return false
-  // }
-
-  // if (isClass(node.parent) || isInterface(node.parent)) {
-  //   return true
-  // }
-
-  return true
-
-  // return (
-  //   isProperty(node) &&
-  //   !isPrivate(node) &&
-  //   (isClass(node.parent) ||
-  //     isInterface(node.parent) ||
-  //     isTypeAlias(node.parent)) &&
-  //   isExported(node.parent)
-  // )
+  return !!mustBeExported && isExported(mustBeExported)
 }
 
 function findParentThatMustBeExported(node: ts.Node): ts.Node | null {
@@ -461,25 +458,6 @@ export function findMethod(
     declaration: method,
     commentTarget: method,
   }
-}
-
-export function getClassNameOfMethod(method: SupportedMethod) {
-  if (ts.isClassLike(method.parent)) {
-    return getClassName(method.parent)
-  }
-
-  if (ts.isObjectLiteralExpression(method.parent)) {
-    // anonymous classes not supported
-  }
-
-  return undefined
-}
-
-export function getInterfaceNameOfMethod(method: SupportedMethod) {
-  if (ts.isInterfaceDeclaration(method.parent)) {
-    return method.parent.name.getText()
-  }
-  return undefined
 }
 
 export function findProperty(

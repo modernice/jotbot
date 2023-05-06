@@ -1,9 +1,7 @@
 import ts from 'typescript'
 import {
   getClassName,
-  getClassNameOfMethod,
   getFunctionName,
-  getInterfaceNameOfMethod,
   getOwnerName,
   getVariableName,
   isExportedClass,
@@ -12,6 +10,7 @@ import {
   isExportedType,
   isExportedVariable,
   isMethodOfExportedInterface,
+  isMethodOfExportedTypeAlias,
   isPublicMethodOfExportedClass,
   isPublicPropertyOfExportedOwner,
 } from './nodes'
@@ -142,13 +141,12 @@ export function createRawIdentifier(node: ts.Node): RawIdentifier {
     return `iface:${node.name.getText()}`
   }
 
-  if (isPublicMethodOfExportedClass(node)) {
-    const className = getClassNameOfMethod(node)!
-    return `method:${className}.${node.name.getText()}`
-  }
-
-  if (isMethodOfExportedInterface(node)) {
-    const interfaceName = getInterfaceNameOfMethod(node)!
+  if (
+    isPublicMethodOfExportedClass(node) ||
+    isMethodOfExportedInterface(node) ||
+    isMethodOfExportedTypeAlias(node)
+  ) {
+    const interfaceName = getOwnerName(node)!
     return `method:${interfaceName}.${node.name.getText()}`
   }
 
