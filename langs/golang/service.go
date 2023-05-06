@@ -170,34 +170,22 @@ func (svc *Service) patch(file *dst.File, identifier, doc string) ([]byte, error
 
 	target := nodes.CommentTarget(spec, decl)
 
-	doc = formatDoc(doc)
-
 	switch target := target.(type) {
 	case *dst.FuncDecl:
-		target.Decs.Start.Clear()
-		if doc != "" {
-			target.Decs.Start.Append(doc)
-		}
+		updateDoc(&target.Decs.Start, doc)
+		target.Decs.After = dst.EmptyLine
 	case *dst.GenDecl:
-		target.Decs.Start.Clear()
-		if doc != "" {
-			target.Decs.Start.Append(doc)
-		}
+		updateDoc(&target.Decs.Start, doc)
+		target.Decs.After = dst.EmptyLine
 	case *dst.TypeSpec:
-		target.Decs.Start.Clear()
-		if doc != "" {
-			target.Decs.Start.Append(doc)
-		}
+		updateDoc(&target.Decs.Start, doc)
+		target.Decs.After = dst.EmptyLine
 	case *dst.ValueSpec:
-		target.Decs.Start.Clear()
-		if doc != "" {
-			target.Decs.Start.Append(doc)
-		}
+		updateDoc(&target.Decs.Start, doc)
+		target.Decs.After = dst.EmptyLine
 	case *dst.Field:
-		target.Decs.Start.Clear()
-		if doc != "" {
-			target.Decs.Start.Append(doc)
-		}
+		updateDoc(&target.Decs.Start, doc)
+		target.Decs.After = dst.EmptyLine
 	}
 
 	return nodes.Format(file)
@@ -241,4 +229,11 @@ func splitByWords(str string, maxLen int) []string {
 	lines = append(lines, line)
 
 	return lines
+}
+
+func updateDoc(decs *dst.Decorations, doc string) {
+	decs.Clear()
+	if doc != "" {
+		decs.Append(formatDoc(doc))
+	}
 }

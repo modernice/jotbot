@@ -125,3 +125,41 @@ func TestService_Patch_groupDeclaration(t *testing.T) {
 		t.Errorf("Patch() returned invalid code:\n\n%s\n\n%s", cmp.Diff(expect, string(patched)), string(patched))
 	}
 }
+
+func TestService_Patch_interfaceMethods(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		type Foo interface {
+			Bar()
+			Baz()
+		}
+	`)
+
+	svc := golang.Must()
+
+	patched, err := svc.Patch(context.Background(), "func:Foo.Bar", "Bar is a bar.", []byte(code))
+	if err != nil {
+		t.Fatalf("Patch() failed: %v", err)
+	}
+	patched, err = svc.Patch(context.Background(), "func:Foo.Baz", "Baz is a baz.", patched)
+	if err != nil {
+		t.Fatalf("Patch() failed: %v", err)
+	}
+
+	expect := heredoc.Doc(`
+		package foo
+
+		type Foo interface {
+			// Bar is a bar.
+			Bar()
+
+			// Baz is a baz.
+			Baz()
+		}
+	`)
+
+	if string(patched) != expect {
+		t.Errorf("Patch() returned invalid code:\n\n%s\n\n%s", cmp.Diff(expect, string(patched)), string(patched))
+	}
+}
