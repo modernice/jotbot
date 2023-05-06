@@ -81,3 +81,42 @@ func TestInsertComment_indent(t *testing.T) {
 		t.Fatalf("unexpected result\n\n%s\n\nwant:\n%s\n\ngot:\n%s", cmp.Diff(want, string(patched)), want, string(patched))
 	}
 }
+
+func TestInsertComment_interfaceMethod(t *testing.T) {
+	code := heredoc.Doc(`
+		export interface Foo {
+			foo(): string
+			bar(): number
+		}
+	`)
+
+	pos := ts.Position{
+		Line:      2,
+		Character: 1,
+	}
+
+	comment := heredoc.Doc(`
+		/**
+		 * This is a comment
+		 */
+	`)
+
+	patched, err := ts.InsertComment(comment, []byte(code), pos)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := heredoc.Doc(`
+		export interface Foo {
+			foo(): string
+			/**
+			 * This is a comment
+			 */
+			bar(): number
+		}
+	`)
+
+	if string(patched) != want {
+		t.Fatalf("unexpected result\n\n%s\n\nwant:\n%s\n\ngot:\n%s", cmp.Diff(want, string(patched)), want, string(patched))
+	}
+}

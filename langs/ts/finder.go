@@ -127,7 +127,7 @@ func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (
 func (f *Finder) executePosition(ctx context.Context, identifier string, code []byte) ([]byte, error) {
 	var stdout bytes.Buffer
 
-	args := []string{"pos", identifier, string(code)}
+	args := []string{"pos", "-v", identifier, string(code)}
 
 	cmd := exec.CommandContext(ctx, "jotbot-es", args...)
 
@@ -158,7 +158,7 @@ func (f *Finder) logErrors(r io.Reader) <-chan struct{} {
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
 			l := scanner.Text()
-			f.log.Info(l)
+			f.log.Warn(l)
 		}
 	}()
 	return done
