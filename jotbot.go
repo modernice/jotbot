@@ -15,6 +15,7 @@ import (
 	"github.com/modernice/jotbot/patch"
 	"github.com/spf13/afero"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -146,6 +147,20 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 				Language:   langName,
 			}
 		})...)
+	}
+
+	slices.SortFunc(out, func(a, b Finding) bool {
+		return a.File < b.File || (a.File == b.File && a.Identifier < b.Identifier)
+	})
+
+	if len(out) == 0 {
+		bot.log.Info("No identifiers found in files.")
+	} else {
+		bot.log.Info(fmt.Sprintf("Found %d identifiers:", len(out)))
+	}
+
+	for _, finding := range out {
+		bot.log.Info(fmt.Sprintf("- %s", finding))
 	}
 
 	return out, nil
