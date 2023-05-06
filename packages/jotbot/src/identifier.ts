@@ -257,14 +257,14 @@ function parseTypeIdentifier(path: string): TypeIdentifier {
   }
 }
 
-export function isRawIdentifier(s: unknown): s is RawIdentifier {
+export function isRawIdentifier(s: string): s is RawIdentifier {
   return (
-    typeof s === 'string' &&
-    (s.startsWith('var:') ||
-      s.startsWith('func:') ||
-      s.startsWith('class:') ||
-      s.startsWith('iface:') ||
-      s.startsWith('method:') ||
-      s.startsWith('prop:'))
+    s.startsWith('var:') ||
+    s.startsWith('func:') ||
+    s.startsWith('class:') ||
+    s.startsWith('iface:') ||
+    s.startsWith('method:') ||
+    s.startsWith('prop:') ||
+    s.startsWith('type:')
   )
 }
