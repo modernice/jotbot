@@ -5,3 +5,4 @@
 - [ ] Allow overriding of docs in Go language service
 - [ ] Allow overriding of docs in TS language service
 - [ ] OpenAI prompt generation for TypeScript code
+- [ ] TS: Support `type` declarations
