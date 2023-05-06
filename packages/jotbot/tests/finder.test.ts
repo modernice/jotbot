@@ -73,6 +73,46 @@ describe('finder', () => {
 
     expectFindings(findings, ['var:hello'])
   })
+
+  it("doesn't find documented symbols by default", () => {
+    const code = heredoc`
+      /**
+       * foo is a string.
+       */
+      export var foo = 'foo'
+
+      /**
+       * bar returns "bar".
+       */
+      export const bar = () => 'bar'
+    `
+
+    const { find } = createFinder()
+
+    const findings = find(code)
+
+    expectFindings(findings, [])
+  })
+
+  it('finds documented symbols if options.includeDocumented is true', () => {
+    const code = heredoc`
+      /**
+       * foo is a string.
+       */
+      export var foo = 'foo'
+
+      /**
+       * bar returns "bar".
+       */
+      export const bar = () => 'bar'
+    `
+
+    const { find } = createFinder({ includeDocumented: true })
+
+    const findings = find(code)
+
+    expectFindings(findings, ['var:foo', 'var:bar'])
+  })
 })
 
 describe(`'symbols' option`, () => {

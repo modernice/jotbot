@@ -1,4 +1,4 @@
-import ts, { isTypeAliasDeclaration, isTypeLiteralNode } from 'typescript'
+import ts from 'typescript'
 import type { Identifier, RawIdentifier } from './identifier'
 import { parseIdentifier } from './identifier'
 
@@ -33,21 +33,16 @@ export function isWithinFunction(node: ts.Node): boolean {
   if (isFunction(node.parent)) {
     return true
   }
-
   return isWithinFunction(node.parent)
-}
-
-export function isVariable(node: ts.Node): node is ts.VariableDeclaration {
-  return ts.isVariableDeclaration(node)
 }
 
 export function isExportedVariable(
   node: ts.Node,
-): node is ts.VariableDeclaration {
-  if (!isVariable(node)) {
+): node is ts.VariableStatement {
+  if (!ts.isVariableStatement(node)) {
     return false
   }
-  return isExported(parseVariable(node).statement)
+  return isExported(node)
 }
 
 export type SupportedFunction = ts.FunctionDeclaration | ts.FunctionExpression
@@ -175,26 +170,22 @@ export function isPublicPropertyOfExportedOwner(
 }
 
 function findParentThatMustBeExported(node: ts.Node): ts.Node | null {
+  if (isClass(node) || isInterface(node) || isTypeAlias(node)) {
+    return node
+  }
+
   if (!node.parent) {
     return null
   }
 
   if (
-    isTypeLiteralNode(node.parent) &&
-    isTypeAliasDeclaration(node.parent.parent)
+    ts.isTypeLiteralNode(node.parent) &&
+    ts.isTypeAliasDeclaration(node.parent.parent)
   ) {
     return node.parent.parent || null
   }
 
-  if (
-    isClass(node.parent) ||
-    isInterface(node.parent) ||
-    isTypeAlias(node.parent)
-  ) {
-    return node.parent
-  }
-
-  return null
+  return findParentThatMustBeExported(node.parent)
 }
 
 export function isLiteralObject(
@@ -371,7 +362,7 @@ export function getOwnerName(node: SupportedProperty | SupportedMethod) {
     return node.parent.name.getText()
   }
 
-  if (isTypeLiteralNode(node.parent) && isTypeAlias(node.parent.parent)) {
+  if (ts.isTypeLiteralNode(node.parent) && isTypeAlias(node.parent.parent)) {
     return node.parent.parent.name.getText()
   }
 }

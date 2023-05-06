@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/slice"
 )
@@ -41,7 +40,7 @@ func (svc *Service) Extensions() []string {
 	return FileExtensions
 }
 
-func (svc *Service) Find(code []byte) ([]find.Finding, error) {
+func (svc *Service) Find(code []byte) ([]string, error) {
 	return svc.finder.Find(context.Background(), code)
 }
 

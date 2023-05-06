@@ -9,7 +9,6 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
@@ -95,7 +94,7 @@ func (svc *Service) Extensions() []string {
 	return append([]string{}, FileExtensions...)
 }
 
-func (svc *Service) Find(code []byte) ([]find.Finding, error) {
+func (svc *Service) Find(code []byte) ([]string, error) {
 	return svc.finder.Find(code)
 }
 

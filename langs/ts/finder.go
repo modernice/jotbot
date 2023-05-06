@@ -1,16 +1,12 @@
 package ts
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os/exec"
 	"strings"
 
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
 	"golang.org/x/exp/slog"
@@ -62,13 +58,13 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-func (f *Finder) Find(ctx context.Context, code []byte) ([]find.Finding, error) {
+func (f *Finder) Find(ctx context.Context, code []byte) ([]string, error) {
 	raw, err := f.executeFind(ctx, code)
 	if err != nil {
 		return nil, err
 	}
 
-	var found []find.Finding
+	var found []string
 	if err := json.Unmarshal(raw, &found); err != nil {
 		return nil, fmt.Errorf("unmarshal findings: %w\n%s", err, raw)
 	}
@@ -77,8 +73,6 @@ func (f *Finder) Find(ctx context.Context, code []byte) ([]find.Finding, error) 
 }
 
 func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
-	var stdout bytes.Buffer
-
 	args := []string{"find", "--json"}
 
 	if len(f.symbols) > 0 {
@@ -90,23 +84,12 @@ func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
 
 	cmd := exec.CommandContext(ctx, "jotbot-es", args...)
 
-	cmd.Stdout = &stdout
-	stderr, err := cmd.StderrPipe()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("pipe stderr: %w", err)
+		return nil, fmt.Errorf("%w:\n%s", err, out)
 	}
 
-	done := f.logErrors(stderr)
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start jotbot-es: %w", err)
-	}
-
-	<-done
-	if err := cmd.Wait(); err != nil {
-		return nil, fmt.Errorf("wait for jotbot-es: %w", err)
-	}
-
-	return stdout.Bytes(), nil
+	return out, nil
 }
 
 func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (Position, error) {
@@ -124,43 +107,16 @@ func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (
 }
 
 func (f *Finder) executePosition(ctx context.Context, identifier string, code []byte) ([]byte, error) {
-	var stdout bytes.Buffer
-
 	args := []string{"pos", "-v", identifier, string(code)}
 
 	cmd := exec.CommandContext(ctx, "jotbot-es", args...)
 
-	cmd.Stdout = &stdout
-	stderr, err := cmd.StderrPipe()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("pipe stderr: %w", err)
+		return nil, fmt.Errorf("%w:\n%s", err, out)
 	}
 
-	done := f.logErrors(stderr)
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("start jotbot-es: %w", err)
-	}
-
-	<-done
-
-	if err := cmd.Wait(); err != nil {
-		return nil, fmt.Errorf("wait for jotbot-es: %w", err)
-	}
-
-	return stdout.Bytes(), nil
-}
-
-func (f *Finder) logErrors(r io.Reader) <-chan struct{} {
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		scanner := bufio.NewScanner(r)
-		for scanner.Scan() {
-			l := scanner.Text()
-			f.log.Warn(l)
-		}
-	}()
-	return done
+	return out, nil
 }
 
 func unquote[S ~string](s S) S {

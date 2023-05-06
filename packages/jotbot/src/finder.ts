@@ -23,14 +23,16 @@ export interface WithSymbolsOption<Symbols extends SymbolType = SymbolType> {
 
 export type GlobOption = string | readonly string[]
 
-export type FinderOptions<Symbols extends SymbolType = SymbolType> =
-  WithSymbolsOption<Symbols>
+export interface FinderOptions<Symbols extends SymbolType = SymbolType>
+  extends WithSymbolsOption<Symbols> {
+  includeDocumented?: boolean
+}
 
 export function createFinder<Symbols extends SymbolType = SymbolType>(
   options?: FinderOptions<Symbols>,
 ) {
   function find(code: string) {
-    const nodes = findUncommentedNodes(createSourceFile('', code), options)
+    const nodes = findNodes(createSourceFile('', code), options)
     return nodes.map((node): RawIdentifier<Symbols> => {
       const identifier = createRawIdentifier(node) as RawIdentifier<Symbols>
       return identifier
@@ -42,11 +44,11 @@ export function createFinder<Symbols extends SymbolType = SymbolType>(
   }
 }
 
-function findUncommentedNodes<Symbols extends SymbolType = SymbolType>(
+function findNodes<Symbols extends SymbolType = SymbolType>(
   node: ts.Node,
-  options?: WithSymbolsOption<Symbols>,
+  options?: FinderOptions<Symbols>,
 ): ts.Node[] {
-  const uncommented: ts.Node[] = []
+  const found: ts.Node[] = []
 
   function traverse(node: ts.Node) {
     if (ts.isSourceFile(node)) {
@@ -59,8 +61,16 @@ function findUncommentedNodes<Symbols extends SymbolType = SymbolType>(
       return
     }
 
-    if (!hasComments(node)) {
-      uncommented.push(node)
+    // if (hasComments(node)) {
+    //   console.log(node.getText(), 'has comments')
+    // } else {
+    //   console.log(node.getText(), 'has no comments')
+    // }
+
+    // const commentable = findCommentableNode(node)
+
+    if (!hasComments(node) || options?.includeDocumented) {
+      found.push(node)
     }
 
     ts.forEachChild(node, traverse)
@@ -68,7 +78,7 @@ function findUncommentedNodes<Symbols extends SymbolType = SymbolType>(
 
   traverse(node)
 
-  return [...uncommented.values()]
+  return [...found.values()]
 }
 
 export function printFindings(findings: RawIdentifier[]) {

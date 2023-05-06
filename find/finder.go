@@ -24,14 +24,6 @@ var (
 	}
 )
 
-type Finding struct {
-	Identifier string
-}
-
-func (f Finding) String() string {
-	return f.Identifier
-}
-
 type Options struct {
 	Extensions []string
 	Include    []string

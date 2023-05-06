@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/modernice/jotbot"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/generate/mockgenerate"
 	"github.com/modernice/jotbot/internal/tests"
@@ -29,13 +28,13 @@ func TestJotBot_Find(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []jotbot.Finding{
-		{File: "foo.go", Finding: find.Finding{Identifier: "func:Foo"}, Language: "go"},
-		{File: "bar.go", Finding: find.Finding{Identifier: "var:Foo"}, Language: "go"},
-		{File: "bar.go", Finding: find.Finding{Identifier: "type:Bar"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "type:X"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "func:X.Foo"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "func:(*X).Bar"}, Language: "go"},
-		{File: "baz.go", Finding: find.Finding{Identifier: "func:Y.Foo"}, Language: "go"},
+		{File: "foo.go", Identifier: "func:Foo", Language: "go"},
+		{File: "bar.go", Identifier: "var:Foo", Language: "go"},
+		{File: "bar.go", Identifier: "type:Bar", Language: "go"},
+		{File: "baz.go", Identifier: "type:X", Language: "go"},
+		{File: "baz.go", Identifier: "func:X.Foo", Language: "go"},
+		{File: "baz.go", Identifier: "func:(*X).Bar", Language: "go"},
+		{File: "baz.go", Identifier: "func:Y.Foo", Language: "go"},
 	}, findings)
 }
 
@@ -61,12 +60,12 @@ func TestJotBot_Generate(t *testing.T) {
 		findings := append(
 			makeFindings(
 				"foo.go",
-				find.Finding{Identifier: "func:Foo"},
+				"func:Foo",
 			),
 			makeFindings(
 				"bar.go",
-				find.Finding{Identifier: "var:Foo"},
-				find.Finding{Identifier: "type:Bar"},
+				"var:Foo",
+				"type:Bar",
 			)...,
 		)
 
@@ -102,17 +101,17 @@ func TestMatch(t *testing.T) {
 	}
 
 	tests.ExpectFound(t, []jotbot.Finding{
-		{Finding: find.Finding{Identifier: "var:Foo"}, Language: "go", File: "bar.go"},
-		{Finding: find.Finding{Identifier: "type:Bar"}, Language: "go", File: "bar.go"},
-		{Finding: find.Finding{Identifier: "type:X"}, Language: "go", File: "baz.go"},
-		{Finding: find.Finding{Identifier: "func:(*X).Bar"}, Language: "go", File: "baz.go"},
+		{Identifier: "var:Foo", Language: "go", File: "bar.go"},
+		{Identifier: "type:Bar", Language: "go", File: "bar.go"},
+		{Identifier: "type:X", Language: "go", File: "baz.go"},
+		{Identifier: "func:(*X).Bar", Language: "go", File: "baz.go"},
 	}, findings)
 }
 
-func makeFindings(file string, findings ...find.Finding) []jotbot.Finding {
+func makeFindings(file string, findings ...string) []jotbot.Finding {
 	out := make([]jotbot.Finding, len(findings))
-	for i, f := range findings {
-		out[i] = jotbot.Finding{File: file, Finding: f, Language: "go"}
+	for i, id := range findings {
+		out[i] = jotbot.Finding{File: file, Identifier: id, Language: "go"}
 	}
 	return out
 }

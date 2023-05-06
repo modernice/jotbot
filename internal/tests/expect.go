@@ -27,12 +27,21 @@ func ExpectFiles(t *testing.T, want, got []string) {
 	}
 }
 
+func ExpectIdentifiers[Finding ~string](t *testing.T, want, got []Finding) {
+	t.Helper()
+
+	slices.Sort(want)
+	slices.Sort(got)
+
+	if !cmp.Equal(want, got) {
+		t.Fatalf("unexpected findings:\n%s\n\nwant:\n%v\n\ngot:\n%v", cmp.Diff(want, got), want, got)
+	}
+}
+
 func ExpectFound[Finding interface{ String() string }](t *testing.T, want, got []Finding) {
 	t.Helper()
 
-	less := func(a, b Finding) bool {
-		return a.String() <= b.String()
-	}
+	less := func(a, b Finding) bool { return a.String() <= b.String() }
 
 	slices.SortFunc(want, less)
 	slices.SortFunc(got, less)

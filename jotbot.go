@@ -23,7 +23,7 @@ type Language interface {
 	generate.Language
 
 	Extensions() []string
-	Find([]byte) ([]find.Finding, error)
+	Find([]byte) ([]string, error)
 }
 
 type JotBot struct {
@@ -38,10 +38,9 @@ type JotBot struct {
 type Option func(*JotBot)
 
 type Finding struct {
-	find.Finding
-
-	File     string
-	Language string
+	Identifier string
+	File       string
+	Language   string
 }
 
 func (f Finding) String() string {
@@ -140,11 +139,11 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 
 		findings = bot.filterFindings(findings)
 
-		out = append(out, slice.Map(findings, func(f find.Finding) Finding {
+		out = append(out, slice.Map(findings, func(id string) Finding {
 			return Finding{
-				Finding:  f,
-				File:     file,
-				Language: langName,
+				Identifier: id,
+				File:       file,
+				Language:   langName,
 			}
 		})...)
 	}
@@ -152,13 +151,13 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 	return out, nil
 }
 
-func (bot *JotBot) filterFindings(findings []find.Finding) []find.Finding {
+func (bot *JotBot) filterFindings(findings []string) []string {
 	if len(bot.filters) == 0 {
 		return findings
 	}
-	return slice.Filter(findings, func(f find.Finding) bool {
+	return slice.Filter(findings, func(id string) bool {
 		for _, filter := range bot.filters {
-			if filter.MatchString(f.Identifier) {
+			if filter.MatchString(id) {
 				return true
 			}
 		}

@@ -15,10 +15,12 @@ import { out } from './print'
 const { log: print } = out
 
 interface Options
-  extends FinderOptions,
+  extends Omit<FinderOptions, 'includeDocumented'>,
     WithFormatOption<'json' | 'list'>,
     WithSourceOption,
-    WithVerboseOption {}
+    WithVerboseOption {
+  commented: boolean
+}
 
 export function withFindCmd(program: Command) {
   const cmd = program
@@ -32,10 +34,11 @@ export function withFindCmd(program: Command) {
       commaSeparated({ validate: isSymbol }),
       [] as SymbolType[],
     )
+    .option('-c, --commented', 'Also find commented symbols', false)
     .option(...verboseOption)
     .addHelpText(
       'after',
-      '\nDefault --symbols:\n  ["func", "var", "class", "method", "iface", "prop"]',
+      '\nDefault --symbols:\n  ["func", "var", "class", "method", "iface", "prop", "type"]',
     )
 
   formatOptions(['list', 'json'])(cmd)
@@ -62,13 +65,18 @@ function run(code: string, options: Options) {
     )}`,
   )
 
-  const { find } = createFinder(options)
+  const { find } = createFinder({
+    ...options,
+    includeDocumented: options.commented,
+  })
+
+  let text = `Searching for${options.commented ? ' ' : ' uncommented '}symbols`
 
   if (options.path) {
-    info(`Searching for uncommented symbols in ${options.path} ...`)
-  } else {
-    info(`Searching for uncommented symbols ...`)
+    text += ` in ${options.path}`
   }
+
+  info(`${text} ...`)
 
   const findings = find(code)
   const entries = Object.entries(findings)
@@ -79,8 +87,8 @@ function run(code: string, options: Options) {
 
   if (format === 'list') {
     log('')
-    for (const finding of findings) {
-      print(finding.identifier)
+    for (const identifier of findings) {
+      print(identifier)
     }
     return
   }

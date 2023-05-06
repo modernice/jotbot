@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/MakeNowJust/heredoc/v2"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/tests"
 	"github.com/modernice/jotbot/langs/golang"
 )
@@ -39,14 +38,14 @@ func TestFinder_Find(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "var:X"},
-		{Identifier: "var:Foo"},
-		{Identifier: "func:Bar"},
-		{Identifier: "type:Baz"},
-		{Identifier: "func:Baz.Baz"},
-		{Identifier: "type:Foobar"},
-		{Identifier: "func:Foobar.Foobar"},
+	tests.ExpectIdentifiers(t, []string{
+		"var:X",
+		"var:Foo",
+		"func:Bar",
+		"type:Baz",
+		"func:Baz.Baz",
+		"type:Foobar",
+		"func:Foobar.Foobar",
 	}, findings)
 }
 
@@ -74,9 +73,9 @@ func TestFinder_Find_onlyUncommented(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "var:Foo"},
-		{Identifier: "func:Baz"},
+	tests.ExpectIdentifiers(t, []string{
+		"var:Foo",
+		"func:Baz",
 	}, findings)
 }
 
@@ -104,10 +103,10 @@ func TestFinder_Find_pointerReceiver(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "type:Foo"},
-		{Identifier: "func:(*Foo).Foo"},
-		{Identifier: "func:Foo.Bar"},
+	tests.ExpectIdentifiers(t, []string{
+		"type:Foo",
+		"func:(*Foo).Foo",
+		"func:Foo.Bar",
 	}, findings)
 }
 
@@ -143,12 +142,12 @@ func TestFinder_Find_generics(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "func:Foobar"},
-		{Identifier: "type:Foo"},
-		{Identifier: "func:Foo.Foo"},
-		{Identifier: "func:(*Foo).Bar"},
-		{Identifier: "func:(*Foo).Baz"},
+	tests.ExpectIdentifiers(t, []string{
+		"func:Foobar",
+		"type:Foo",
+		"func:Foo.Foo",
+		"func:(*Foo).Bar",
+		"func:(*Foo).Baz",
 	}, findings)
 }
 
@@ -172,8 +171,8 @@ func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "func:Foobar"},
+	tests.ExpectIdentifiers(t, []string{
+		"func:Foobar",
 	}, findings)
 }
 
@@ -197,9 +196,9 @@ func TestFindTests(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "func:TestFoo"},
-		{Identifier: "func:TestBar"},
-		{Identifier: "func:Foobar"},
+	tests.ExpectIdentifiers(t, []string{
+		"func:TestFoo",
+		"func:TestBar",
+		"func:Foobar",
 	}, findings)
 }

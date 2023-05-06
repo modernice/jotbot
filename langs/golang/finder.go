@@ -8,7 +8,6 @@ import (
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/nodes"
 	"golang.org/x/exp/slices"
 )
@@ -33,8 +32,8 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-func (f *Finder) Find(code []byte) ([]find.Finding, error) {
-	var findings []find.Finding
+func (f *Finder) Find(code []byte) ([]string, error) {
+	var findings []string
 
 	fset := token.NewFileSet()
 	node, err := decorator.ParseFile(fset, "", code, parser.ParseComments|parser.SkipObjectResolution)
@@ -87,15 +86,11 @@ func (f *Finder) Find(code []byte) ([]find.Finding, error) {
 		}
 
 		if exported {
-			findings = append(findings, find.Finding{
-				Identifier: identifier,
-			})
+			findings = append(findings, identifier)
 		}
 	}
 
-	slices.SortFunc(findings, func(a, b find.Finding) bool {
-		return a.Identifier <= b.Identifier
-	})
+	slices.Sort(findings)
 
 	return findings, nil
 }
@@ -105,8 +100,8 @@ func isInterface(spec *dst.TypeSpec) bool {
 	return ok
 }
 
-func findInterfaceMethods(spec *dst.TypeSpec) []find.Finding {
-	var findings []find.Finding
+func findInterfaceMethods(spec *dst.TypeSpec) []string {
+	var findings []string
 
 	ifaceName := spec.Name.Name
 	for _, method := range spec.Type.(*dst.InterfaceType).Methods.List {
@@ -116,9 +111,7 @@ func findInterfaceMethods(spec *dst.TypeSpec) []find.Finding {
 		name := method.Names[0].Name
 		ident := fmt.Sprintf("func:%s.%s", ifaceName, name)
 		if nodes.IsExportedIdentifier(ident) && !nodes.HasDoc(method.Decs.Start) {
-			findings = append(findings, find.Finding{
-				Identifier: ident,
-			})
+			findings = append(findings, ident)
 		}
 	}
 

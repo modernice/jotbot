@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/MakeNowJust/heredoc/v2"
-	"github.com/modernice/jotbot/find"
 	"github.com/modernice/jotbot/internal/tests"
 	"github.com/modernice/jotbot/langs/ts"
 )
@@ -39,16 +38,16 @@ func TestFinder_Find(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "var:foo"},
-		{Identifier: "func:foobar"},
-		{Identifier: "iface:Foo"},
-		{Identifier: "prop:Foo.foo"},
-		{Identifier: "method:Foo.bar"},
-		{Identifier: "prop:Foo.baz"},
-		{Identifier: "class:Bar"},
-		{Identifier: "prop:Bar.foo"},
-		{Identifier: "method:Bar.bar"},
+	tests.ExpectIdentifiers(t, []string{
+		"var:foo",
+		"func:foobar",
+		"iface:Foo",
+		"prop:Foo.foo",
+		"method:Foo.bar",
+		"prop:Foo.baz",
+		"class:Bar",
+		"prop:Bar.foo",
+		"method:Bar.bar",
 	}, findings)
 }
 
@@ -81,10 +80,10 @@ func TestSymbols(t *testing.T) {
 		t.Fatalf("Find() failed: %v", err)
 	}
 
-	tests.ExpectFound(t, []find.Finding{
-		{Identifier: "var:foo"},
-		{Identifier: "method:Foo.bar"},
-		{Identifier: "method:Bar.bar"},
+	tests.ExpectIdentifiers(t, []string{
+		"var:foo",
+		"method:Foo.bar",
+		"method:Bar.bar",
 	}, findings)
 }
 
