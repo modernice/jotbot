@@ -1,4 +1,4 @@
-import ts from 'typescript'
+import ts, { isTypeAliasDeclaration, isTypeLiteralNode } from 'typescript'
 import type { Identifier, RawIdentifier } from './identifier'
 import { parseIdentifier } from './identifier'
 
@@ -76,6 +76,10 @@ export function isInterface(node: ts.Node): node is ts.InterfaceDeclaration {
   return ts.isInterfaceDeclaration(node)
 }
 
+export function isTypeAlias(node: ts.Node): node is ts.TypeAliasDeclaration {
+  return ts.isTypeAliasDeclaration(node)
+}
+
 export type SupportedMethod = ts.MethodDeclaration | ts.MethodSignature
 
 export function isMethod(node: ts.Node): node is SupportedMethod {
@@ -143,12 +147,67 @@ export function isProperty(node: ts.Node): node is SupportedProperty {
 export function isPublicPropertyOfExportedOwner(
   node: ts.Node,
 ): node is SupportedProperty {
-  return (
-    isProperty(node) &&
-    !isPrivate(node) &&
-    (isClass(node.parent) || isInterface(node.parent)) &&
-    isExported(node.parent)
-  )
+  if (!isProperty(node) || isPrivate(node)) {
+    return false
+  }
+
+  const mustBeExported = findParentThatMustBeExported(node)
+
+  if (!mustBeExported || !isExported(mustBeExported)) {
+    return false
+  }
+
+  // if (!isProperty(node) || isPrivate(node) || !isExported(node.parent)) {
+  //   return false
+  // }
+
+  // if (isClass(node.parent) || isInterface(node.parent)) {
+  //   return true
+  // }
+
+  return true
+
+  // return (
+  //   isProperty(node) &&
+  //   !isPrivate(node) &&
+  //   (isClass(node.parent) ||
+  //     isInterface(node.parent) ||
+  //     isTypeAlias(node.parent)) &&
+  //   isExported(node.parent)
+  // )
+}
+
+function findParentThatMustBeExported(node: ts.Node): ts.Node | null {
+  if (!node.parent) {
+    return null
+  }
+
+  if (
+    isTypeLiteralNode(node.parent) &&
+    isTypeAliasDeclaration(node.parent.parent)
+  ) {
+    return node.parent.parent || null
+  }
+
+  if (
+    isClass(node.parent) ||
+    isInterface(node.parent) ||
+    isTypeAlias(node.parent)
+  ) {
+    return node.parent
+  }
+
+  return null
+}
+
+export function isLiteralObject(
+  node: ts.Node,
+): node is ts.ObjectLiteralExpression {
+  return ts.isObjectLiteralExpression(node)
+}
+
+export function isExportedType(node: ts.Node): node is ts.TypeAliasDeclaration {
+  return ts.isTypeAliasDeclaration(node) && isExported(node)
 }
 
 export function getInterfaceOfMethod(node: SupportedMethod) {
@@ -181,6 +240,8 @@ export function findNode(
       return findMethod(root, identifier.ownerName, identifier.methodName)
     case 'prop':
       return findProperty(root, identifier.ownerName, identifier.propertyName)
+    case 'type':
+      return findType(root, identifier.typeName)
   }
 }
 
@@ -310,7 +371,11 @@ export function getOwnerName(node: SupportedProperty | SupportedMethod) {
   }
 
   if (isInterface(node.parent)) {
-    return getInterfaceName(node.parent)
+    return node.parent.name.getText()
+  }
+
+  if (isTypeLiteralNode(node.parent) && isTypeAlias(node.parent.parent)) {
+    return node.parent.parent.name.getText()
   }
 }
 
@@ -333,9 +398,13 @@ export function getClassName(node: ts.ClassLikeDeclaration) {
   }
 }
 
-export function getInterfaceName(node: ts.InterfaceDeclaration): string {
-  return node.name.getText()
-}
+// export function getInterfaceName(node: ts.InterfaceDeclaration): string {
+//   return node.name.getText()
+// }
+
+// export function getTypeAliasName(node: ts.TypeAliasDeclaration): string {
+//   return node.name.getText()
+// }
 
 export function findInterface(
   node: ts.Node,
@@ -406,19 +475,11 @@ export function getClassNameOfMethod(method: SupportedMethod) {
   return undefined
 }
 
-export function getMethodName(method: SupportedMethod) {
-  return method.name.getText()
-}
-
 export function getInterfaceNameOfMethod(method: SupportedMethod) {
-  if (ts.isInterfaceDeclaration(method.parent))
-    return getInterfaceName(method.parent)
-
+  if (ts.isInterfaceDeclaration(method.parent)) {
+    return method.parent.name.getText()
+  }
   return undefined
-}
-
-export function getPropertyName(property: SupportedProperty) {
-  return property.name.getText()
 }
 
 export function findProperty(
@@ -451,4 +512,21 @@ export function findProperty(
     declaration: prop,
     commentTarget: prop,
   }
+}
+
+export function findType(
+  node: ts.Node,
+  typeName: string,
+): {
+  declaration: ts.TypeAliasDeclaration
+  commentTarget: ts.TypeAliasDeclaration
+} | null {
+  if (ts.isTypeAliasDeclaration(node) && node.name.getText() === typeName) {
+    return {
+      declaration: node,
+      commentTarget: node,
+    }
+  }
+
+  return ts.forEachChild(node, (node) => findType(node, typeName)) ?? null
 }

@@ -22,6 +22,7 @@ describe('finder', () => {
         bar() { return 'bar' }
         baz = () => 'baz'
       }
+      export type Baz = { baz: string }
     `
     const { find } = createFinder()
 
@@ -40,6 +41,8 @@ describe('finder', () => {
       'prop:Bar.foo',
       'method:Bar.bar',
       'prop:Bar.baz',
+      'type:Baz',
+      'prop:Baz.baz',
     ])
   })
 

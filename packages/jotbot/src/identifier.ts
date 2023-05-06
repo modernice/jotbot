@@ -3,15 +3,13 @@ import {
   getClassName,
   getClassNameOfMethod,
   getFunctionName,
-  getInterfaceName,
   getInterfaceNameOfMethod,
-  getMethodName,
   getOwnerName,
-  getPropertyName,
   getVariableName,
   isExportedClass,
   isExportedFunction,
   isExportedInterface,
+  isExportedType,
   isExportedVariable,
   isMethodOfExportedInterface,
   isPublicMethodOfExportedClass,
@@ -38,6 +36,7 @@ export type Identifier =
   | InterfaceIdentifier
   | MethodIdentifier
   | PropertyIdentifier
+  | TypeIdentifier
 
 export interface VariableIdentifier {
   type: 'var'
@@ -75,6 +74,12 @@ export interface PropertyIdentifier {
   path: string
   ownerName: string // className or interfaceName
   propertyName: string
+}
+
+export interface TypeIdentifier {
+  type: 'type'
+  path: string
+  typeName: string
 }
 
 export type NaturalLanguageTarget<Symbols extends SymbolType = SymbolType> =
@@ -134,22 +139,26 @@ export function createRawIdentifier(node: ts.Node): RawIdentifier {
   }
 
   if (isExportedInterface(node)) {
-    return `iface:${getInterfaceName(node)}`
+    return `iface:${node.name.getText()}`
   }
 
   if (isPublicMethodOfExportedClass(node)) {
     const className = getClassNameOfMethod(node)!
-    return `method:${className}.${getMethodName(node)}`
+    return `method:${className}.${node.name.getText()}`
   }
 
   if (isMethodOfExportedInterface(node)) {
     const interfaceName = getInterfaceNameOfMethod(node)!
-    return `method:${interfaceName}.${getMethodName(node)}`
+    return `method:${interfaceName}.${node.name.getText()}`
   }
 
   if (isPublicPropertyOfExportedOwner(node)) {
     const ownerName = getOwnerName(node)!
-    return `prop:${ownerName}.${getPropertyName(node)}`
+    return `prop:${ownerName}.${node.name.getText()}`
+  }
+
+  if (isExportedType(node)) {
+    return `type:${node.name.getText()}`
   }
 
   throw new Error(`Cannot create identifier for node:\n${node.getText()}`)
@@ -173,6 +182,8 @@ export function formatIdentifier(identifier: Identifier): RawIdentifier {
       return `method:${identifier.ownerName}.${identifier.methodName}`
     case 'prop':
       return `prop:${identifier.ownerName}.${identifier.propertyName}`
+    case 'type':
+      return `type:${identifier.typeName}`
   }
 }
 
@@ -196,6 +207,8 @@ export function parseIdentifier(identifier: RawIdentifier): Identifier {
       return parseMethodIdentifier(path)
     case 'prop':
       return parsePropertyIdentifier(path)
+    case 'type':
+      return parseTypeIdentifier(path)
   }
 }
 
@@ -257,6 +270,14 @@ function parsePropertyIdentifier(path: string): PropertyIdentifier {
   }
 }
 
+function parseTypeIdentifier(path: string): TypeIdentifier {
+  return {
+    type: 'type',
+    path,
+    typeName: path,
+  }
+}
+
 export function describeIdentifier(
   identifier: RawIdentifier,
 ): NaturalLanguageTarget {
@@ -279,6 +300,8 @@ export function describeIdentifier(
       const [owner, prop] = name.split('.')
       return `property '${prop}' of '${owner}'`
     }
+    case 'type':
+      return `type '${name}'`
     default:
       throw new Error(`Unknown symbol type: ${symbol}`)
   }

@@ -4,6 +4,7 @@ import {
   isExportedClass,
   isExportedFunction,
   isExportedInterface,
+  isExportedType,
   isExportedVariable,
   isMethodOfExportedInterface,
   isPublicMethodOfExportedClass,
@@ -108,6 +109,9 @@ function isSupportedNode<Symbols extends SymbolType = SymbolType>(
         break
       case 'prop':
         tests.push(isPublicPropertyOfExportedOwner)
+        break
+      case 'type':
+        tests.push(isExportedType)
         break
     }
   }

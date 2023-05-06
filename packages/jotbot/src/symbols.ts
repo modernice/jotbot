@@ -8,17 +8,14 @@ export const symbolTypes = [
   'method',
   'iface',
   'prop',
+  'type',
 ] as const
 
-export const globalSymbols = ['func', 'var', 'class', 'iface'] as const
-
-export const ownerSymbols = ['class', 'iface'] as const
+export const globalSymbols = ['func', 'var', 'class', 'iface', 'type'] as const
 
 export type SymbolType = (typeof symbolTypes)[number]
 
 export type GlobalSymbol = (typeof globalSymbols)[number]
-
-export type OwnerSymbol = (typeof ownerSymbols)[number]
 
 export function isSymbol(s: unknown): s is SymbolType {
   return symbolTypes.includes(s as any)

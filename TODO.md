@@ -4,5 +4,5 @@
 - [x] Apply code minification in `generate` package
 - [ ] Allow overriding of docs in Go language service
 - [ ] Allow overriding of docs in TS language service
-- [ ] OpenAI prompt generation for TypeScript code
-- [ ] TS: Support `type` declarations
+- [x] OpenAI prompt generation for TypeScript code
+- [x] TS: Support `type` declarations
