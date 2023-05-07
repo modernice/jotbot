@@ -190,7 +190,7 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 		result, err := internal.Drain(docs, nil)
 		if err != nil {
 			fail(err)
-			return false
+			return true
 		}
 
 		return push(File{Path: file, Docs: result})
