@@ -69,44 +69,39 @@ By default, this command will find all Go and TypeScript (and JavaScript) files
 in the current and nested directories and generate documentation for them.
 Excluded from the search are by default:
 
-```ts
-[
-	"**/.*/**",
-	"**/dist/**",
-	"**/node_modules/**",
-	"**/vendor/**",
-	"**/testdata/**",
-	"**/test/**",
-	"**/tests/**"
-]
-```
+- \*\*/.*/\*\*
+- \*\*/dist/\*\*
+- \*\*/node_modules/\*\*
+- \*\*/vendor/\*\*
+- \*\*/testdata/\*\*
+- \*\*/test/\*\*
+- \*\*/tests/\*\*
 
 ## CLI options
-
-| Option             | Alias | Description                                                   | Default          |
-|--------------------|-------|---------------------------------------------------------------|------------------|
-| `--root`           |       | Root directory of the repository                              | "."              |
-| `--include`        | `-i`  | Glob pattern(s) to include files                              |                  |
-| `--exclude`        | `-e`  | Glob pattern(s) to exclude files                              |                  |
-| `--exclude-internal` | `-E` | Exclude 'internal' directories (Go-specific)                  | true             |
-| `--match`          | `-m`  | Regular expression(s) to match identifiers                    |                  |
-| `--symbol`         | `-s`  | Symbol(s) to search for in code (TS/JS-specific)              |                  |
-| `--branch`         |       | Branch name to commit changes to (leave empty to not commit)  |                  |
-| `--limit`          |       | Limit the number of files to generate documentation for       | 0                |
-| `--dry`            |      | Print the changes without applying them                       | false            |
-| `--model`          |       | OpenAI model used to generate documentation                   | "gpt-3.5-turbo"   |
-| `--maxTokens`      |       | Maximum number of tokens to generate for a single documentation | 512              |
-| `--parallel`       | `-p`  | Number of files to handle concurrently                        | 4                |
-| `--workers`        |       | Number of workers to use per file                             | 2                |
-| `--override`       | `-o`  | Override existing documentation                               |                  |
-| `--key`            |       | OpenAI API key                                                |                  |
-| `--verbose`        | `-v`  | Enable verbose logging                                        | false            |
-
-For a full list of options and their descriptions, run:
 
 ```
 jotbot --help
 ```
+
+| Option                 | Description                                                             | Default        |
+|------------------------|-------------------------------------------------------------------------|----------------|
+| `--root`               | Root directory of the repository                                        | `"."`          |
+| `--include, -i`       | Glob pattern(s) to include files                                        |                |
+| `--include-tests, -T` | Include TestXXX() functions (Go-specific)                               |                |
+| `--exclude, -e`       | Glob pattern(s) to exclude files                                        |                |
+| `--exclude-internal, -E` | Exclude 'internal' directories (Go-specific)                          | `true`         |
+| `--match, -m`         | Regular expression(s) to match identifiers                              |                |
+| `--symbol, -s`        | Symbol(s) to search for in code (TS/JS-specific)                        |                |
+| `--branch`             | Branch name to commit changes to (leave empty to not commit)            |                |
+| `--limit`              | Limit the number of files to generate documentation for                 | `0`            |
+| `--dry`                | Print the changes without applying them                                 | `false`        |
+| `--model`              | OpenAI model used to generate documentation                             | `"gpt-3.5-turbo"` |
+| `--maxTokens`          | Maximum number of tokens to generate for a single documentation         | `512`          |
+| `--parallel, -p`      | Number of files to handle concurrently                                  | `4`            |
+| `--workers`            | Number of workers to use per file                                       | `2`            |
+| `--override, -o`      | Override existing documentation                                         |                |
+| `--key`                | OpenAI API key                                                          |                |
+| `--verbose, -v`       | Enable verbose logging                                                  | `false`        |
 
 ## License
 

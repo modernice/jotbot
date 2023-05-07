@@ -28,6 +28,7 @@ type Config struct {
 	Generate struct {
 		Root            string      `arg:"" default:"." help:"Root directory of the repository."`
 		Include         []string    `name:"include" short:"i" env:"JOTBOT_INCLUDE" help:"Glob pattern(s) to include files."`
+		IncludeTests    bool        `name:"include-tests" short:"T" default:"false" env:"JOTBOT_INCLUDE_TESTS" help:"Include TestXXX() functions. (Go-specific)"`
 		Exclude         []string    `name:"exclude" short:"e" env:"JOTBOT_EXCLUDE" help:"Glob pattern(s) to exclude files."`
 		ExcludeInternal bool        `name:"exclude-internal" short:"E" default:"true" env:"JOTBOT_EXCLUDE_INTERNAL" help:"Exclude 'internal' directories (Go-specific)"`
 		Match           []string    `name:"match" short:"m" env:"JOTBOT_MATCH" help:"Regular expression(s) to match identifiers."`
@@ -75,7 +76,10 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	}.NewTextHandler(os.Stdout))
 	logger := slog.New(logHandler)
 
-	goFinder := golang.NewFinder(golang.FindTests(false))
+	goFinder := golang.NewFinder(
+		golang.FindTests(cfg.Generate.IncludeTests),
+		golang.IncludeDocumented(cfg.Generate.Override),
+	)
 	gosvc, err := golang.New(golang.WithFinder(goFinder), golang.Model(cfg.Generate.Model))
 	if err != nil {
 		return fmt.Errorf("create Go language service: %w", err)

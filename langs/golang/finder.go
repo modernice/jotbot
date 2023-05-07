@@ -13,7 +13,8 @@ import (
 )
 
 type Finder struct {
-	findTests bool
+	findTests         bool
+	includeDocumented bool
 }
 
 type FinderOption func(*Finder)
@@ -21,6 +22,12 @@ type FinderOption func(*Finder)
 func FindTests(find bool) FinderOption {
 	return func(f *Finder) {
 		f.findTests = find
+	}
+}
+
+func IncludeDocumented(include bool) FinderOption {
+	return func(f *Finder) {
+		f.includeDocumented = include
 	}
 }
 
@@ -53,13 +60,13 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 				break
 			}
 
-			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
+			if !f.includeDocumented && nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
 			}
 
 			identifier, exported = nodes.Identifier(node)
 		case *dst.GenDecl:
-			if nodes.HasDoc(node.Decs.NodeDecs.Start) {
+			if !f.includeDocumented && nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
 			}
 
@@ -71,15 +78,15 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 
 			switch spec := spec.(type) {
 			case *dst.TypeSpec:
-				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+				if f.includeDocumented || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
 					identifier, exported = nodes.Identifier(spec)
 				}
 
 				if isInterface(spec) {
-					findings = append(findings, findInterfaceMethods(spec)...)
+					findings = append(findings, f.findInterfaceMethods(spec)...)
 				}
 			case *dst.ValueSpec:
-				if !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+				if f.includeDocumented || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
 					identifier, exported = nodes.Identifier(spec)
 				}
 			}
@@ -95,12 +102,7 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 	return findings, nil
 }
 
-func isInterface(spec *dst.TypeSpec) bool {
-	_, ok := spec.Type.(*dst.InterfaceType)
-	return ok
-}
-
-func findInterfaceMethods(spec *dst.TypeSpec) []string {
+func (f *Finder) findInterfaceMethods(spec *dst.TypeSpec) []string {
 	var findings []string
 
 	ifaceName := spec.Name.Name
@@ -110,12 +112,17 @@ func findInterfaceMethods(spec *dst.TypeSpec) []string {
 		}
 		name := method.Names[0].Name
 		ident := fmt.Sprintf("func:%s.%s", ifaceName, name)
-		if nodes.IsExportedIdentifier(ident) && !nodes.HasDoc(method.Decs.Start) {
+		if nodes.IsExportedIdentifier(ident) && (f.includeDocumented || !nodes.HasDoc(method.Decs.Start)) {
 			findings = append(findings, ident)
 		}
 	}
 
 	return findings
+}
+
+func isInterface(spec *dst.TypeSpec) bool {
+	_, ok := spec.Type.(*dst.InterfaceType)
+	return ok
 }
 
 func isTestFunction(node *dst.FuncDecl) bool {
