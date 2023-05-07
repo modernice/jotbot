@@ -27,11 +27,9 @@ func ChatTokens(model string, messages []openai.ChatCompletionMessage) (int, err
 	case tokenizer.GPT4:
 		perMessage = 3
 		perName = 1
-		break
 	case tokenizer.GPT35Turbo:
 		perMessage = 3
 		perName = -1
-		break
 	default:
 		return 0, fmt.Errorf("unsupported model %q", model)
 	}
@@ -50,7 +48,7 @@ func ChatTokens(model string, messages []openai.ChatCompletionMessage) (int, err
 		tokens += len(toks)
 	}
 
-	return tokens, nil
+	return tokens + 1, nil
 }
 
 func getCodec(model string) (tokenizer.Codec, error) {

@@ -76,8 +76,13 @@ func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(strin
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case err := <-p.errs:
-			return err
+		case err, ok := <-p.errs:
+			if !ok {
+				p.errs = nil
+				continue
+			}
+			p.log.Warn(fmt.Sprintf("Failed to generate file: %v", err))
+			continue
 		case file, ok := <-p.files:
 			if !ok {
 				return nil

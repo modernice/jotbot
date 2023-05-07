@@ -17,26 +17,73 @@ import type { SymbolType } from './symbols'
 import { configureSymbols } from './symbols'
 import { createSourceFile } from './parse'
 
+/**
+ * The `iface:WithSymbolsOption` interface is an optional configuration option
+ * for the `createFinder` function that allows specifying an array of symbol
+ * types to include in the search. This interface extends the
+ * `WithSymbolsOption` interface and is generic over a `SymbolType`. The symbols
+ * included can be any of: variables, functions, classes, interfaces, methods,
+ * properties, and types.
+ */
 export interface WithSymbolsOption<Symbols extends SymbolType = SymbolType> {
+  /**
+   * The "symbols" property is an optional array of symbol types used to filter
+   * the nodes returned by the finder. The finder will only return nodes that
+   * match at least one of the specified symbol types.
+   */
   symbols?: readonly Symbols[]
 }
 
+/**
+ * The `GlobOption` type represents a string or an array of strings that can be
+ * used to specify file paths or patterns when searching for nodes in TypeScript
+ * code. It is used as a parameter in functions like `createFinder` to specify
+ * the files to search through.
+ */
 export type GlobOption = string | readonly string[]
 
+/**
+ * The `iface:FinderOptions` interface defines options for a finder function
+ * that searches a TypeScript AST for nodes matching certain criteria. It
+ * extends the `WithSymbolsOption` interface to include an option for whether to
+ * include only documented nodes. The `createFinder` function takes in an
+ * optional `FinderOptions` object and returns a finder object with a `find`
+ * method that uses the provided options to search a given code string for
+ * matching nodes. The `printFindings` function takes in an array of raw
+ * identifiers and returns a formatted JSON string of the findings.
+ */
 export interface FinderOptions<Symbols extends SymbolType = SymbolType>
   extends WithSymbolsOption<Symbols> {
+  /**
+   * Property `includeDocumented` is an optional boolean flag in the
+   * `FinderOptions` interface that, when set to `true`, includes only nodes in
+   * the search results that have associated comments. When set to `false` or
+   * omitted, all nodes that meet the other search criteria will be included in
+   * the results regardless of whether they have comments.
+   */
   includeDocumented?: boolean
 }
 
+/**
+ * Creates a finder object with a "find" function that takes a string of code
+ * and returns an array of RawIdentifier objects representing the symbols found
+ * in the code. The type of symbols to search for can be optionally specified in
+ * the options parameter. If includeDocumented is true in the options parameter,
+ * only symbols with documentation comments will be included in the results.
+ */
 export function createFinder<Symbols extends SymbolType = SymbolType>(
   options?: FinderOptions<Symbols>,
 ) {
   function find(code: string) {
     const nodes = findNodes(createSourceFile('', code), options)
-    return nodes.map((node): RawIdentifier<Symbols> => {
-      const identifier = createRawIdentifier(node) as RawIdentifier<Symbols>
-      return identifier
-    })
+    return nodes
+      .map((node): RawIdentifier<Symbols> | null => {
+        const identifier = createRawIdentifier(
+          node,
+        ) as RawIdentifier<Symbols> | null
+        return identifier
+      })
+      .filter((ident): ident is RawIdentifier<Symbols> => !!ident)
   }
 
   return {
@@ -73,6 +120,10 @@ function findNodes<Symbols extends SymbolType = SymbolType>(
   return [...found.values()]
 }
 
+/**
+ * Prints the findings of identified nodes as a JSON string with two-space
+ * indentation.
+ */
 export function printFindings(findings: RawIdentifier[]) {
   return JSON.stringify(findings, null, 2)
 }

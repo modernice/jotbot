@@ -15,6 +15,28 @@ const { log: print } = out
 
 interface Options extends WithSourceOption, WithVerboseOption {}
 
+/**
+ * The `withPosCmd()` function is used to create and configure a `pos` command
+ * for a given Commander.js program instance. The `pos` command extracts the
+ * position of a specified node identifier from TypeScript or JavaScript source
+ * code. The function accepts a single parameter:
+ * 
+ * - `program`: A Commander.js program instance.
+ * 
+ * The `pos` command takes two arguments:
+ * 
+ * - `<identifier>`: The identifier of the node to find (e.g. "func:foo").
+ * - `[code]`: The TypeScript or JavaScript source code (optional).
+ * 
+ * Additionally, the `pos` command provides two options:
+ * 
+ * - `-p, --path <file>`: Path to a TypeScript or JavaScript file (instead of
+ * providing the source code as an argument).
+ * - `-v, --verbose`: Enable verbose output.
+ * 
+ * Upon successful execution, the `pos` command prints the extracted position of
+ * the specified node in JSON format.
+ */
 export function withPosCmd(program: Command) {
   program
     .command('pos')

@@ -1,3 +1,13 @@
+/**
+ * Converts the given value to an array. If the value is already an array, it
+ * returns the value unchanged. If the value is undefined or null, it returns an
+ * empty array. Otherwise, it returns a new array containing the value as its
+ * single element.
+ * 
+ * @param value - The value to be converted to an array.
+ * @returns An array containing the given value or an empty array if the value
+ * is undefined or null.
+ */
 export function toArray<T>(value?: T | readonly T[]): T[] {
   if (!value) {
     return []
@@ -5,6 +15,14 @@ export function toArray<T>(value?: T | readonly T[]): T[] {
   return Array.isArray(value) ? (value as any) : [value]
 }
 
+/**
+ * The `heredoc()` function takes a template string with newline and indentation
+ * characters, and returns a formatted string with consistent indentation. It
+ * accepts a `TemplateStringsArray` and an optional array of values to be
+ * interpolated within the template string. The function trims leading
+ * whitespace characters and adjusts the indentation of each line based on the
+ * minimum indentation found in the input string.
+ */
 export function heredoc(
   strings: TemplateStringsArray,
   ...values: any[]
