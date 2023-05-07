@@ -170,7 +170,8 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 			go func() {
 				defer wg.Done()
 				for input := range queue {
-					// log.Println(input)
+					g.log.Info(fmt.Sprintf("Generating %s ...", input))
+
 					doc, err := g.Generate(ctx, input)
 					if err != nil {
 						fail(fmt.Errorf("generate %q: %w", input.Identifier, err))
@@ -259,6 +260,9 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 					if !ok {
 						return
 					}
+
+					g.log.Info(fmt.Sprintf("Generating %s ...", job.file))
+
 					if g.limit > 0 {
 						n := nFiles.Load()
 						if n >= int64(g.limit) {

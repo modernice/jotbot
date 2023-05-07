@@ -154,7 +154,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	}
 
 	if cfg.Generate.Branch == "" {
-		return nil
+		return patch.Apply(ctx, cfg.Generate.Root)
 	}
 
 	repo := git.Repo(cfg.Generate.Root, git.WithLogger(logHandler))

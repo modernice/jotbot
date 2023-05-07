@@ -45,7 +45,7 @@ type Finding struct {
 }
 
 func (f Finding) String() string {
-	return fmt.Sprintf("%s@%s (%s)", f.File, f.Identifier, f.Language)
+	return fmt.Sprintf("%s@%s", f.File, f.Identifier)
 }
 
 type Patch struct {
@@ -103,6 +103,8 @@ func (bot *JotBot) Extensions() []string {
 }
 
 func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, error) {
+	bot.log.Info(fmt.Sprintf("Searching for files in %s ...", bot.root))
+
 	opts = append([]find.Option{find.Extensions(bot.Extensions()...)}, opts...)
 
 	repo := os.DirFS(bot.root)
@@ -160,7 +162,7 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 	}
 
 	for _, finding := range out {
-		bot.log.Info(fmt.Sprintf("- %s", finding))
+		bot.log.Log(ctx, internal.LogLevelNaked, fmt.Sprintf("- %s", finding))
 	}
 
 	return out, nil

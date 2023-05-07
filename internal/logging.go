@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/exp/slog"
 )
+
+const LogLevelNaked = slog.Level(-1)
 
 var nop (slog.Handler) = nopLogger{}
 
@@ -47,9 +50,27 @@ func PrettyLogger(h slog.Handler) slog.Handler {
 }
 
 func (l *prettyLogger) Handle(ctx context.Context, r slog.Record) error {
-	if r.Level == slog.LevelInfo {
-		fmt.Fprintf(os.Stdout, "%s\n", r.Message)
-		return nil
+	var icon rune
+
+	switch r.Level {
+	case slog.LevelDebug:
+		icon = '⚙'
+	case slog.LevelInfo:
+		icon = 'ℹ'
+	case slog.LevelWarn:
+		icon = '⚠'
+	case slog.LevelError:
+		icon = '✖'
+	case LogLevelNaked:
 	}
-	return l.Handler.Handle(ctx, r)
+
+	fmt.Fprint(os.Stdout, strings.TrimLeft(fmt.Sprintf("%c %s", icon, r.Message), " "))
+
+	r.Attrs(func(a slog.Attr) {
+		fmt.Fprintf(os.Stdout, " %s=%v", a.Key, a.Value)
+	})
+
+	fmt.Fprintln(os.Stdout)
+
+	return nil
 }
