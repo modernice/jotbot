@@ -3,6 +3,7 @@ package ts
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/modernice/jotbot/generate"
@@ -108,13 +109,17 @@ func splitByWords(str string, maxLen int) []string {
 	return lines
 }
 
+var commentLinePrefixRE = regexp.MustCompile(`^\s*\s`)
+
 func normalizeGeneratedComment(doc string) string {
 	doc = strings.TrimSpace(doc)
 	doc = strings.TrimPrefix(doc, "/**")
 	doc = strings.TrimSuffix(doc, "*/")
+
 	lines := strings.Split(doc, "\n")
 	lines = slice.Map(lines, func(l string) string {
-		return strings.TrimPrefix(l, " * ")
+		return commentLinePrefixRE.ReplaceAllString(l, "")
 	})
+
 	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
