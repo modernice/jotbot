@@ -10,11 +10,19 @@ import (
 func Prompt(input generate.Input) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
+
+	var beginWith string
+	switch extractType(input.Identifier) {
+	case "type", "iface", "class":
+		beginWith = fmt.Sprintf(`You must begin the comment with "%s ". `, simple)
+	}
+
 	return fmt.Sprintf(
-		"Write a concise documentation for %s. Do not include links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. Enclose symbol references in {@link} braces. You must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
+		"Write a concise documentation for %s. Do not include links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. Enclose symbol references in {@link} braces. %sYou must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
 		target,
 		target,
 		simple,
+		beginWith,
 		input.Code,
 	)
 }
@@ -59,4 +67,12 @@ func removeOwner(identifier string) string {
 		return parts[1]
 	}
 	return identifier
+}
+
+func extractType(identifier string) string {
+	parts := strings.Split(identifier, ":")
+	if len(parts) == 2 {
+		return parts[0]
+	}
+	return ""
 }
