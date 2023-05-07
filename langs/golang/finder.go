@@ -12,25 +12,42 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// Finder is a utility that searches for exported identifiers in Go code, with
+// options to include or exclude test functions and documented identifiers. It
+// can be configured using FinderOption functions like FindTests and
+// IncludeDocumented. The Find method takes a byte slice of Go code and returns
+// a sorted slice of strings representing the found exported identifiers.
 type Finder struct {
 	findTests         bool
 	includeDocumented bool
 }
 
+// FinderOption is a function type that modifies the behavior of a Finder, which
+// searches for exported identifiers in Go code. Common options include
+// FindTests and IncludeDocumented.
 type FinderOption func(*Finder)
 
+// FindTests is a function that returns a FinderOption which sets the findTests
+// field of a Finder. The findTests field determines whether or not test
+// functions should be included in the search results.
 func FindTests(find bool) FinderOption {
 	return func(f *Finder) {
 		f.findTests = find
 	}
 }
 
+// IncludeDocumented modifies a Finder to include documented declarations if the
+// passed boolean is true. If false, only undocumented declarations will be
+// considered by the Finder.
 func IncludeDocumented(include bool) FinderOption {
 	return func(f *Finder) {
 		f.includeDocumented = include
 	}
 }
 
+// NewFinder creates a new Finder with the provided options. The Finder can be
+// used to find exported identifiers in Go code, optionally including test
+// functions and documented identifiers.
 func NewFinder(opts ...FinderOption) *Finder {
 	var f Finder
 	for _, opt := range opts {
@@ -39,6 +56,10 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
+// Find searches the provided code for exported identifiers, such as functions,
+// types, and variables. It returns a sorted slice of strings containing the
+// found identifiers. The search can be configured to include or exclude test
+// functions and documented identifiers with FinderOptions.
 func (f *Finder) Find(code []byte) ([]string, error) {
 	var findings []string
 

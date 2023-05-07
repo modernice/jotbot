@@ -7,6 +7,11 @@ import (
 	"github.com/modernice/jotbot/generate"
 )
 
+// Prompt generates a concise TSDoc comment prompt based on the provided Input,
+// taking into account the type of identifier (e.g. function, property, method)
+// and its context. The generated prompt instructs the user to focus on the
+// purpose and usage of the identifier, without including links, source code, or
+// code examples.
 func Prompt(input generate.Input) string {
 	switch extractType(input.Identifier) {
 	case "prop", "method":
@@ -66,6 +71,8 @@ func defaultPrompt(input generate.Input) string {
 	)
 }
 
+// Target returns a human-readable representation of the given identifier,
+// describing its type and name.
 func Target(identifier string) string {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {

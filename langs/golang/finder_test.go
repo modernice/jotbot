@@ -79,6 +79,8 @@ func TestFinder_Find_onlyUncommented(t *testing.T) {
 	}, findings)
 }
 
+// X is a struct that represents an empty type used in
+// TestFinder_Find_pointerReceiver test function.
 type X struct{}
 
 func TestFinder_Find_pointerReceiver(t *testing.T) {

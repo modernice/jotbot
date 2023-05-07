@@ -9,6 +9,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// LogLevelNaked is a constant representing a log level that omits the log level
+// icon when using the prettyLogger, resulting in a cleaner output.
 const LogLevelNaked = slog.Level(-1)
 
 var nop (slog.Handler) = nopLogger{}
@@ -45,10 +47,17 @@ type prettyLogger struct {
 	slog.Handler
 }
 
+// PrettyLogger wraps an existing slog.Handler with a new handler that formats
+// log messages with icons and attributes before passing them to the underlying
+// handler. The icons are based on the log level (e.g., debug, info, warn,
+// error).
 func PrettyLogger(h slog.Handler) slog.Handler {
 	return &prettyLogger{h}
 }
 
+// Handle processes a log record by printing it to the standard output with a
+// level-specific icon, followed by its message and attributes. It is a method
+// of the prettyLogger type, which wraps an existing slog.Handler.
 func (l *prettyLogger) Handle(ctx context.Context, r slog.Record) error {
 	var icon rune
 

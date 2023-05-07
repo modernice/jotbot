@@ -7,6 +7,9 @@ import (
 )
 
 var (
+	// MinifyNone is a variable of MinifyOptions type that represents the default,
+	// no-op configuration where no minification actions are performed on the input
+	// node.
 	MinifyNone MinifyOptions
 
 	MinifyUnexported = MinifyOptions{
@@ -38,6 +41,10 @@ var (
 	}
 )
 
+// MinifyOptions is a configuration struct that sets options for minifying the
+// different parts of a Go source code file, such as package comments, function
+// comments and bodies, and struct comments. It can also be configured to only
+// minify exported or unexported elements.
 type MinifyOptions struct {
 	PackageComment bool
 	FuncComment    bool
@@ -46,6 +53,10 @@ type MinifyOptions struct {
 	Exported       bool
 }
 
+// Minify applies the specified MinifyOptions to the given dst.Node, removing
+// comments, function bodies, and/or struct comments based on the options set.
+// If Exported is true, only exported nodes are affected; otherwise, all nodes
+// are affected. The modified node is returned.
 func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
 	out := dst.Clone(node)
 
@@ -85,6 +96,9 @@ func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
 	return out
 }
 
+// Minify applies the specified MinifyOptions to the given dst.Node, removing
+// elements such as comments and function bodies to reduce its size. The
+// resulting node is a clone of the original with the specified changes applied.
 func Minify[Node dst.Node](node Node, opts MinifyOptions) Node {
 	return opts.Minify(node).(Node)
 }

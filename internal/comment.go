@@ -6,6 +6,8 @@ import (
 	"github.com/modernice/jotbot/internal/slice"
 )
 
+// Columns splits the given string into a slice of strings, each with a maximum
+// length of maxLen, preserving the original words and line breaks.
 func Columns(str string, maxLen int) []string {
 	rawLines := strings.Split(str, "\n")
 	var lines []string

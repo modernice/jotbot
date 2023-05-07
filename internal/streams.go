@@ -1,5 +1,8 @@
 package internal
 
+// Stream creates a new channel of type T, sends the provided values to the
+// channel concurrently, and returns the channel. The channel is closed after
+// all values have been sent.
 func Stream[T any](values ...T) <-chan T {
 	ch := make(chan T, len(values))
 	go func() {
@@ -57,6 +60,10 @@ func Walk[T any](vals <-chan T, errs <-chan error, fn func(T) error) error {
 	}
 }
 
+// Map applies a given function [fn] to each value received from an input
+// channel [in] of type In and sends the transformed values of type Out to an
+// output channel. The output channel is closed when all values have been
+// processed.
 func Map[In, Out any](in <-chan In, fn func(In) Out) <-chan Out {
 	out := make(chan Out)
 	go func() {

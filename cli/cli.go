@@ -24,6 +24,11 @@ import (
 
 const internalDirectoriesGlob = "**/internal/**/*.go"
 
+// Config is a struct that holds configuration options for generating missing
+// documentation in a codebase. It provides various options, such as specifying
+// the root directory, include and exclude patterns, match identifiers, branch
+// name for committing changes, and more. It also supports configuring OpenAI
+// API key and logging verbosity.
 type Config struct {
 	Generate struct {
 		Root            string      `arg:"" default:"." help:"Root directory of the repository."`
@@ -47,6 +52,10 @@ type Config struct {
 	Verbose bool   `name:"verbose" short:"v" env:"JOTBOT_VERBOSE" help:"Enable verbose logging."`
 }
 
+// Run generates missing documentation for a codebase, based on the provided
+// configuration. It finds undocumented code, generates documentation using
+// OpenAI, and applies the generated documentation as a patch. It can also
+// commit the changes to a specified branch.
 func (cfg *Config) Run(kctx *kong.Context) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
@@ -179,6 +188,10 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	return nil
 }
 
+// New initializes and returns a new kong.Context with a parsed configuration
+// from command line arguments, default values, and environment variables. The
+// returned context is used to run the JotBot application, which generates
+// documentation for uncommented code using OpenAI models.
 func New() *kong.Context {
 	if len(os.Args) < 1 {
 		os.Args = append(os.Args, "generate")

@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	Var       = Symbol("var")
+	// Var is a predefined Symbol representing a variable within the code.
+	Var = Symbol("var")
+
 	Class     = Symbol("class")
 	Interface = Symbol("iface")
 	Func      = Symbol("func")
@@ -21,39 +23,58 @@ const (
 	Property  = Symbol("prop")
 )
 
+// Symbol represents a type of code construct, such as variables, classes,
+// interfaces, functions, methods, or properties. It is used by the Finder to
+// search for and filter specific types of symbols within code.
 type Symbol string
 
+// Position represents a specific location within a text document, identified by
+// its line number and character position on that line.
 type Position struct {
 	Line      int
 	Character int
 }
 
+// Finder is a utility that searches for specified [Symbol]s within provided
+// code and optionally includes documented symbols. It can also find the
+// position of a given identifier within the code.
 type Finder struct {
 	symbols           []Symbol
 	includeDocumented bool
 	log               *slog.Logger
 }
 
+// FinderOption is a function that configures a [Finder] by modifying its
+// fields. Common options include Symbols, IncludeDocumented, and WithLogger.
 type FinderOption func(*Finder)
 
+// Symbols returns a FinderOption that appends the provided symbols to the list
+// of symbols the Finder should search for in the code.
 func Symbols(symbols ...Symbol) FinderOption {
 	return func(f *Finder) {
 		f.symbols = append(f.symbols, symbols...)
 	}
 }
 
+// IncludeDocumented is a FinderOption that configures a Finder to include or
+// exclude documented symbols in its search results based on the provided
+// boolean value.
 func IncludeDocumented(include bool) FinderOption {
 	return func(f *Finder) {
 		f.includeDocumented = include
 	}
 }
 
+// WithLogger sets the logger for a Finder. It accepts an *slog.Logger and
+// returns a FinderOption that configures the Finder to use the provided logger.
 func WithLogger(log *slog.Logger) FinderOption {
 	return func(f *Finder) {
 		f.log = log
 	}
 }
 
+// NewFinder creates a new Finder with the provided options. A Finder searches
+// for symbols in TypeScript code and returns their positions.
 func NewFinder(opts ...FinderOption) *Finder {
 	var f Finder
 	for _, opt := range opts {
@@ -65,6 +86,10 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
+// Find searches the provided code for symbols specified in the Finder
+// configuration, and returns a slice of strings containing the found symbols.
+// It respects the includeDocumented flag in the Finder configuration. The
+// search is performed within the provided context.
 func (f *Finder) Find(ctx context.Context, code []byte) ([]string, error) {
 	raw, err := f.executeFind(ctx, code)
 	if err != nil {
@@ -103,6 +128,9 @@ func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
 	return out, nil
 }
 
+// Position determines the line and character position of the specified
+// identifier within the provided code. It returns a Position struct containing
+// the line and character information or an error if the operation fails.
 func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (Position, error) {
 	raw, err := f.executePosition(ctx, identifier, code)
 	if err != nil {

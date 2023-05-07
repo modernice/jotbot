@@ -18,7 +18,10 @@ import (
 )
 
 var (
-	FileExtensions      = []string{".go"}
+	// FileExtensions is a slice of strings representing the file extensions
+	// supported by the package, such as ".go" for Go source files.
+	FileExtensions = []string{".go"}
+
 	DefaultMinification = []nodes.MinifyOptions{
 		nodes.MinifyUnexported,
 		{
@@ -30,6 +33,10 @@ var (
 	}
 )
 
+// Service is a struct that provides functionality for code minification,
+// identifier search, and documentation patching in Go source code. It can be
+// configured with optional settings such as a custom Finder, model, or
+// minification steps through the use of Option functions.
 type Service struct {
 	model       string
 	maxTokens   int
@@ -38,26 +45,39 @@ type Service struct {
 	minifySteps []nodes.MinifyOptions
 }
 
+// Option is a function that modifies a [Service] instance. It is used to
+// provide optional configurations for the [Service] during its creation, such
+// as setting the finder, model, or minification steps.
 type Option func(*Service)
 
+// WithFinder sets the Finder for a Service, which is used to search for
+// specific elements in the source code.
 func WithFinder(f *Finder) Option {
 	return func(s *Service) {
 		s.finder = f
 	}
 }
 
+// Model sets the model name for a Service. The provided model name is used to
+// create a tokenizer.Codec and determine the maximum number of tokens allowed
+// for code minification.
 func Model(m string) Option {
 	return func(s *Service) {
 		s.model = m
 	}
 }
 
+// Minify is an Option that sets the minification steps for a Service,
+// specifying how the source code should be minified in each step.
 func Minify(steps []nodes.MinifyOptions) Option {
 	return func(s *Service) {
 		s.minifySteps = steps
 	}
 }
 
+// Must creates a new Service with the provided options and panics if an error
+// occurs. It is useful for creating a Service when it is known that the
+// provided options are valid and an error will not occur.
 func Must(opts ...Option) *Service {
 	svc, err := New(opts...)
 	if err != nil {
@@ -66,6 +86,10 @@ func Must(opts ...Option) *Service {
 	return svc
 }
 
+// New creates a new Service with the provided options, initializes its
+// tokenizer based on the model, and sets the maximum tokens allowed. If no
+// finder is provided, it creates a new Finder. Returns an error if there's an
+// issue creating the tokenizer.
 func New(opts ...Option) (*Service, error) {
 	svc := Service{minifySteps: DefaultMinification}
 	for _, opt := range opts {
@@ -91,14 +115,23 @@ func New(opts ...Option) (*Service, error) {
 	return &svc, err
 }
 
+// Extensions returns a copy of the slice containing file extensions supported
+// by the Service.
 func (svc *Service) Extensions() []string {
 	return append([]string{}, FileExtensions...)
 }
 
+// Find returns a slice of strings representing the identifiers found in the
+// provided code byte slice. An error is returned if the search for identifiers
+// fails.
 func (svc *Service) Find(code []byte) ([]string, error) {
 	return svc.finder.Find(code)
 }
 
+// Minify takes a byte slice of code and returns a minified version of the code,
+// removing unnecessary elements based on the minification steps configured for
+// the Service. If the minified code's token count is within the limit, it
+// returns the minified code; otherwise, it returns an error.
 func (svc *Service) Minify(code []byte) ([]byte, error) {
 	if len(code) == 0 {
 		return code, nil
@@ -149,10 +182,17 @@ func (svc *Service) Minify(code []byte) ([]byte, error) {
 	return nil, fmt.Errorf("minified code exceeds %d tokens (%d tokens)", svc.maxTokens, len(tokens))
 }
 
+// Prompt takes an input of type generate.Input and returns a string
+// representation of the prompt.
 func (svc *Service) Prompt(input generate.Input) string {
 	return Prompt(input)
 }
 
+// Patch applies a given documentation string to the specified identifier in the
+// provided code, and returns the updated code. It updates the documentation for
+// functions, general declarations, type specifications, value specifications,
+// and fields. If the specified identifier is not found in the code, an error is
+// returned.
 func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []byte) ([]byte, error) {
 	fset := token.NewFileSet()
 	file, err := decorator.ParseFile(fset, "", code, parser.ParseComments|parser.SkipObjectResolution)

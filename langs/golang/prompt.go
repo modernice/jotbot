@@ -7,6 +7,11 @@ import (
 	"github.com/modernice/jotbot/generate"
 )
 
+// Prompt generates a formatted string instructing the user to write a concise
+// GoDoc comment for a given identifier, adhering to Go library documentation
+// style and conventions, without including links, source code, or code
+// examples. It takes an input of type [generate.Input] and returns the
+// generated prompt string.
 func Prompt(input generate.Input) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
@@ -20,6 +25,9 @@ func Prompt(input generate.Input) string {
 	)
 }
 
+// Target returns a human-readable description of the given identifier, which
+// can be a function, type, or variable. It formats the identifier based on its
+// kind (func, type, or var) and name.
 func Target(identifier string) string {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {
