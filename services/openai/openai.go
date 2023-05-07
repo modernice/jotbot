@@ -83,15 +83,7 @@ func New(apiKey string, opts ...Option) (*Service, error) {
 func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	svc.log.Debug(fmt.Sprintf("[OpenAI] Generating docs for %s (%s)", ctx.Input().Identifier, ctx.Input().Language))
 
-	// TODO(bounoable): find optimal values for these parameters
-	req := openai.CompletionRequest{
-		Model:            string(svc.model),
-		Temperature:      0.618,
-		TopP:             0.5,
-		PresencePenalty:  0.1,
-		FrequencyPenalty: 0.2,
-		Prompt:           ctx.Prompt(),
-	}
+	req := svc.makeBaseRequest(ctx)
 
 	generate := svc.useModel(req.Model)
 	result, err := generate(ctx, req)
@@ -101,6 +93,28 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	result.normalize()
 
 	return result.text, nil
+}
+
+func (svc *Service) makeBaseRequest(ctx generate.Context) openai.CompletionRequest {
+	req := openai.CompletionRequest{
+		Model:            string(svc.model),
+		Temperature:      0.618,
+		PresencePenalty:  0.2,
+		FrequencyPenalty: 0.35,
+		Prompt:           ctx.Prompt(),
+	}
+
+	if isGPT4(svc.model) {
+		req.TopP = 0.5
+		req.PresencePenalty = 0.1
+		req.FrequencyPenalty = 0.35
+	}
+
+	return req
+}
+
+func isGPT4(model string) bool {
+	return strings.HasPrefix(model, "gpt-4")
 }
 
 func (svc *Service) useModel(model string) func(context.Context, openai.CompletionRequest) (result, error) {
