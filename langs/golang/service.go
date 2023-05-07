@@ -192,11 +192,17 @@ func (svc *Service) patch(file *dst.File, identifier, doc string) ([]byte, error
 }
 
 func formatDoc(doc string) string {
+	doc = normalizeGeneratedComment(doc)
+
 	lines := internal.Columns(doc, 77)
 	lines = slice.Map(lines, func(s string) string {
 		return "// " + s
 	})
 	return strings.Join(lines, "\n")
+}
+
+func normalizeGeneratedComment(doc string) string {
+	return strings.ReplaceAll(doc, "// ", "")
 }
 
 func updateDoc(decs *dst.Decorations, doc string) {
