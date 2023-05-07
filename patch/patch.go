@@ -83,14 +83,17 @@ func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(strin
 				return nil
 			}
 
+			p.log.Info(fmt.Sprintf("Patching %q ...", file.Path))
+
 			ext := filepath.Ext(file.Path)
 			svc, err := getLanguage(ext)
 			if err != nil {
-				return fmt.Errorf("get language service for %q files: %w", ext, err)
+				p.log.Warn(fmt.Sprintf("Get language service for %q files: %v", ext, err), "file", file.Path)
+				break
 			}
 
 			if _, err := p.applyFile(ctx, repo, svc, file, true); err != nil {
-				return fmt.Errorf("apply patch to %q: %w", file.Path, err)
+				p.log.Warn(fmt.Sprintf("Failed to apply patch: %v", err), "file", file.Path)
 			}
 		}
 	}
