@@ -154,7 +154,14 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	}
 
 	if cfg.Generate.Branch == "" {
-		return patch.Apply(ctx, cfg.Generate.Root)
+		if err := patch.Apply(ctx, cfg.Generate.Root); err != nil {
+			return fmt.Errorf("apply patch: %w", err)
+		}
+
+		took := time.Since(start)
+		logger.Info(fmt.Sprintf("Done in %s.", took))
+
+		return nil
 	}
 
 	repo := git.Repo(cfg.Generate.Root, git.WithLogger(logHandler))
