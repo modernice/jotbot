@@ -50,7 +50,7 @@ jobs:
           JOTBOT_PATH="$(pnpm which jotbot-es)"
           JOTBOT_DIR="$(dirname $JOTBOT_PATH)"
           echo "JotBot path: $JOTBOT_PATH"
-          echo "$JOTBOT_DIR" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/$JOTBOT_DIR" >> $GITHUB_PATH
 
       - name: Dependencies
         run: go get ./...
