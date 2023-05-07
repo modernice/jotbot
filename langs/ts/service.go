@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
 )
 
@@ -65,7 +66,7 @@ func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []by
 func formatDoc(doc string, indent int) string {
 	doc = normalizeGeneratedComment(doc)
 
-	lines := splitString(doc, 77-indent)
+	lines := internal.Columns(doc, 77-indent)
 
 	if len(lines) == 1 {
 		return fmt.Sprintf("/** %s */\n", strings.TrimSpace(lines[0]))
@@ -76,40 +77,6 @@ func formatDoc(doc string, indent int) string {
 	})
 
 	return "/**\n" + strings.Join(lines, "\n") + "\n */\n"
-}
-
-func splitString(str string, maxLen int) []string {
-	var out []string
-
-	lines := splitByWords(str, maxLen)
-
-	out = append(out, lines...)
-
-	return slice.Map(out, strings.TrimSpace)
-}
-
-func splitByWords(str string, maxLen int) []string {
-	rawLines := strings.Split(str, "\n")
-	var lines []string
-
-	for _, rawLine := range rawLines {
-		words := strings.Fields(rawLine)
-		var line string
-		for _, word := range words {
-			if len(line)+len(word) >= maxLen {
-				line = strings.TrimSpace(line)
-				lines = append(lines, line)
-				line = ""
-			}
-			if len(line) > 0 {
-				line += " "
-			}
-			line += word
-		}
-		lines = append(lines, strings.TrimSpace(line))
-	}
-
-	return lines
 }
 
 var commentLinePrefixRE = regexp.MustCompile(`^\s\*\s?`)

@@ -7,3 +7,4 @@
 - [x] Allow overriding of docs in TS language service
 - [x] OpenAI prompt generation for TypeScript code
 - [x] TS: Support `type` declarations
+- [x] Apply formatting fix to Go code (copy from TS service)

@@ -10,6 +10,7 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/modernice/jotbot/generate"
+	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
 	"github.com/modernice/jotbot/services/openai"
@@ -191,43 +192,11 @@ func (svc *Service) patch(file *dst.File, identifier, doc string) ([]byte, error
 }
 
 func formatDoc(doc string) string {
-	lines := splitString(doc, 77)
+	lines := internal.Columns(doc, 77)
 	lines = slice.Map(lines, func(s string) string {
 		return "// " + s
 	})
 	return strings.Join(lines, "\n")
-}
-
-func splitString(str string, maxLen int) []string {
-	var out []string
-
-	paras := strings.Split(str, "\n\n")
-	for i, para := range paras {
-		lines := splitByWords(para, maxLen)
-		out = append(out, lines...)
-		if i < len(paras)-1 {
-			out = append(out, "")
-		}
-	}
-
-	return out
-}
-
-func splitByWords(str string, maxLen int) []string {
-	words := strings.Split(str, " ")
-
-	var lines []string
-	var line string
-	for _, word := range words {
-		if len(line)+len(word) > maxLen {
-			lines = append(lines, line)
-			line = ""
-		}
-		line += word + " "
-	}
-	lines = append(lines, line)
-
-	return lines
 }
 
 func updateDoc(decs *dst.Decorations, doc string) {
