@@ -48,6 +48,7 @@ jobs:
           pnpm build
           pnpm link .
           cd ../..
+          echo "$(pnpm bin -g)" >> $GITHUB_PATH
 
       - name: Dependencies
         run: go get ./...
