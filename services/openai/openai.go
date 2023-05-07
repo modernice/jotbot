@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal"
@@ -86,7 +87,11 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 	req := svc.makeBaseRequest(ctx)
 
 	generate := svc.useModel(req.Model)
-	result, err := generate(ctx, req)
+
+	timeout, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	result, err := generate(timeout, req)
 	if err != nil {
 		return "", err
 	}
