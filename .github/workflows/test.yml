@@ -48,6 +48,7 @@ jobs:
           pnpm build
           pnpm link .
           echo "$(pnpm bin -g)" >> $GITHUB_PATH
+          echo "PNPM global bin: $(pnpm bin -g)"
           echo "PATH=$GITHUB_PATH"
 
       - name: Dependencies
