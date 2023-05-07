@@ -18,7 +18,7 @@ func Prompt(input generate.Input) string {
 	}
 
 	return fmt.Sprintf(
-		"Write a concise documentation for %s. Do not include links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. Enclose symbol references in {@link} braces. %sYou must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
+		"Write a concise documentation for %s. You must not output links, source code, or code examples. Write the comment only for %s. You must not describe the type of %q, just describe what it does. Enclose symbol references in {@link} braces. %sYou must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
 		target,
 		target,
 		simple,
@@ -33,23 +33,33 @@ func Target(identifier string) string {
 		return identifier
 	}
 
-	switch parts[0] {
+	typ := parts[0]
+	path := parts[1]
+	name := path
+
+	var owner string
+	if parts = strings.Split(path, "."); len(parts) == 2 {
+		owner = parts[0]
+		name = parts[1]
+	}
+
+	switch typ {
 	case "var":
-		return fmt.Sprintf("variable %q", parts[1])
+		return fmt.Sprintf("variable %q", name)
 	case "class":
-		return fmt.Sprintf("class %q", parts[1])
+		return fmt.Sprintf("class %q", name)
 	case "interface":
-		return fmt.Sprintf("interface %q", parts[1])
+		return fmt.Sprintf("interface %q", name)
 	case "func":
-		return fmt.Sprintf(`function "%s()"`, parts[1])
+		return fmt.Sprintf(`function "%s()"`, name)
 	case "method":
-		return fmt.Sprintf(`method "%s()"`, parts[1])
+		return fmt.Sprintf(`method %q of %q"`, name, owner)
 	case "prop":
-		return fmt.Sprintf(`property %q`, parts[1])
+		return fmt.Sprintf(`property %q of %q`, name, owner)
 	case "type":
-		return fmt.Sprintf(`type %q`, parts[1])
+		return fmt.Sprintf(`type %q`, name)
 	default:
-		return fmt.Sprintf("%q", identifier)
+		return fmt.Sprintf("%s", identifier)
 	}
 }
 

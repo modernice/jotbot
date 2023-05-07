@@ -33,6 +33,13 @@ export interface MinifyOptions<ComputeTokens extends boolean = never>
   computeTokens?: ComputeTokens
 }
 
+/**
+ * MinifyFlags is an interface that defines the flags used to control the
+ * minification process in the code. It specifies whether to minify variables,
+ * functions, classes, interfaces, properties, methods, and empty lines. Each
+ * flag is a boolean value that determines whether to minify or remove the
+ * corresponding code element during the minification process.
+ */
 export interface MinifyFlags {
   variables: boolean
   functions: boolean

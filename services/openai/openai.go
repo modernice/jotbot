@@ -99,23 +99,13 @@ func (svc *Service) makeBaseRequest(ctx generate.Context) openai.CompletionReque
 	req := openai.CompletionRequest{
 		Model:            string(svc.model),
 		Temperature:      0.618,
+		TopP:             0.3,
 		PresencePenalty:  0.2,
-		FrequencyPenalty: 0.35,
+		FrequencyPenalty: 0.3,
 		Prompt:           ctx.Prompt(),
 	}
 
-	if isGPT4(svc.model) {
-		req.TopP = 0.5
-		req.Temperature = 0.5
-		req.PresencePenalty = 0.1
-		req.FrequencyPenalty = 0.2
-	}
-
 	return req
-}
-
-func isGPT4(model string) bool {
-	return strings.HasPrefix(model, "gpt-4")
 }
 
 func (svc *Service) useModel(model string) func(context.Context, openai.CompletionRequest) (result, error) {
