@@ -66,12 +66,13 @@ func formatDoc(doc string, indent int) string {
 	doc = normalizeGeneratedComment(doc)
 
 	lines := splitString(doc, 77-indent)
+
 	if len(lines) == 1 {
 		return fmt.Sprintf("/** %s */\n", strings.TrimSpace(lines[0]))
 	}
 
-	lines = slice.Map(lines, func(s string) string {
-		return " * " + s
+	lines = slice.Map(lines, func(l string) string {
+		return " * " + l
 	})
 
 	return "/**\n" + strings.Join(lines, "\n") + "\n */\n"
@@ -80,36 +81,38 @@ func formatDoc(doc string, indent int) string {
 func splitString(str string, maxLen int) []string {
 	var out []string
 
-	paras := strings.Split(str, "\n\n")
-	for i, para := range paras {
-		lines := splitByWords(para, maxLen)
-		out = append(out, lines...)
-		if i < len(paras)-1 {
-			out = append(out, "")
-		}
-	}
+	lines := splitByWords(str, maxLen)
 
-	return out
+	out = append(out, lines...)
+
+	return slice.Map(out, strings.TrimSpace)
 }
 
 func splitByWords(str string, maxLen int) []string {
-	words := strings.Split(str, " ")
-
+	rawLines := strings.Split(str, "\n")
 	var lines []string
-	var line string
-	for _, word := range words {
-		if len(line)+len(word) > maxLen {
-			lines = append(lines, line)
-			line = ""
+
+	for _, rawLine := range rawLines {
+		words := strings.Fields(rawLine)
+		var line string
+		for _, word := range words {
+			if len(line)+len(word) >= maxLen {
+				line = strings.TrimSpace(line)
+				lines = append(lines, line)
+				line = ""
+			}
+			if len(line) > 0 {
+				line += " "
+			}
+			line += word
 		}
-		line += word + " "
+		lines = append(lines, strings.TrimSpace(line))
 	}
-	lines = append(lines, line)
 
 	return lines
 }
 
-var commentLinePrefixRE = regexp.MustCompile(`^\s*\s`)
+var commentLinePrefixRE = regexp.MustCompile(`^\s\*\s?`)
 
 func normalizeGeneratedComment(doc string) string {
 	doc = strings.TrimSpace(doc)

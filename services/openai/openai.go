@@ -106,8 +106,9 @@ func (svc *Service) makeBaseRequest(ctx generate.Context) openai.CompletionReque
 
 	if isGPT4(svc.model) {
 		req.TopP = 0.5
+		req.Temperature = 0.5
 		req.PresencePenalty = 0.1
-		req.FrequencyPenalty = 0.35
+		req.FrequencyPenalty = 0.2
 	}
 
 	return req

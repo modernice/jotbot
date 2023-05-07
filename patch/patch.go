@@ -83,7 +83,7 @@ func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(strin
 				return nil
 			}
 
-			p.log.Info(fmt.Sprintf("Patching %q ...", file.Path))
+			p.log.Info(fmt.Sprintf("Patching %s ...", file.Path))
 
 			ext := filepath.Ext(file.Path)
 			svc, err := getLanguage(ext)

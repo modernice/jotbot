@@ -11,7 +11,7 @@ func Prompt(input generate.Input) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
 	return fmt.Sprintf(
-		"Write a concise comment for %s in TSDoc format. Do not include links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. You must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
+		"Write a concise documentation for %s. Do not include links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. Enclose symbol references in {@link} braces. You must adhere to the writing style consistent with TypeScript library documentation. Here is the source code for reference:\n\n%s",
 		target,
 		target,
 		simple,
@@ -38,6 +38,8 @@ func Target(identifier string) string {
 		return fmt.Sprintf(`method "%s()"`, parts[1])
 	case "prop":
 		return fmt.Sprintf(`property %q`, parts[1])
+	case "type":
+		return fmt.Sprintf(`type %q`, parts[1])
 	default:
 		return fmt.Sprintf("%q", identifier)
 	}
