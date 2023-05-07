@@ -1,6 +1,6 @@
 module github.com/modernice/jotbot
 
-go 1.19
+go 1.20
 
 require (
 	github.com/dave/jennifer v1.6.1 // indirect
