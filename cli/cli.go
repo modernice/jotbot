@@ -85,7 +85,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 		ts.Symbols(cfg.Generate.Symbols...),
 		ts.IncludeDocumented(cfg.Generate.Override),
 	)
-	tssvc := ts.New(ts.WithFinder(tsFinder))
+	tssvc := ts.New(ts.Model(cfg.Generate.Model), ts.WithFinder(tsFinder))
 
 	matchers, err := parseMatchers(cfg.Generate.Match)
 	if err != nil {

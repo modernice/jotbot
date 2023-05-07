@@ -118,7 +118,7 @@ func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (
 }
 
 func (f *Finder) executePosition(ctx context.Context, identifier string, code []byte) ([]byte, error) {
-	args := []string{"pos", "-v", identifier, string(code)}
+	args := []string{"pos", identifier, string(code)}
 
 	cmd := exec.CommandContext(ctx, "jotbot-es", args...)
 

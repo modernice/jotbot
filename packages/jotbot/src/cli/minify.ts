@@ -33,14 +33,14 @@ const { log: print } = out
  * reduce the number of tokens in the output. The minification process can be
  * customized by specifying the maximum number of output tokens, the
  * minification steps to use, and other options.
- * 
+ *
  * The function accepts a single parameter:
- * 
+ *
  * - `program`: A Commander.js program instance to which the "minify" command
  * will be added.
- * 
+ *
  * The "minify" command supports various options:
- * 
+ *
  * - `code`: Optional TS/JS source code to minify.
  * - `--path`: Optional path to a TS/JS file to minify (instead of using
  * `code`).
@@ -52,7 +52,7 @@ const { log: print } = out
  * `--format="json"`).
  * - `--verbose`: Enable verbose logging.
  * - `--format`: Output format, either 'text' or 'json'.
- * 
+ *
  * The function returns the modified Commander.js program instance.
  */
 export function withMinifyCmd(program: Command) {
@@ -64,7 +64,7 @@ export function withMinifyCmd(program: Command) {
     .option(
       '-m, --model <model>',
       'Use max tokens of OpenAI model',
-      'text-davinci-003' as TiktokenModel,
+      'gpt-3.5-turbo' as TiktokenModel,
     )
     .option(
       '-t, --tokens <number>',

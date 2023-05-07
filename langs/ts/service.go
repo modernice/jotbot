@@ -3,12 +3,14 @@ package ts
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"regexp"
 	"strings"
 
 	"github.com/modernice/jotbot/generate"
 	"github.com/modernice/jotbot/internal"
 	"github.com/modernice/jotbot/internal/slice"
+	"github.com/modernice/jotbot/services/openai"
 )
 
 var (
@@ -17,6 +19,7 @@ var (
 
 type Service struct {
 	finder *Finder
+	model  string
 }
 
 type Option func(*Service)
@@ -27,10 +30,19 @@ func WithFinder(f *Finder) Option {
 	}
 }
 
+func Model(model string) Option {
+	return func(s *Service) {
+		s.model = model
+	}
+}
+
 func New(opts ...Option) *Service {
 	var svc Service
 	for _, opt := range opts {
 		opt(&svc)
+	}
+	if svc.model == "" {
+		svc.model = openai.DefaultModel
 	}
 	if svc.finder == nil {
 		svc.finder = NewFinder()
@@ -44,6 +56,19 @@ func (svc *Service) Extensions() []string {
 
 func (svc *Service) Find(code []byte) ([]string, error) {
 	return svc.finder.Find(context.Background(), code)
+}
+
+func (svc *Service) Minify(code []byte) ([]byte, error) {
+	args := []string{"minify", "-m", svc.model, string(code)}
+
+	cmd := exec.Command("jotbot-es", args...)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("%w:\n%s", err, out)
+	}
+
+	return out, nil
 }
 
 func (svc *Service) Prompt(input generate.Input) string {
