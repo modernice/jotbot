@@ -75,8 +75,9 @@ func (l *prettyLogger) Handle(ctx context.Context, r slog.Record) error {
 
 	fmt.Fprint(os.Stdout, strings.TrimLeft(fmt.Sprintf("%c %s", icon, r.Message), " "))
 
-	r.Attrs(func(a slog.Attr) {
+	r.Attrs(func(a slog.Attr) bool {
 		fmt.Fprintf(os.Stdout, " %s=%v", a.Key, a.Value)
+		return true
 	})
 
 	fmt.Fprintln(os.Stdout)
