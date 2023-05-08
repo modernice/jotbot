@@ -316,30 +316,33 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 		wg.Add(workers)
 
 		var nFiles atomic.Int64
-
 		for i := 0; i < workers; i++ {
 			go func() {
 				defer wg.Done()
-				select {
-				case <-ctx.Done():
-					return
-				case job, ok := <-queue:
-					if !ok {
+				for {
+					select {
+					case <-ctx.Done():
 						return
-					}
-
-					g.log.Info(fmt.Sprintf("Generating %s ...", job.file))
-
-					if g.limit > 0 {
-						n := nFiles.Load()
-						if n >= int64(g.limit) {
+					case job, ok := <-queue:
+						if !ok {
 							return
 						}
-						nFiles.Add(1)
-					}
 
-					if !work(job.file, job.inputs) {
-						return
+						g.log.Info(fmt.Sprintf("Generating %s ...", job.file))
+
+						if g.limit > 0 {
+							n := nFiles.Load()
+							if n >= int64(g.limit) {
+								g.log.Debug(fmt.Sprintf("Reached file limit of %d files. Stopping file worker.", g.limit))
+								return
+							}
+							nFiles.Add(1)
+						}
+
+						if !work(job.file, job.inputs) {
+							g.log.Debug("Stopping file worker.")
+							return
+						}
 					}
 				}
 			}()

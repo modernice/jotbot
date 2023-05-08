@@ -72,9 +72,48 @@ func TestGenerator_Files(t *testing.T) {
 
 	got := drain(t, gens, errs)
 
-	expectGenerated(t, got, "func:Foo", "Foo is a function.")
-	expectGenerated(t, got, "var:Foo", "Foo is a variable.")
-	expectGenerated(t, got, "type:Bar", "Bar is a struct.")
+	expectGenerated(t, got, "foo.go", "func:Foo", "Foo is a function.")
+	expectGenerated(t, got, "bar.go", "var:Foo", "Foo is a variable.")
+	expectGenerated(t, got, "bar.go", "type:Bar", "Bar is a struct.")
+}
+
+func TestGenerate_Files_workers(t *testing.T) {
+	svc := mockgenerate.NewMockService()
+	svc.GenerateDocFunc.SetDefaultHook(func(ctx generate.Context) (string, error) {
+		switch ctx.Input().Identifier {
+		case "var:Foo":
+			return "Foo is a variable.", nil
+		default:
+			return "", fmt.Errorf("unknown identifier %q", ctx.Input().Identifier)
+		}
+	})
+
+	g := generate.New(
+		svc,
+		generate.WithLanguage("go", golang.Must()),
+		generate.Workers(2, 1),
+	)
+
+	files := map[string][]generate.Input{
+		"foo.go":    {{Identifier: "var:Foo", Language: "go"}},
+		"bar.go":    {{Identifier: "var:Foo", Language: "go"}},
+		"baz.go":    {{Identifier: "var:Foo", Language: "go"}},
+		"foobar.go": {{Identifier: "var:Foo", Language: "go"}},
+		"barbaz.go": {{Identifier: "var:Foo", Language: "go"}},
+	}
+
+	gens, errs, err := g.Files(context.Background(), files)
+	if err != nil {
+		t.Fatalf("Files() failed: %v", err)
+	}
+
+	got := drain(t, gens, errs)
+
+	expectGenerated(t, got, "foo.go", "var:Foo", "Foo is a variable.")
+	expectGenerated(t, got, "bar.go", "var:Foo", "Foo is a variable.")
+	expectGenerated(t, got, "baz.go", "var:Foo", "Foo is a variable.")
+	expectGenerated(t, got, "foobar.go", "var:Foo", "Foo is a variable.")
+	expectGenerated(t, got, "barbaz.go", "var:Foo", "Foo is a variable.")
 }
 
 func TestFooter(t *testing.T) {
@@ -133,12 +172,16 @@ func TestLimit(t *testing.T) {
 	}
 }
 
-func expectGenerated(t *testing.T, gens []generate.File, identifier, doc string) {
+func expectGenerated(t *testing.T, gens []generate.File, file, identifier, doc string) {
 	t.Helper()
 
 	var found string
 L:
 	for _, gen := range gens {
+		if file != "" && gen.Path != file {
+			continue
+		}
+
 		for _, g := range gen.Docs {
 			if g.Identifier == identifier && g.Text == doc {
 				found = g.Text
@@ -148,7 +191,7 @@ L:
 	}
 
 	if found != doc {
-		t.Fatalf("unexpected generation for identifier %q\n\nwant:\n%s\n\ngot:\n%s\n\n%v", identifier, doc, found, gens)
+		t.Fatalf("unexpected generation for identifier %q in %s\n\nwant:\n%s\n\ngot:\n%s\n\n%v", identifier, file, doc, found, gens)
 	}
 }
 
