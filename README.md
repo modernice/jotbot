@@ -38,19 +38,17 @@ I'm in the process of re-generating the documentation using GPT-4. Will update w
 If you have Go installed, you can simply install JotBot using `go install`:
 
 ```
-go install github.com/modernice/jotbot/cmd/jotbot@main
+go install github.com/modernice/jotbot/cmd/jotbot@latest
 ```
 
-### Standalone binary
+### Standalone Binary
 
 > TODO: Setup GitHub Action (GoReleaser)
 
-### TypeScript support
+### TypeScript Support
 
-~~To enable TypeScript (and JavaScript) support, you also need to install the
-`jotbot-ts` npm package:~~
-
-> TODO: Upload jotbot-ts to npm
+To enable TypeScript (and JavaScript) support, you also need to install the
+`jotbot-ts` npm package.
 
 ```
 npm install -g jotbot-ts
