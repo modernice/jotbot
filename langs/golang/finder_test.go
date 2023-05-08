@@ -178,6 +178,26 @@ func TestFinder_Find_excludesTestsByDefault(t *testing.T) {
 	}, findings)
 }
 
+func TestFinder_Find_variableList(t *testing.T) {
+	code := heredoc.Doc(`
+		package foo
+
+		const (
+			Foo = "foo"
+			Bar = "bar"
+		)
+	`)
+
+	f := golang.NewFinder()
+
+	findings, err := f.Find([]byte(code))
+	if err != nil {
+		t.Fatalf("Find() failed: %v", err)
+	}
+
+	tests.ExpectIdentifiers(t, []string{"var:Foo", "var:Bar"}, findings)
+}
+
 func TestFindTests(t *testing.T) {
 	code := heredoc.Doc(`
 		package foo

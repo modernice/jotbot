@@ -98,7 +98,7 @@ func TestService_Patch_groupDeclaration(t *testing.T) {
 	code := heredoc.Doc(`
 		package foo
 
-		var (
+		const (
 			Foo = "foo"
 			Bar = "bar"
 		)
@@ -106,7 +106,12 @@ func TestService_Patch_groupDeclaration(t *testing.T) {
 
 	svc := golang.Must()
 
-	patched, err := svc.Patch(context.Background(), "var:Bar", "Bar is a bar.", []byte(code))
+	patched, err := svc.Patch(context.Background(), "var:Foo", "Foo is a foo.", []byte(code))
+	if err != nil {
+		t.Fatalf("Patch() failed: %v", err)
+	}
+
+	patched, err = svc.Patch(context.Background(), "var:Bar", "Bar is a bar.", patched)
 	if err != nil {
 		t.Fatalf("Patch() failed: %v", err)
 	}
@@ -114,8 +119,10 @@ func TestService_Patch_groupDeclaration(t *testing.T) {
 	expect := heredoc.Doc(`
 		package foo
 
-		var (
+		const (
+			// Foo is a foo.
 			Foo = "foo"
+
 			// Bar is a bar.
 			Bar = "bar"
 		)

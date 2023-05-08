@@ -6,6 +6,12 @@ import { readPackageJSON } from 'pkg-types'
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 
+/**
+ * Updates the current version of the package to the specified `version`,
+ * builds, and publishes it.
+ * Throws an error if the new version is not greater than the current version.
+ * @param version - The new version string to update the package to.
+ */
 export async function release(version: string) {
   const pkg = await readPackageJSON(packageRoot)
   const currentVersion = SemanticVersion.parse(pkg.version!.replace('v', ''))

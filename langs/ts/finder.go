@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	Var       = Symbol("var")
+	// Var represents a variable symbol in the code.
+	Var = Symbol("var")
+
 	Class     = Symbol("class")
 	Interface = Symbol("iface")
 	Func      = Symbol("func")

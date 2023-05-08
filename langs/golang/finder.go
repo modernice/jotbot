@@ -70,10 +70,10 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 	}
 
 	for _, node := range node.Decls {
-		var (
-			identifier string
-			exported   bool
-		)
+		// var (
+		// 	identifier string
+		// 	exported   bool
+		// )
 
 		switch node := node.(type) {
 		case *dst.FuncDecl:
@@ -85,7 +85,9 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 				break
 			}
 
-			identifier, exported = nodes.Identifier(node)
+			if identifier, exported := nodes.Identifier(node); exported {
+				findings = append(findings, identifier)
+			}
 		case *dst.GenDecl:
 			if !f.includeDocumented && nodes.HasDoc(node.Decs.NodeDecs.Start) {
 				break
@@ -95,26 +97,26 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 				break
 			}
 
-			spec := node.Specs[0]
+			for _, spec := range node.Specs {
+				switch spec := spec.(type) {
+				case *dst.TypeSpec:
+					if f.includeDocumented || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+						if identifier, exported := nodes.Identifier(spec); exported {
+							findings = append(findings, identifier)
+						}
+					}
 
-			switch spec := spec.(type) {
-			case *dst.TypeSpec:
-				if f.includeDocumented || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
-					identifier, exported = nodes.Identifier(spec)
-				}
-
-				if isInterface(spec) {
-					findings = append(findings, f.findInterfaceMethods(spec)...)
-				}
-			case *dst.ValueSpec:
-				if f.includeDocumented || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
-					identifier, exported = nodes.Identifier(spec)
+					if isInterface(spec) {
+						findings = append(findings, f.findInterfaceMethods(spec)...)
+					}
+				case *dst.ValueSpec:
+					if f.includeDocumented || !nodes.HasDoc(spec.Decs.NodeDecs.Start) {
+						if identifier, exported := nodes.Identifier(spec); exported {
+							findings = append(findings, identifier)
+						}
+					}
 				}
 			}
-		}
-
-		if exported {
-			findings = append(findings, identifier)
 		}
 	}
 
