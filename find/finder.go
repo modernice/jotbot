@@ -17,6 +17,10 @@ var (
 		".ts",
 	}
 
+	// DefaultExclude is a predefined slice of strings containing common file
+	// exclusion patterns, such as hidden directories, build directories, and test
+	// directories. It is used as a default value when searching for files using the
+	// Options struct.
 	DefaultExclude = []string{
 		"**/.*/**",           // hidden directories
 		"**/dist/**",         // node builds
@@ -27,6 +31,9 @@ var (
 		"**/tests/**",        // tests
 	}
 
+	// Default is a predefined instance of the Options struct with commonly used
+	// file extensions and exclusion patterns. It serves as a starting point for
+	// file searching configurations.
 	Default = Options{
 		Extensions: DefaultExtensions,
 		Exclude:    DefaultExclude,

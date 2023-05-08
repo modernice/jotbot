@@ -19,6 +19,9 @@ var (
 	// files. It is set to the minimum of 4 and the number of available CPU cores.
 	DefaultFileWorkers = int(math.Min(4, float64(runtime.NumCPU())))
 
+	// DefaultSymbolWorkers is the default number of concurrent workers for
+	// processing code symbols within a file. It is set to the minimum of 2 and the
+	// number of available CPU cores.
 	DefaultSymbolWorkers = int(math.Min(2, float64(runtime.NumCPU())))
 )
 
