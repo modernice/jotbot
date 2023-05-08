@@ -1,9 +1,8 @@
 import { fileURLToPath } from 'node:url'
-import { resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { exec } from 'node:child_process'
 import { SemanticVersion } from '@hediet/semver'
-import { readPackageJSON, writePackageJSON } from 'pkg-types'
+import { readPackageJSON } from 'pkg-types'
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 
@@ -24,12 +23,11 @@ export async function release(version: string) {
     )
   }
 
+  const v = newVersion.toString()
+  await execute(`pnpm version v${v}`)
+
   await execute('pnpm i')
   await execute('pnpm build')
-
-  const v = newVersion.toString()
-  pkg.version = `v${v}`
-  await writePackageJSON(resolve(packageRoot, 'package.json'), pkg)
 
   await execute('git add package.json')
   await execute(`git commit -m 'chore(jotbot-ts): v${v}'`)
