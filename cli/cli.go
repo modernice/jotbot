@@ -46,7 +46,7 @@ type Config struct {
 		MaxTokens       int         `name:"maxTokens" default:"${maxTokens=512}" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation"`
 		Parallel        int         `name:"parallel" short:"p" default:"${parallel=4}" env:"JOTBOT_PARALLEL" help:"Number of files to handle concurrently"`
 		Workers         int         `name:"workers" default:"${workers=2}" env:"JOTBOT_WORKERS" help:"Number of workers to use per file"`
-		Override        bool        `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation"`
+		Override        bool        `name:"override" short:"o" env:"JOTBOT_OVERRIDE" help:"Override existing documentation (Go-specific)"`
 	} `cmd:"" help:"Generate missing documentation."`
 
 	APIKey  string `name:"key" env:"OPENAI_API_KEY" help:"OpenAI API key."`
@@ -101,7 +101,8 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 
 	tsFinder := ts.NewFinder(
 		ts.Symbols(cfg.Generate.Symbols...),
-		ts.IncludeDocumented(cfg.Generate.Override),
+		// TODO(bounoable): Make this work for TS code
+		// ts.IncludeDocumented(cfg.Generate.Override),
 	)
 	tssvc := ts.New(ts.Model(cfg.Generate.Model), ts.WithFinder(tsFinder))
 

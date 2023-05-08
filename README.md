@@ -135,7 +135,7 @@ jotbot --help
 | `--maxTokens`          | Maximum number of tokens to generate for a single documentation         | `512`          |
 | `--parallel, -p`      | Number of files to handle concurrently                                  | `4`            |
 | `--workers`            | Number of workers to use per file                                       | `2`            |
-| `--override, -o`      | Override existing documentation                                         |                |
+| `--override, -o`      | Override existing documentation (Go-specific)                            |                |
 | `--key`                | OpenAI API key                                                          |                |
 | `--verbose, -v`       | Enable verbose logging                                                  | `false`        |
 
