@@ -36,6 +36,15 @@ jotbot generate
 
 ---
 
+## Features
+
+- Generate documentation for Go and TypeScript codebases
+- Customize glob patterns for included and excluded files
+- Filter code symbols by matching regular expressions
+- Limit the number of files to generate documentation for
+- Run in dry mode to preview changes without applying them
+- Control the AI model and token limits used for generating documentation
+- Optionally commit changes to a Git branch
 
 ## Models
 
@@ -50,17 +59,6 @@ and pass it via the `--model|-m` flag:
 ```
 jotbot generate -m text-davinci-003
 ```
-
-## Features
-
-- Generate documentation for Go and TypeScript codebases
-- Customize glob patterns for included and excluded files
-- Filter code symbols by matching regular expressions
-- Limit the number of files to generate documentation for
-- Run in dry mode to preview changes without applying them
-- Control the AI model and token limits used for generating documentation
-- Optionally commit changes to a Git branch
-
 
 ## Installation
 
