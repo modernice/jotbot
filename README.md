@@ -56,6 +56,7 @@ npm install -g jotbot-ts
 pnpm install -g jotbot-ts
 ```
 
+
 ## Usage
 
 To generate missing documentation for your codebase, run the following command:
