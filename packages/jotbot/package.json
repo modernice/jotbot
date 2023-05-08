@@ -31,7 +31,8 @@
   "files": [
     "dist",
     "package.json",
-    "LICENSE"
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "test": "vitest",
