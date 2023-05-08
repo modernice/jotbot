@@ -13,7 +13,7 @@ import { withMinifyCmd } from './minify'
  * instance.
  */
 export function createCLI() {
-  const program = new Command('jotbot-es')
+  const program = new Command('jotbot-ts')
     .description(description)
     .version(version)
 

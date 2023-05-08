@@ -1,4 +1,4 @@
-name: jotbot-es
+name: jotbot-ts
 
 on:
   push:

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -13,9 +14,7 @@ import (
 )
 
 const (
-	// Var is a predefined Symbol representing a variable within the code.
-	Var = Symbol("var")
-
+	Var       = Symbol("var")
 	Class     = Symbol("class")
 	Interface = Symbol("iface")
 	Func      = Symbol("func")
@@ -118,7 +117,7 @@ func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
 
 	args = append(args, string(code))
 
-	cmd := exec.CommandContext(ctx, "jotbot-es", args...)
+	cmd := exec.CommandContext(ctx, jotbotTSPath, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -148,7 +147,7 @@ func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (
 func (f *Finder) executePosition(ctx context.Context, identifier string, code []byte) ([]byte, error) {
 	args := []string{"pos", identifier, string(code)}
 
-	cmd := exec.CommandContext(ctx, "jotbot-es", args...)
+	cmd := exec.CommandContext(ctx, jotbotTSPath, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -160,4 +159,12 @@ func (f *Finder) executePosition(ctx context.Context, identifier string, code []
 
 func unquote[S ~string](s S) S {
 	return S(strings.Trim(string(s), `"`))
+}
+
+var jotbotTSPath = os.Getenv("JOTBOT_TS_PATH")
+
+func init() {
+	if jotbotTSPath == "" {
+		jotbotTSPath = "jotbot-ts"
+	}
 }

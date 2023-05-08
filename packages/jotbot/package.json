@@ -1,5 +1,5 @@
 {
-  "name": "jotbot",
+  "name": "jotbot-ts",
   "version": "0.0.1",
   "description": "JotBot utilities for TypeScript and JavaScript",
   "author": "Saman Hosseini <bounoable@gmail.com>",
@@ -22,7 +22,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "jotbot-es": "./bin/jotbot-es.mjs"
+    "jotbot-ts": "./bin/jotbot-ts.mjs"
   },
   "files": [
     "dist",

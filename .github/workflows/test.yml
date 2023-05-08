@@ -41,18 +41,15 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: './packages/pnpm-lock.yaml'
       
-      - name: Install jotbot-es
+      - name: Install jotbot-ts
         run: |
           cd packages/jotbot
           pnpm i
           pnpm build
-          pnpm link .
-          echo "$PNPM_HOME" >> $GITHUB_PATH
+          pnpm link -g
 
       - name: Dependencies
         run: go get ./...
         
       - name: Test
-        run: |
-          alias jotbot-es="$PNPM_HOME/jotbot-es"
-          go test ./...
+        run: go test ./...

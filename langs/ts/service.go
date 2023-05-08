@@ -84,7 +84,7 @@ func (svc *Service) Find(code []byte) ([]string, error) {
 func (svc *Service) Minify(code []byte) ([]byte, error) {
 	args := []string{"minify", "-m", svc.model, string(code)}
 
-	cmd := exec.Command("jotbot-es", args...)
+	cmd := exec.Command(jotbotTSPath, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
