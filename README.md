@@ -76,6 +76,7 @@ Excluded from the search are by default:
 - `**/testdata/**`
 - `**/test/**`
 - `**/tests/**`
+- `**/*.pb.go`
 
 ## CLI options
 

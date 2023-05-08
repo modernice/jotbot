@@ -29,6 +29,7 @@ var (
 		"**/testdata/**",     // tests
 		"**/test/**",         // tests
 		"**/tests/**",        // tests
+		"**/*.pb.go",         // generated protobufs
 	}
 
 	// Default is a predefined instance of the Options struct with commonly used
