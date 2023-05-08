@@ -245,7 +245,7 @@ func formatDoc(doc string) string {
 }
 
 func normalizeGeneratedComment(doc string) string {
-	return strings.ReplaceAll(doc, "// ", "")
+	return internal.RemoveColumns(strings.ReplaceAll(doc, "// ", ""))
 }
 
 func updateDoc(decs *dst.Decorations, doc string) {

@@ -6,6 +6,17 @@ import (
 	"github.com/modernice/jotbot/internal/slice"
 )
 
+// RemoveColumns takes a string and removes the column formatting by replacing
+// newline characters with spaces and joining paragraphs with double newlines.
+// It preserves the original words and line breaks.
+func RemoveColumns(str string) string {
+	paras := strings.Split(str, "\n\n")
+	paras = slice.Map(paras, func(para string) string {
+		return strings.ReplaceAll(strings.ReplaceAll(para, "\n", " "), "  ", " ")
+	})
+	return strings.Join(paras, "\n\n")
+}
+
 // Columns splits the given string into a slice of strings, each with a maximum
 // length of maxLen, preserving the original words and line breaks.
 func Columns(str string, maxLen int) []string {

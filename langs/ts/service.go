@@ -140,6 +140,7 @@ func normalizeGeneratedComment(doc string) string {
 	doc = strings.TrimPrefix(doc, "/**")
 	doc = strings.TrimSuffix(doc, "*/")
 	doc = strings.ReplaceAll(doc, "*/", "*\\/")
+	doc = internal.RemoveColumns(doc)
 
 	lines := strings.Split(doc, "\n")
 	lines = slice.Map(lines, func(l string) string {
