@@ -19,30 +19,30 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Language is an interface that combines the patch.Language and
-// generate.Language interfaces, adding methods to retrieve supported file
-// extensions and find identifiers within source code. It is used by JotBot to
-// work with different programming languages, allowing for language-specific
-// operations such as finding identifiers and generating patches.
+// Language is an interface that combines the functionality of patch.Language
+// and generate.Language, providing methods for file extension handling and
+// finding identifiers in source code. It extends the capabilities of patching
+// and generating code by allowing customization for different programming
+// languages.
 type Language interface {
 	patch.Language
 	generate.Language
 
-	// Extensions returns a slice of file extensions that are supported by the
-	// Language. Each extension is associated with a specific language
-	// implementation for code generation and patching purposes.
+	// Extensions returns a slice of file extensions supported by the configured
+	// languages in the Language interface.
 	Extensions() []string
 
-	// Find searches the provided byte slice for identifiers in the language and
-	// returns a slice of found identifiers along with any error encountered during
-	// the search.
+	// Find searches the provided byte slice for language-specific identifiers and
+	// returns a slice of found identifiers and an error if any occurs.
 	Find([]byte) ([]string, error)
 }
 
-// JotBot is a utility for finding and generating code snippets in various
-// programming languages within a project. It supports configurable languages,
-// filters, and file systems, and offers patching capabilities for applying
-// generated changes.
+// JotBot is a tool for finding, generating, and patching code snippets in
+// multiple programming languages. It supports customizable language
+// configurations and can be extended with additional languages. JotBot can
+// filter findings based on regular expressions, generate new code snippets
+// using a provided generate.Service, and apply or dry-run patches to modify the
+// source code.
 type JotBot struct {
 	root          string
 	filters       []*regexp.Regexp
@@ -52,38 +52,42 @@ type JotBot struct {
 	log           *slog.Logger
 }
 
-// Option is a function that takes a pointer to a JotBot and modifies its
-// configuration. It can be used to set custom languages, loggers, or filters
-// for the JotBot instance.
+// Option is a function that configures a JotBot instance. It takes a JotBot
+// pointer as an argument and modifies its properties according to the desired
+// configuration. Common options include WithLanguage, which associates a
+// language with JotBot, and WithLogger, which sets up a logger for the JotBot
+// instance.
 type Option func(*JotBot)
 
-// Finding represents a single code identifier found within a file with its
-// associated language.
+// Finding represents an identifier found within a file and its associated
+// language.
 type Finding struct {
 	Identifier string
 	File       string
 	Language   string
 }
 
-// String returns a formatted string representation of the Finding, including
-// the file path and identifier.
+// String returns a formatted string representation of the Finding, containing
+// the file name and identifier separated by an '@' symbol.
 func (f Finding) String() string {
 	return fmt.Sprintf("%s@%s", f.File, f.Identifier)
 }
 
-// Patch is a wrapper around a patch.Patch that provides additional
-// functionality for applying and dry-running patches using Language
-// implementations. It is used to generate, apply, and preview changes to source
-// code based on the provided findings.
+// Patch represents a set of changes to be applied to source code files. It
+// provides methods for applying the changes directly or performing a dry run to
+// preview the resulting files without modifying them. A Patch is created by
+// generating code from a list of findings using a generate.Service and various
+// generate.Option values.
 type Patch struct {
 	*patch.Patch
 
 	getLanguage func(string) (Language, error)
 }
 
-// WithLanguage configures a JotBot instance to use the specified language for
-// processing files with the given name. It associates the language with its
-// supported file extensions.
+// WithLanguage configures a JotBot instance to use the specified Language
+// implementation with the given name. The Language implementation is used for
+// finding identifiers, generating code, and patching files with the
+// corresponding file extension.
 func WithLanguage(name string, lang Language) Option {
 	return func(bot *JotBot) {
 		bot.ConfigureLanguage(name, lang)
@@ -97,18 +101,18 @@ func WithLogger(h slog.Handler) Option {
 	}
 }
 
-// Match appends the provided regular expression filters to the JotBot's
-// filters. These filters are used to determine which findings should be
-// included in the final result when searching for identifiers in files.
+// Match adds the provided regular expression filters to the JotBot instance,
+// which are then used to filter identifiers found in files during the Find
+// operation.
 func Match(filters ...*regexp.Regexp) Option {
 	return func(bot *JotBot) {
 		bot.filters = append(bot.filters, filters...)
 	}
 }
 
-// New creates a new JotBot instance with the given root directory and options.
-// The returned JotBot is configured with the provided languages, filters, and
-// logger.
+// New creates a new JotBot instance with the specified root directory and
+// optional configurations. The returned JotBot can be used to find and generate
+// code snippets based on configured languages and filters.
 func New(root string, opts ...Option) *JotBot {
 	bot := &JotBot{
 		root:          root,
@@ -128,9 +132,8 @@ func New(root string, opts ...Option) *JotBot {
 	return bot
 }
 
-// ConfigureLanguage configures a Language for the given name, associating it
-// with the provided extensions. The Language is used by JotBot to find and
-// generate code for identifiers in files with the associated extensions.
+// ConfigureLanguage configures a Language for the given name and adds the
+// language's file extensions to the mapping of extensions to languages.
 func (bot *JotBot) ConfigureLanguage(name string, lang Language) {
 	bot.languages[name] = lang
 	for _, ext := range lang.Extensions() {
@@ -138,18 +141,17 @@ func (bot *JotBot) ConfigureLanguage(name string, lang Language) {
 	}
 }
 
-// Extensions returns a slice of file extensions that are associated with
-// configured languages in the JotBot instance.
+// Extensions returns a slice of file extensions for which a language is
+// configured in the JotBot instance.
 func (bot *JotBot) Extensions() []string {
 	return maps.Keys(bot.extToLanguage)
 }
 
-// Find searches the JotBot's root directory for files matching the provided
-// options, extracts identifiers from those files using the configured
-// languages, and returns a slice of Findings containing the extracted
-// identifiers, file paths, and language names. It filters the extracted
-// identifiers based on the JotBot's configured filters. If any error occurs
-// during the process, it returns the error.
+// Find searches for files in the root directory of a JotBot instance, filters
+// them by configured languages, and returns a slice of findings. Each finding
+// includes the identifier, file path, and language name associated with the
+// matched file. The search can be further customized using context and find
+// options.
 func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, error) {
 	bot.log.Info(fmt.Sprintf("Searching for files in %s ...", bot.root))
 
@@ -239,9 +241,9 @@ func (bot *JotBot) languageForExtension(ext string) (Language, error) {
 	return nil, fmt.Errorf("no language configured for file extension %q", ext)
 }
 
-// Generate creates a Patch by generating code snippets for the given Findings
-// using the provided generate.Service and options. It returns a Patch that can
-// be applied to the project or used in a dry run.
+// Generate creates a Patch by generating code for the given Findings using the
+// provided generate.Service and options. It returns an error if there is any
+// issue during code generation.
 func (bot *JotBot) Generate(ctx context.Context, findings []Finding, svc generate.Service, opts ...generate.Option) (*Patch, error) {
 	baseOpts := []generate.Option{generate.WithLogger(bot.log.Handler())}
 	for name, lang := range bot.languages {
@@ -292,20 +294,19 @@ func (bot *JotBot) makeInput(ctx context.Context, finding Finding) (generate.Inp
 	return input, nil
 }
 
-// Apply applies the patch to the filesystem rooted at the given root path,
-// using the configured languages for applying changes. The operation can be
-// canceled through the provided context. It returns an error if any issues are
-// encountered during the application process.
+// Apply applies the patch to the files in the provided root directory. It
+// returns an error if there is an issue applying the patch or accessing the
+// file system.
 func (p *Patch) Apply(ctx context.Context, root string) error {
 	return p.Patch.Apply(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.Language, error) {
 		return p.getLanguage(s)
 	})
 }
 
-// DryRun applies the patch to a virtual filesystem rooted at the provided root
-// path, returning a map of file paths to their new contents without modifying
-// the actual filesystem. The operation can be canceled through the provided
-// context.
+// DryRun applies the patch in a simulated environment without making actual
+// changes to the files in the specified root directory, returning a map of
+// filenames to their updated contents after applying the patch. It is useful
+// for previewing changes before applying them.
 func (p *Patch) DryRun(ctx context.Context, root string) (map[string][]byte, error) {
 	return p.Patch.DryRun(ctx, afero.NewBasePathFs(afero.NewOsFs(), root), func(s string) (patch.Language, error) {
 		return p.getLanguage(s)

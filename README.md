@@ -139,6 +139,11 @@ jotbot --help
 | `--key`                | OpenAI API key                                                          |                |
 | `--verbose, -v`       | Enable verbose logging                                                  | `false`        |
 
+## Screenshots
+
+![JotBot](./.github/screenshot-go.png)
+![JotBot](./.github/screenshot-ts.png)
+
 ## License
 
 [MIT](./LICENSE)
