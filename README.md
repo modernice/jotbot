@@ -43,7 +43,8 @@ go install github.com/modernice/jotbot/cmd/jotbot@latest
 
 ### Standalone Binary
 
-> TODO: Setup GitHub Action (GoReleaser)
+You can download the latest binary from the
+[Releases](https://github.com/modernice/jotbot/releases/latest) page.
 
 ### TypeScript Support
 
@@ -67,13 +68,13 @@ By default, this command will find all Go and TypeScript (and JavaScript) files
 in the current and nested directories and generate documentation for them.
 Excluded from the search are by default:
 
-- \*\*/.*/\*\*
-- \*\*/dist/\*\*
-- \*\*/node_modules/\*\*
-- \*\*/vendor/\*\*
-- \*\*/testdata/\*\*
-- \*\*/test/\*\*
-- \*\*/tests/\*\*
+- `**/.*/**`
+- `**/dist/**`
+- `**/node_modules/**`
+- `**/vendor/**`
+- `**/testdata/**`
+- `**/test/**`
+- `**/tests/**`
 
 ## CLI options
 
