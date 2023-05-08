@@ -11,7 +11,7 @@ import type {
 import { formatOptions, parseFormat, verboseOption } from './options'
 import { commaSeparated } from './utils'
 import { createLogger } from './logger'
-import { out } from './print'
+import { print } from './print'
 
 interface Options
   extends WithSourceOption,
@@ -22,8 +22,6 @@ interface Options
   steps?: (keyof MinifyFlags)[]
   printTokens?: boolean
 }
-
-const { log: print } = out
 
 /**
  * The `withMinifyCmd()` function adds a "minify" command to a given

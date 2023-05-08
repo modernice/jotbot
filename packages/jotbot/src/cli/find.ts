@@ -10,9 +10,7 @@ import type {
   WithVerboseOption,
 } from './options'
 import { formatOptions, verboseOption } from './options'
-import { out } from './print'
-
-const { log: print } = out
+import { print } from './print'
 
 interface Options
   extends Omit<FinderOptions, 'includeDocumented'>,
