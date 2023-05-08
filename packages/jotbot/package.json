@@ -38,7 +38,8 @@
     "play": "tsx ./src/play.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build": "vite build"
+    "build": "vite build",
+    "release": "tsx ./scripts/release.ts"
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.7",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^0.38.5",
+    "@hediet/semver": "^0.2.2",
     "@types/lodash": "^4.14.194",
     "@types/node": "^18.15.13",
     "@vitest/ui": "^0.30.1",
