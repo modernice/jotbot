@@ -37,6 +37,12 @@ var (
 	}
 )
 
+// Service is a type that provides functionality for parsing, minifying, and
+// patching Go source code. It can find identifiers, minify source code based on
+// configured steps, generate prompts, and apply documentation patches to
+// specified identifiers. The Service can be customized with various options,
+// such as setting a Finder for searching elements in the source code,
+// specifying a model for the tokenizer, and configuring minification steps.
 type Service struct {
 	model         string
 	maxTokens     int
@@ -76,6 +82,9 @@ func Minify(steps []nodes.MinifyOptions) Option {
 	}
 }
 
+// ClearComments is an Option that sets whether or not to remove comments from
+// the code when generating a prompt for the Service. If clear is true, comments
+// will be removed; otherwise, they will be preserved.
 func ClearComments(clear bool) Option {
 	return func(s *Service) {
 		s.clearComments = clear
@@ -189,6 +198,9 @@ func (svc *Service) Minify(code []byte) ([]byte, error) {
 	return nil, fmt.Errorf("minified code exceeds %d tokens (%d tokens)", svc.maxTokens, len(tokens))
 }
 
+// Prompt takes an input of type [generate.Input] and returns a string. If the
+// [Service] is configured to clear comments, it clears the comments from the
+// input code before generating the prompt.
 func (svc *Service) Prompt(input generate.Input) string {
 	if svc.clearComments {
 		if node, err := nodes.Parse(input.Code); err == nil {

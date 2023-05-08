@@ -135,6 +135,10 @@ func formatDoc(doc string, indent int) string {
 
 var commentLinePrefixRE = regexp.MustCompile(`^\s\*\s?`)
 
+// NormalizeGeneratedComment removes leading and trailing whitespaces, removes
+// comment prefixes, and collapses consecutive whitespaces in the given
+// documentation string. It also ensures that comment tokens are not
+// accidentally closed within the comment text.
 func NormalizeGeneratedComment(doc string) string {
 	doc = strings.TrimSpace(doc)
 	doc = strings.TrimPrefix(doc, "/**")

@@ -127,6 +127,7 @@ jotbot --help
 | `--exclude-internal, -E` | Exclude 'internal' directories (Go-specific)                          | `true`         |
 | `--match`             | Regular expression(s) to match identifiers                              |                |
 | `--symbol, -s`        | Symbol(s) to search for in code (TS/JS-specific)                        |                |
+| `--clear, -c`         | Force-clear comments in generation prompt (Go-specific)                 |                |
 | `--branch`             | Branch name to commit changes to (leave empty to not commit)            |                |
 | `--limit`              | Limit the number of files to generate documentation for                 | `0`            |
 | `--dry`                | Print the changes without applying them                                 | `false`        |
