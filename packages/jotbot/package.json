@@ -24,6 +24,10 @@
   "bin": {
     "jotbot-ts": "./bin/jotbot-ts.mjs"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "files": [
     "dist",
     "package.json",
