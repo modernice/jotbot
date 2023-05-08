@@ -36,12 +36,12 @@ type Config struct {
 		IncludeTests    bool        `name:"include-tests" short:"T" default:"false" env:"JOTBOT_INCLUDE_TESTS" help:"Include TestXXX() functions. (Go-specific)"`
 		Exclude         []string    `name:"exclude" short:"e" env:"JOTBOT_EXCLUDE" help:"Glob pattern(s) to exclude files."`
 		ExcludeInternal bool        `name:"exclude-internal" short:"E" default:"true" env:"JOTBOT_EXCLUDE_INTERNAL" help:"Exclude 'internal' directories (Go-specific)"`
-		Match           []string    `name:"match" short:"m" env:"JOTBOT_MATCH" help:"Regular expression(s) to match identifiers."`
+		Match           []string    `name:"match" env:"JOTBOT_MATCH" help:"Regular expression(s) to match identifiers."`
 		Symbols         []ts.Symbol `name:"symbol" short:"s" env:"JOTBOT_SYMBOLS" help:"Symbol(s) to search for in code (TS/JS-specific)."`
 		Branch          string      `name:"branch" env:"JOTBOT_BRANCH" help:"Branch name to commit changes to. Leave empty to not commit changes."`
 		Limit           int         `name:"limit" default:"0" env:"JOTBOT_LIMIT" help:"Limit the number of files to generate documentation for."`
 		DryRun          bool        `name:"dry" default:"false" env:"JOTBOT_DRY_RUN" help:"Print the changes without applying them."`
-		Model           string      `name:"model" default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model used to generate documentation."`
+		Model           string      `name:"model" short:"m" default:"gpt-3.5-turbo" env:"JOTBOT_MODEL" help:"OpenAI model used to generate documentation."`
 		MaxTokens       int         `name:"maxTokens" default:"${maxTokens=512}" env:"JOTBOT_MAX_TOKENS" help:"Maximum number of tokens to generate for a single documentation."`
 		Parallel        int         `name:"parallel" short:"p" default:"${parallel=4}" env:"JOTBOT_PARALLEL" help:"Number of files to handle concurrently."`
 		Workers         int         `name:"workers" default:"${workers=2}" env:"JOTBOT_WORKERS" help:"Number of workers to use per file."`
