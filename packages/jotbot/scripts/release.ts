@@ -32,10 +32,7 @@ export async function release(version: string) {
 
 const _exec = promisify(exec)
 async function execute(cmd: string) {
-  const { stdout, stderr } = await _exec(cmd)
-  if (stderr) {
-    throw new Error(stderr)
-  }
+  const { stdout } = await _exec(cmd)
   process.stdout.write(stdout)
   return stdout
 }
