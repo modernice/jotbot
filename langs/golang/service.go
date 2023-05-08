@@ -14,6 +14,7 @@ import (
 	"github.com/modernice/jotbot/internal/nodes"
 	"github.com/modernice/jotbot/internal/slice"
 	"github.com/modernice/jotbot/services/openai"
+	"github.com/modernice/jotbot/tools/reset"
 	"github.com/tiktoken-go/tokenizer"
 )
 
@@ -36,16 +37,13 @@ var (
 	}
 )
 
-// Service is a struct that provides functionality for code minification,
-// identifier search, and documentation patching in Go source code. It can be
-// configured with optional settings such as a custom Finder, model, or
-// minification steps through the use of Option functions.
 type Service struct {
-	model       string
-	maxTokens   int
-	codec       tokenizer.Codec
-	finder      *Finder
-	minifySteps []nodes.MinifyOptions
+	model         string
+	maxTokens     int
+	clearComments bool
+	codec         tokenizer.Codec
+	finder        *Finder
+	minifySteps   []nodes.MinifyOptions
 }
 
 // Option is a function that modifies a [Service] instance. It is used to
@@ -75,6 +73,12 @@ func Model(m string) Option {
 func Minify(steps []nodes.MinifyOptions) Option {
 	return func(s *Service) {
 		s.minifySteps = steps
+	}
+}
+
+func ClearComments(clear bool) Option {
+	return func(s *Service) {
+		s.clearComments = clear
 	}
 }
 
@@ -185,9 +189,15 @@ func (svc *Service) Minify(code []byte) ([]byte, error) {
 	return nil, fmt.Errorf("minified code exceeds %d tokens (%d tokens)", svc.maxTokens, len(tokens))
 }
 
-// Prompt takes an input of type generate.Input and returns a string
-// representation of the prompt.
 func (svc *Service) Prompt(input generate.Input) string {
+	if svc.clearComments {
+		if node, err := nodes.Parse(input.Code); err == nil {
+			reset.Comments(node)
+			if code, err := nodes.Format(node); err == nil {
+				input.Code = code
+			}
+		}
+	}
 	return Prompt(input)
 }
 
