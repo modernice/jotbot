@@ -59,3 +59,26 @@ func TestService_Patch_interfaceFields(t *testing.T) {
 		t.Fatalf("unexpected result\n\n%s\n\nwant:\n%s\n\ngot:\n%s", cmp.Diff(want, string(patched)), want, string(patched))
 	}
 }
+
+func TestNormalizeGeneratedComment(t *testing.T) {
+	comment := heredoc.Doc(`
+		/**
+		 * This is a multi-line
+		 * comment. I am very short in width.
+		 *
+		 * But I have multiple
+		 * paragraphs.
+		 *
+		 * @param foo This is a parameter.
+		 * @return This is a return value.
+		 */
+	`)
+
+	normalized := ts.NormalizeGeneratedComment(comment)
+
+	want := "This is a multi-line comment. I am very short in width.\n\nBut I have multiple paragraphs."
+
+	if normalized != want {
+		t.Fatalf("unexpected result\n\n%s\n\nwant:\n%s\n\ngot:\n%s", cmp.Diff(want, normalized), want, normalized)
+	}
+}

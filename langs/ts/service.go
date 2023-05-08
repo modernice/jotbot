@@ -118,7 +118,7 @@ func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []by
 }
 
 func formatDoc(doc string, indent int) string {
-	doc = normalizeGeneratedComment(doc)
+	doc = NormalizeGeneratedComment(doc)
 
 	lines := internal.Columns(doc, 77-indent)
 
@@ -135,17 +135,21 @@ func formatDoc(doc string, indent int) string {
 
 var commentLinePrefixRE = regexp.MustCompile(`^\s\*\s?`)
 
-func normalizeGeneratedComment(doc string) string {
+func NormalizeGeneratedComment(doc string) string {
 	doc = strings.TrimSpace(doc)
 	doc = strings.TrimPrefix(doc, "/**")
 	doc = strings.TrimSuffix(doc, "*/")
 	doc = strings.ReplaceAll(doc, "*/", "*\\/")
-	doc = internal.RemoveColumns(doc)
 
 	lines := strings.Split(doc, "\n")
+
 	lines = slice.Map(lines, func(l string) string {
 		return commentLinePrefixRE.ReplaceAllString(l, "")
 	})
 
-	return strings.TrimSpace(strings.Join(lines, "\n"))
+	lines = slice.Filter(lines, func(l string) bool {
+		return !strings.HasPrefix(l, "@")
+	})
+
+	return internal.RemoveColumns(strings.TrimSpace(strings.Join(lines, "\n")))
 }
