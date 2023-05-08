@@ -12,12 +12,18 @@ var (
 	// node.
 	MinifyNone MinifyOptions
 
+	// MinifyUnexported is a preconfigured set of MinifyOptions that minifies
+	// function comments, function bodies, and struct comments for unexported
+	// elements only.
 	MinifyUnexported = MinifyOptions{
 		FuncComment:   true,
 		FuncBody:      true,
 		StructComment: true,
 	}
 
+	// MinifyExported is a variable of MinifyOptions type that configures
+	// minification to remove function comments, function bodies, and struct
+	// comments for exported elements in the Go source code.
 	MinifyExported = MinifyOptions{
 		FuncComment:   true,
 		FuncBody:      true,
@@ -25,6 +31,9 @@ var (
 		Exported:      true,
 	}
 
+	// MinifyComments is a predefined configuration of MinifyOptions that minifies
+	// package, function, and struct comments for both exported and unexported
+	// elements.
 	MinifyComments = MinifyOptions{
 		PackageComment: true,
 		FuncComment:    true,
@@ -32,6 +41,10 @@ var (
 		Exported:       true,
 	}
 
+	// MinifyAll is a variable of MinifyOptions type representing the most
+	// aggressive minification configuration, which removes package comments,
+	// function comments and bodies, and struct comments for both exported and
+	// unexported elements in the input node.
 	MinifyAll = MinifyOptions{
 		PackageComment: true,
 		FuncComment:    true,

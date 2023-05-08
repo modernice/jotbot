@@ -14,14 +14,28 @@ import (
 )
 
 const (
-	// Var represents a variable symbol in the code.
+	// Var is a [Symbol] representing a variable in the code.
 	Var = Symbol("var")
 
-	Class     = Symbol("class")
+	// Class is a [Symbol] representing a class construct in the code. It is used by
+	// the [Finder] to search for and filter class symbols within code.
+	Class = Symbol("class")
+
+	// Interface is a [Symbol] representing an interface code construct, used by the
+	// Finder to search for and filter interface symbols within code.
 	Interface = Symbol("iface")
-	Func      = Symbol("func")
-	Method    = Symbol("method")
-	Property  = Symbol("prop")
+
+	// Func represents a function symbol in the code. It is used by the Finder to
+	// search for and filter function symbols within code.
+	Func = Symbol("func")
+
+	// Method represents a method symbol within a code construct, used by the Finder
+	// to search for and filter methods within the code.
+	Method = Symbol("method")
+
+	// Property represents a property symbol used by the Finder to search for and
+	// filter properties within code.
+	Property = Symbol("prop")
 )
 
 // Symbol represents a type of code construct, such as variables, classes,

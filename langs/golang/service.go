@@ -22,6 +22,9 @@ var (
 	// supported by the package, such as ".go" for Go source files.
 	FileExtensions = []string{".go"}
 
+	// DefaultMinification is a predefined set of minification options used by the
+	// Service to minify Go source code. The options include minifying unexported
+	// elements, exporting functions with their bodies, and minifying all elements.
 	DefaultMinification = []nodes.MinifyOptions{
 		nodes.MinifyUnexported,
 		{
