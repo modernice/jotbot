@@ -61,7 +61,7 @@ export function withMinifyCmd(program: Command) {
     .option('-p, --path <file>', 'Path to TS/JS file (instead of code)')
     .option(
       '-m, --model <model>',
-      'Use max tokens of OpenAI model',
+      'OpenAI model to use',
       'gpt-3.5-turbo' as TiktokenModel,
     )
     .option(
@@ -93,6 +93,7 @@ function run(code: string, options: Options) {
     enabled: options.verbose ?? false,
   })
 
+  const model = options.model
   const maxTokens = options.tokens || maxTokensForModel(options.model)
 
   const stepsOption = options.steps?.length
@@ -116,7 +117,7 @@ function run(code: string, options: Options) {
     info(`Minifying code ...`)
   }
 
-  const min = minifyTo(maxTokens, code, { steps })
+  const min = minifyTo(maxTokens, code, { model, steps })
   const { minified, inputTokens, tokens, steps: executedSteps } = min
 
   log('')

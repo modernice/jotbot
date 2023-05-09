@@ -318,6 +318,7 @@ describe('minify', () => {
 			` // 4 tokens
 
       const { tokens, inputTokens, minified } = minify(code, {
+        model: 'text-davinci-003',
         computeTokens: true,
       })
 
@@ -337,7 +338,9 @@ describe('minifyTo', () => {
 			function foo() {}
 		` // 15 tokens
 
-    const { tokens, inputTokens, minified, steps } = minifyTo(15, code)
+    const { tokens, inputTokens, minified, steps } = minifyTo(15, code, {
+      model: 'text-davinci-003',
+    })
 
     expect(minified).toEqual(code)
     expect(inputTokens).toHaveLength(15)
@@ -357,7 +360,9 @@ describe('minifyTo', () => {
 			function foo() {}
 		` // 4 tokens
 
-    const { tokens, inputTokens, minified, steps } = minifyTo(14, code)
+    const { tokens, inputTokens, minified, steps } = minifyTo(14, code, {
+      model: 'text-davinci-003',
+    })
 
     expect(minified).toEqual(wantMinified)
     expect(inputTokens).toHaveLength(15)
@@ -402,6 +407,7 @@ describe('minifyTo', () => {
 		` // 4 tokens
 
     const { tokens, inputTokens, minified, steps } = minifyTo(14, code, {
+      model: 'text-davinci-003',
       steps: [{ functions: true }],
     })
 
