@@ -31,7 +31,7 @@ pnpm i -g jotbot-ts@latest
 Within your Go and/or TypeScript codebase, run:
 
 ```
-jotbot generate
+jotbot generate --key OPENAI_API_KEY
 ```
 
 ---
