@@ -29,7 +29,7 @@ func propOrMethodPrompt(input generate.Input) string {
 	owner := extractOwner(input.Identifier)
 
 	return fmt.Sprintf(
-		"Write a concise TSDoc comment for %s, focusing on its purpose and how it is used within the context of %q. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose symbol references in {@link} braces. Here is the source code for reference:\n\n%s",
+		"Write a concise TSDoc comment for %s, focusing on its purpose and how it is used within the context of %q. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose external references in {@link} braces. Here is the source code for reference:\n\n%s",
 		target,
 		owner,
 		target,
@@ -43,7 +43,7 @@ func funcPrompt(input generate.Input) string {
 	simple := simpleIdentifier(input.Identifier)
 
 	return fmt.Sprintf(
-		"Write a concise TSDoc comment for %s. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose symbol references in {@link} braces. Here is the source code for reference:\n\n%s",
+		"Write a concise TSDoc comment for %s. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose external references in {@link} braces. Here is the source code for reference:\n\n%s",
 		target,
 		target,
 		simple,
@@ -62,7 +62,7 @@ func defaultPrompt(input generate.Input) string {
 	}
 
 	return fmt.Sprintf(
-		"Write a concise TSDoc comment for %s. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose symbol references in {@link} braces. %sHere is the source code for reference:\n\n%s",
+		"Write a concise TSDoc comment for %s. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose external references in {@link} braces. %sHere is the source code for reference:\n\n%s",
 		target,
 		target,
 		simple,
