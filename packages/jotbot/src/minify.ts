@@ -33,6 +33,13 @@ const propertyCommentsRE =
 const methodCommentsRE = /(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*(?=(?:\w+\s*\())/g
 const emptyLineRE = /^\s*[\r\n]+/gm
 
+/**
+ * MinifyOptions is an interface that provides optional configuration settings
+ * for the minification process. It allows setting specific flags for removing
+ * comments and empty lines from various code elements, as well as enabling the
+ * computation of token counts for input and minified code using a specified
+ * {@link TiktokenModel}.
+ */
 export interface MinifyOptions<ComputeTokens extends boolean = never>
   extends Partial<MinifyFlags> {
   /**
@@ -53,6 +60,12 @@ export interface MinifyOptions<ComputeTokens extends boolean = never>
   model?: [ComputeTokens] extends [true] ? TiktokenModel : never
 }
 
+/**
+ * MinifyFlags represents an interface for specifying which code elements should
+ * be minified, such as variables, functions, classes, interfaces, properties,
+ * methods, and empty lines. This is used in the minification process to
+ * configure the removal of comments and empty lines for a more compact output.
+ */
 export interface MinifyFlags {
   /**
    * Determines whether variable comments should be removed during the

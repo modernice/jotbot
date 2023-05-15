@@ -61,14 +61,12 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
-	if cfg.Generate.Root != "." {
-		if !filepath.IsAbs(cfg.Generate.Root) {
-			wd, err := os.Getwd()
-			if err != nil {
-				return fmt.Errorf("get working directory: %w", err)
-			}
-			cfg.Generate.Root = filepath.Join(wd, cfg.Generate.Root)
+	if !filepath.IsAbs(cfg.Generate.Root) {
+		wd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("get working directory: %w", err)
 		}
+		cfg.Generate.Root = filepath.Join(wd, cfg.Generate.Root)
 	}
 
 	var level slog.Level
@@ -85,6 +83,8 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 		},
 	}.NewTextHandler(os.Stdout))
 	logger := slog.New(logHandler)
+
+	logger.Info(fmt.Sprintf("Root: %s", cfg.Generate.Root))
 
 	goFinder := golang.NewFinder(
 		golang.FindTests(cfg.Generate.IncludeTests),
