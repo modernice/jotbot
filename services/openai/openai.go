@@ -118,7 +118,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 
 	generate := svc.useModel(req.Model)
 
-	// TODO(bounoable): Make timeout configurable
+	// TODO(modernice): Make timeout configurable
 	timeout, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -206,7 +206,7 @@ func (svc *Service) createWithChat(ctx context.Context, req openai.CompletionReq
 
 	choice := resp.Choices[0]
 	res := result{
-		finishReason: choice.FinishReason,
+		finishReason: string(choice.FinishReason),
 		text:         choice.Message.Content,
 	}
 
@@ -293,6 +293,7 @@ var modelMaxTokens = map[string]int{
 	openai.GPT432K:            32768,
 	openai.GPT40314:           8192,
 	openai.GPT4:               8192,
+	openai.GPT3Dot5Turbo16K:   16384,
 	openai.GPT3Dot5Turbo0301:  4096,
 	openai.GPT3Dot5Turbo:      4096,
 	openai.GPT3TextDavinci003: 4097,

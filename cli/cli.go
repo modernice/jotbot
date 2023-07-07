@@ -73,7 +73,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 	if cfg.Verbose {
 		level = slog.LevelDebug
 	}
-	logHandler := internal.PrettyLogger(slog.HandlerOptions{
+	logHandler := internal.PrettyLogger(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: level,
 		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
@@ -81,7 +81,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 			}
 			return a
 		},
-	}.NewTextHandler(os.Stdout))
+	}))
 	logger := slog.New(logHandler)
 
 	logger.Info(fmt.Sprintf("Root: %s", cfg.Generate.Root))
@@ -101,7 +101,7 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 
 	tsFinder := ts.NewFinder(
 		ts.Symbols(cfg.Generate.Symbols...),
-		// TODO(bounoable): Make this work for TS code
+		// TODO(modernice): Make this work for TS code
 		// ts.IncludeDocumented(cfg.Generate.Override),
 	)
 	tssvc := ts.New(ts.Model(cfg.Generate.Model), ts.WithFinder(tsFinder))
