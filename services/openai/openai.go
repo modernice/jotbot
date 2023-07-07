@@ -95,7 +95,7 @@ func New(apiKey string, opts ...Option) (*Service, error) {
 	}
 	svc.log.Debug(fmt.Sprintf("[OpenAI] Using model %q", svc.model))
 
-	codec, err := tokenizer.ForModel(tokenizer.Model(svc.model))
+	codec, err := internal.OpenAITokenizer(svc.model)
 	if err != nil {
 		return nil, fmt.Errorf("get tokenizer for model %q: %w", svc.model, err)
 	}
@@ -265,17 +265,8 @@ func (svc *Service) printUsage(usage openai.Usage) {
 	svc.log.Debug("[OpenAI] Usage info", "prompt", usage.PromptTokens, "completion", usage.CompletionTokens, "total", usage.TotalTokens)
 }
 
-var chatModels = map[string]bool{
-	openai.GPT4:              true,
-	openai.GPT40314:          true,
-	openai.GPT432K:           true,
-	openai.GPT432K0314:       true,
-	openai.GPT3Dot5Turbo:     true,
-	openai.GPT3Dot5Turbo0301: true,
-}
-
 func isChatModel(model string) bool {
-	return chatModels[model]
+	return strings.HasPrefix(model, "gpt-")
 }
 
 // MaxTokensForModel returns the maximum number of tokens allowed for the

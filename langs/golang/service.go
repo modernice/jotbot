@@ -116,7 +116,7 @@ func New(opts ...Option) (*Service, error) {
 		svc.model = openai.DefaultModel
 	}
 
-	codec, err := tokenizer.ForModel(tokenizer.Model(svc.model))
+	codec, err := internal.OpenAITokenizer(svc.model)
 	if err != nil {
 		return nil, fmt.Errorf("create tokenizer: %w", err)
 	}

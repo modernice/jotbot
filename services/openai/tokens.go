@@ -2,8 +2,10 @@ package openai
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
+	"github.com/modernice/jotbot/internal"
 	"github.com/sashabaranov/go-openai"
 	"github.com/tiktoken-go/tokenizer"
 )
@@ -24,18 +26,14 @@ func ChatTokens(model string, messages []openai.ChatCompletionMessage) (int, err
 	}
 
 	var (
-		perMessage int
+		perMessage = 3
 		perName    int
 	)
-	switch tokenizer.Model(model) {
-	case tokenizer.GPT4:
-		perMessage = 3
+
+	if strings.HasPrefix(model, "gpt-4") {
 		perName = 1
-	case tokenizer.GPT35Turbo:
-		perMessage = 3
+	} else if strings.HasPrefix(model, "gpt-3.5") {
 		perName = -1
-	default:
-		return 0, fmt.Errorf("unsupported model %q", model)
 	}
 
 	tokens := 3 // every reply is primed with <|start|>assistant<|message|>
@@ -62,7 +60,7 @@ func getCodec(model string) (tokenizer.Codec, error) {
 	codec, ok := codecs[model]
 	if !ok {
 		var err error
-		if codec, err = tokenizer.ForModel(tokenizer.Model(model)); err != nil {
+		if codec, err = internal.OpenAITokenizer(model); err != nil {
 			return nil, err
 		}
 		codecs[model] = codec
