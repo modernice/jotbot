@@ -51,8 +51,8 @@ jotbot generate --key OPENAI_API_KEY
 
 JotBot utilizes OpenAI's GPT models to generate documentation. By default,
 JotBot uses the `gpt-3.5-turbo` model which provides good results at
-a cost-effective rate. However, the best results are produced by `gpt-4` and
-`text-davinci-003`, which are 10-30x more expensive than `gpt-3.5-turbo`.
+a cost-effective rate. ~~However, the best results are produced by `gpt-4` and
+`text-davinci-003`, which are 10-30x more expensive than `gpt-3.5-turbo`.~~
 
 You are free to choose any model from the [OpenAI Docs](https://platform.openai.com/docs/models)
 and pass it via the `--model|-m` flag:
