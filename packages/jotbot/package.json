@@ -1,6 +1,6 @@
 {
   "name": "jotbot-ts",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "JotBot utilities for TypeScript and JavaScript",
   "author": "Saman Hosseini <bounoable@gmail.com>",
   "license": "MIT",
