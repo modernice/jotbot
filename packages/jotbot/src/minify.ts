@@ -1,5 +1,5 @@
-import type { TiktokenModel } from '@dqbd/tiktoken'
-import { encoding_for_model } from '@dqbd/tiktoken'
+import type { TiktokenModel } from 'tiktoken'
+import { encoding_for_model } from 'tiktoken'
 
 /**
  * Defines an array of {@link MinifyFlags} objects representing the default

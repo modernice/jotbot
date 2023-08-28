@@ -1,5 +1,5 @@
 import type { Command } from 'commander'
-import type { TiktokenModel } from '@dqbd/tiktoken'
+import type { TiktokenModel } from 'tiktoken'
 import type { MinificationStep, MinifyFlags, MinifyToResult } from '../minify'
 import { defaultMinificationSteps, isMinifyFlag, minifyTo } from '../minify'
 import { readSource } from '../parse'

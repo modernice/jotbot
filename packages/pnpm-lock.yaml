@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 patchedDependencies:
   pkg-types@1.0.2:
     hash: yljoujhdufzobmjtr5vx4opuai
@@ -11,15 +15,15 @@ importers:
 
   jotbot:
     dependencies:
-      '@dqbd/tiktoken':
-        specifier: ^1.0.7
-        version: 1.0.7
       commander:
         specifier: ^10.0.1
         version: 10.0.1
       consola:
         specifier: ^3.1.0
         version: 3.1.0
+      tiktoken:
+        specifier: ^1.0.10
+        version: 1.0.10
       typescript:
         specifier: ^5.0.4
         version: 5.0.4
@@ -237,10 +241,6 @@ packages:
       '@babel/helper-validator-identifier': 7.19.1
       to-fast-properties: 2.0.0
     dev: true
-
-  /@dqbd/tiktoken@1.0.7:
-    resolution: {integrity: sha512-bhR5k5W+8GLzysjk8zTMVygQZsgvf7W1F0IlL4ZQ5ugjo5rCyiwGM5d8DYriXspytfu98tv59niang3/T+FoDw==}
-    dev: false
 
   /@esbuild-kit/cjs-loader@2.4.2:
     resolution: {integrity: sha512-BDXFbYOJzT/NBEtp71cvsrGPwGAMGRB/349rwKuoxNSiKjPraNNnlK6MIIabViCjqZugu6j+xeMDlEkWdHHJSg==}
@@ -521,7 +521,7 @@ packages:
       '@actions/exec': 1.1.1
       '@actions/github': 2.2.0(@octokit/core@4.2.0)
       '@typescript-eslint/eslint-plugin': 3.10.1(@typescript-eslint/parser@3.10.1)(eslint@7.32.0)(typescript@5.0.4)
-      '@typescript-eslint/parser': 3.10.1(eslint@7.32.0)(typescript@5.0.4)
+      '@typescript-eslint/parser': 3.10.1(eslint@8.39.0)(typescript@5.0.4)
       eslint: 7.32.0
     transitivePeerDependencies:
       - '@octokit/core'
@@ -947,7 +947,7 @@ packages:
         optional: true
     dependencies:
       '@typescript-eslint/experimental-utils': 3.10.1(eslint@7.32.0)(typescript@5.0.4)
-      '@typescript-eslint/parser': 3.10.1(eslint@7.32.0)(typescript@5.0.4)
+      '@typescript-eslint/parser': 3.10.1(eslint@8.39.0)(typescript@5.0.4)
       debug: 4.3.4
       eslint: 7.32.0
       functional-red-black-tree: 1.0.1
@@ -1004,7 +1004,24 @@ packages:
       - typescript
     dev: true
 
-  /@typescript-eslint/parser@3.10.1(eslint@7.32.0)(typescript@5.0.4):
+  /@typescript-eslint/experimental-utils@3.10.1(eslint@8.39.0)(typescript@5.0.4):
+    resolution: {integrity: sha512-DewqIgscDzmAfd5nOGe4zm6Bl7PKtMG2Ad0KG8CUZAHlXfAKTF9Ol5PXhiMh39yRL2ChRH1cuuUGOcVyyrhQIw==}
+    engines: {node: ^10.12.0 || >=12.0.0}
+    peerDependencies:
+      eslint: '*'
+    dependencies:
+      '@types/json-schema': 7.0.11
+      '@typescript-eslint/types': 3.10.1
+      '@typescript-eslint/typescript-estree': 3.10.1(typescript@5.0.4)
+      eslint: 8.39.0
+      eslint-scope: 5.1.1
+      eslint-utils: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+    dev: true
+
+  /@typescript-eslint/parser@3.10.1(eslint@8.39.0)(typescript@5.0.4):
     resolution: {integrity: sha512-Ug1RcWcrJP02hmtaXVS3axPPTTPnZjupqhgj+NnZ6BCkwSImWk/283347+x9wN+lqOdK9Eo3vsyiyDHgsmiEJw==}
     engines: {node: ^10.12.0 || >=12.0.0}
     peerDependencies:
@@ -1015,10 +1032,10 @@ packages:
         optional: true
     dependencies:
       '@types/eslint-visitor-keys': 1.0.0
-      '@typescript-eslint/experimental-utils': 3.10.1(eslint@7.32.0)(typescript@5.0.4)
+      '@typescript-eslint/experimental-utils': 3.10.1(eslint@8.39.0)(typescript@5.0.4)
       '@typescript-eslint/types': 3.10.1
       '@typescript-eslint/typescript-estree': 3.10.1(typescript@5.0.4)
-      eslint: 7.32.0
+      eslint: 8.39.0
       eslint-visitor-keys: 1.3.0
       typescript: 5.0.4
     transitivePeerDependencies:
@@ -3761,6 +3778,10 @@ packages:
   /text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
+
+  /tiktoken@1.0.10:
+    resolution: {integrity: sha512-gF8ndTCNu7WcRFbl1UUWaFIB4CTXmHzS3tRYdyUYF7x3C6YR6Evoao4zhKDmWIwv2PzNbzoQMV8Pxt+17lEDbA==}
+    dev: false
 
   /time-zone@1.0.0:
     resolution: {integrity: sha512-TIsDdtKo6+XrPtiTm1ssmMngN1sAhyKnTO2kunQWqNPWIVvCm15Wmw4SWInwTVgJ5u/Tr04+8Ei9TNcw4x4ONA==}
