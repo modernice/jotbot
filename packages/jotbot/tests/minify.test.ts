@@ -6,7 +6,7 @@ import {
   minify,
   minifyTo,
 } from '../src/minify'
-import { encoding_for_model } from '@dqbd/tiktoken'
+import { encoding_for_model } from 'tiktoken'
 
 describe('minify', () => {
   describe('by default', () => {
