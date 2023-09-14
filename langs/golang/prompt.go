@@ -4,23 +4,43 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/modernice/jotbot/generate"
 )
 
-// Prompt generates a formatted string instructing the user to write a concise
-// GoDoc comment for a given identifier, adhering to Go library documentation
-// style and conventions, without including links, source code, or code
-// examples. It takes an input of type [generate.Input] and returns the
-// generated prompt string.
-func Prompt(input generate.Input) string {
+// Prompt takes an input of type [generate.Input] and generates a string that
+// forms a GoDoc-style comment for the input. It first creates a target
+// description of the identifier contained in the input using the Target
+// function, and obtains a simplified identifier with the simpleIdentifier
+// function. The resulting string is formatted to provide instructions on how to
+// write a GoDoc comment for the targeted identifier.
+func Prompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
-	return fmt.Sprintf(
-		"Write a concise comment for %s in GoDoc format. Do not including links, source code, or code examples. Write the comment only for %s. You must not describe the type of %s, just describe what it does. You must enclose references to other types within brackets ([]). You must begin the comment with %q, and maintain the writing style consistent with Go library documentation. Here is the source code for reference:\n\n%s",
+	return heredoc.Docf(`
+		Write a comment for %s in idiomatic GoDoc format. Do not include any external links or source code.
+		If you provide a code example, it must be short, concise, and only for %s.
+
+		Describe what %s does but not what it _technically_ is. For example, if %s is a function that adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "adds two integers.".
+		
+		You must enclose references to other types within brackets ([]). For example, if %q is a function that returns a *Foo, you must describe it as "returns a [*Foo].".
+
+		You must begin the comment exactly with "%s ", and maintain the writing style consistent with Go library documentation.
+
+		Output only the unquoted comment, do not include comment markers (// or /* */).
+
+		Here is the source code for reference:
+		---
+		# %s
+		%s
+	`,
+		target,
 		target,
 		target,
 		simple,
 		simple,
+		simple,
+		input.File,
 		input.Code,
 	)
 }

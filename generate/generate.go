@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -40,7 +41,7 @@ type Service interface {
 type Language interface {
 	// Prompt returns a formatted string using the provided Input for a Language
 	// implementation.
-	Prompt(Input) string
+	Prompt(PromptInput) string
 }
 
 // Minifier is an interface that provides a method to minify a byte slice,
@@ -66,6 +67,19 @@ func (f Input) String() string {
 	return fmt.Sprintf("%s (%s)", f.Identifier, f.Language)
 }
 
+// PromptInput is an extension of the [Input] type that includes the filename
+// associated with the input. It is used when generating documentation for a
+// unit of code from a specific file, providing additional context for the
+// documentation generation process. The PromptInput consists of the code to be
+// documented, its language, an identifier, and the name of the file where this
+// code resides. This type is particularly useful when a documentation
+// generation process needs to be aware of the source file of a given unit of
+// code.
+type PromptInput struct {
+	Input
+	File string
+}
+
 // Context is an interface that extends the standard [context.Context] and
 // provides additional methods to retrieve the associated [Input] and prompt
 // string for the current context. It is used during the documentation
@@ -75,7 +89,7 @@ type Context interface {
 
 	// Input returns the Input associated with the Context, which contains code,
 	// language, and identifier information.
-	Input() Input
+	Input() PromptInput
 
 	// Prompt returns the prompt string for the current [Context].
 	Prompt() string
@@ -234,12 +248,15 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 		}()
 
 		for i := 0; i < g.symbolWorkers; i++ {
-			go func() {
+			go func(file string) {
 				defer wg.Done()
 				for input := range queue {
 					g.log.Info(fmt.Sprintf("Generating %s ...", input))
 
-					doc, err := g.Generate(ctx, input)
+					doc, err := g.Generate(ctx, PromptInput{
+						Input: input,
+						File:  file,
+					})
 					if err != nil {
 						fail(fmt.Errorf("generate %q: %w", input.Identifier, err))
 						continue
@@ -251,7 +268,7 @@ func (g *Generator) Files(ctx context.Context, files map[string][]Input) (<-chan
 					case docs <- Documentation{Input: input, Text: doc}:
 					}
 				}
-			}()
+			}(file)
 		}
 
 		result, err := internal.Drain(docs, nil)
@@ -359,7 +376,7 @@ func (g *Generator) distributeWork(files map[string][]Input) (func(context.Conte
 // associated Language and Service. It returns an error if the specified
 // language is not registered or if there is an issue generating the
 // documentation.
-func (g *Generator) Generate(ctx context.Context, input Input) (string, error) {
+func (g *Generator) Generate(ctx context.Context, input PromptInput) (string, error) {
 	lang, ok := g.languages[input.Language]
 	if !ok {
 		return "", fmt.Errorf("unknown language %q", input.Language)
@@ -379,6 +396,8 @@ func (g *Generator) Generate(ctx context.Context, input Input) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("service: %w", err)
 	}
+
+	doc = strings.Trim(doc, `"' `)
 
 	if g.footer != "" {
 		doc = fmt.Sprintf("%s\n\n%s", doc, g.footer)

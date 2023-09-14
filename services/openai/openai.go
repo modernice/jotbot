@@ -118,7 +118,7 @@ func (svc *Service) GenerateDoc(ctx generate.Context) (string, error) {
 
 	generate := svc.useModel(req.Model)
 
-	// TODO(modernice): Make timeout configurable
+	// TODO(bounoable): Make timeout configurable
 	timeout, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 

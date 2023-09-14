@@ -96,7 +96,7 @@ func (svc *Service) Minify(code []byte) ([]byte, error) {
 
 // Prompt generates a prompt string from the provided generate.Input, which can
 // be used in a code generation service request.
-func (svc *Service) Prompt(input generate.Input) string {
+func (svc *Service) Prompt(input generate.PromptInput) string {
 	return Prompt(input)
 }
 

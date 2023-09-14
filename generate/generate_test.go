@@ -27,10 +27,13 @@ func TestGenerator_Generate(t *testing.T) {
 	`)
 
 	g := generate.New(svc, generate.WithLanguage("go", golang.Must()))
-	in := generate.Input{
-		Code:       []byte(code),
-		Language:   "go",
-		Identifier: "Add",
+	in := generate.PromptInput{
+		File: "foo.go",
+		Input: generate.Input{
+			Code:       []byte(code),
+			Language:   "go",
+			Identifier: "Add",
+		},
 	}
 
 	got, err := g.Generate(context.Background(), in)
@@ -122,10 +125,13 @@ func TestFooter(t *testing.T) {
 
 	g := generate.New(svc, generate.Footer("This is a footer."), generate.WithLanguage("go", golang.Must()))
 
-	doc, err := g.Generate(context.Background(), generate.Input{
-		Code:       []byte("package foo\n\nfunc Foo() {}"),
-		Language:   "go",
-		Identifier: "Foo",
+	doc, err := g.Generate(context.Background(), generate.PromptInput{
+		File: "foo.go",
+		Input: generate.Input{
+			Code:       []byte("package foo\n\nfunc Foo() {}"),
+			Language:   "go",
+			Identifier: "Foo",
+		},
 	})
 	if err != nil {
 		t.Fatalf("Generate() failed: %v", err)

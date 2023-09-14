@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/modernice/jotbot/generate"
 )
 
@@ -12,7 +13,7 @@ import (
 // and its context. The generated prompt instructs the user to focus on the
 // purpose and usage of the identifier, without including links, source code, or
 // code examples.
-func Prompt(input generate.Input) string {
+func Prompt(input generate.PromptInput) string {
 	switch extractType(input.Identifier) {
 	case "prop", "method":
 		return propOrMethodPrompt(input)
@@ -23,50 +24,96 @@ func Prompt(input generate.Input) string {
 	}
 }
 
-func propOrMethodPrompt(input generate.Input) string {
+func propOrMethodPrompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
-	owner := extractOwner(input.Identifier)
+	// owner := extractOwner(input.Identifier)
 
-	return fmt.Sprintf(
-		"Write a concise TSDoc comment for %s, focusing on its purpose and how it is used within the context of %q. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose external references in {@link} braces. Here is the source code for reference:\n\n%s",
+	return heredoc.Docf(`
+		Write a comment for %s in TSDoc format. Do not include any external links or source code.
+		If you provide a code example, it must be short, concise, and only for %s.
+
+		Write the comment in natural language. For example, if %s adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "%s adds two integers.".
+		
+		You must enclose references to other types within {@link} references. For example, if %q returns a Foo, you must describe it as "returns a {@link Foo}.".
+
+		You should maintain the writing style consistent with TS library documentation.
+
+		Output only the unquoted comment, do not include comment markers (// or /* */).
+
+		Here is the source code for reference:
+		---
+		# %s
+		%s
+	`,
 		target,
-		owner,
 		target,
 		simple,
+		simple,
+		simple,
+		input.File,
 		input.Code,
 	)
 }
 
-func funcPrompt(input generate.Input) string {
+func funcPrompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
 
-	return fmt.Sprintf(
-		"Write a concise TSDoc comment for %s. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose external references in {@link} braces. Here is the source code for reference:\n\n%s",
+	return heredoc.Docf(`
+		Write a comment for %s in TSDoc format. Do not include any external links or source code.
+		If you provide a code example, it must be short, concise, and only for %s.
+
+		Write the comment in natural language. For example, if %s adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "%s adds two integers.".
+		
+		You must enclose references to other types within {@link} references. For example, if %q returns a Foo, you must describe it as "returns a {@link Foo}.".
+
+		You should maintain the writing style consistent with TS library documentation.
+
+		Output only the unquoted comment, do not include comment markers (// or /* */).
+
+		Here is the source code for reference:
+		---
+		# %s
+		%s
+	`,
 		target,
 		target,
 		simple,
+		simple,
+		simple,
+		input.File,
 		input.Code,
 	)
 }
 
-func defaultPrompt(input generate.Input) string {
+func defaultPrompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
 
-	var beginWith string
-	switch extractType(input.Identifier) {
-	case "type", "iface", "class":
-		beginWith = fmt.Sprintf(`You must begin the comment with "%s ". `, simple)
-	}
+	return heredoc.Docf(`
+		Write a comment for %s in TSDoc format. Do not include any external links or source code.
+		If you provide a code example, it must be short, concise, and only for %s.
 
-	return fmt.Sprintf(
-		"Write a concise TSDoc comment for %s. You must not output links, source code, or code examples. Write the comment only for %s. Don't describe what %s is, but what it does. Enclose external references in {@link} braces. %sHere is the source code for reference:\n\n%s",
+		Write the comment in natural language. For example, if %s is a function that adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "%s adds two integers.".
+		
+		You must enclose references to other types within {@link} references. For example, if %q returns a Foo, you must describe it as "returns a {@link Foo}.".
+
+		You should maintain the writing style consistent with TS library documentation.
+
+		Output only the unquoted comment, do not include comment markers (// or /* */).
+
+		Here is the source code for reference:
+		---
+		# %s
+		%s
+	`,
 		target,
 		target,
 		simple,
-		beginWith,
+		simple,
+		simple,
+		input.File,
 		input.Code,
 	)
 }
@@ -133,13 +180,13 @@ func extractType(identifier string) string {
 	return ""
 }
 
-func extractOwner(identifier string) string {
-	parts := strings.Split(identifier, ":")
-	if len(parts) != 2 {
-		return identifier
-	}
-	if parts = strings.Split(parts[1], "."); len(parts) == 2 {
-		return parts[0]
-	}
-	return identifier
-}
+// func extractOwner(identifier string) string {
+// 	parts := strings.Split(identifier, ":")
+// 	if len(parts) != 2 {
+// 		return identifier
+// 	}
+// 	if parts = strings.Split(parts[1], "."); len(parts) == 2 {
+// 		return parts[0]
+// 	}
+// 	return identifier
+// }

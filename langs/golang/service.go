@@ -201,7 +201,7 @@ func (svc *Service) Minify(code []byte) ([]byte, error) {
 // Prompt takes an input of type [generate.Input] and returns a string. If the
 // [Service] is configured to clear comments, it clears the comments from the
 // input code before generating the prompt.
-func (svc *Service) Prompt(input generate.Input) string {
+func (svc *Service) Prompt(input generate.PromptInput) string {
 	if svc.clearComments {
 		if node, err := nodes.Parse(input.Code); err == nil {
 			reset.Comments(node)

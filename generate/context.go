@@ -7,11 +7,11 @@ var _ Context = (*genCtx)(nil)
 type genCtx struct {
 	context.Context
 
-	input  Input
+	input  PromptInput
 	prompt string
 }
 
-func newCtx(parent context.Context, input Input, prompt string) *genCtx {
+func newCtx(parent context.Context, input PromptInput, prompt string) *genCtx {
 	return &genCtx{
 		Context: parent,
 		input:   input,
@@ -19,8 +19,9 @@ func newCtx(parent context.Context, input Input, prompt string) *genCtx {
 	}
 }
 
-// Input returns the Input associated with the genCtx instance.
-func (ctx *genCtx) Input() Input {
+// Input returns the PromptInput associated with the genCtx instance. This is
+// typically used to retrieve user input that has been stored within a context.
+func (ctx *genCtx) Input() PromptInput {
 	return ctx.input
 }
 
