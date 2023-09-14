@@ -18,8 +18,7 @@ func Prompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
 	return heredoc.Docf(`
-		Write a comment for %s in idiomatic GoDoc format. Do not include any external links or source code.
-		If you provide a code example, it must be short, concise, and only for %s.
+		Write a comment for %s in idiomatic GoDoc format. Do not include any external links, source code, or (code) examples.
 
 		Describe what %s does but not what it _technically_ is. For example, if %s is a function that adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "adds two integers.".
 		
@@ -29,12 +28,13 @@ func Prompt(input generate.PromptInput) string {
 
 		Output only the unquoted comment, do not include comment markers (// or /* */).
 
+		Keep the comment as short as possible while still being descriptive.
+
 		Here is the source code for reference:
 		---
 		# %s
 		%s
 	`,
-		target,
 		target,
 		target,
 		simple,

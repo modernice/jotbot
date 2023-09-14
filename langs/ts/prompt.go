@@ -30,8 +30,7 @@ func propOrMethodPrompt(input generate.PromptInput) string {
 	// owner := extractOwner(input.Identifier)
 
 	return heredoc.Docf(`
-		Write a comment for %s in TSDoc format. Do not include any external links or source code.
-		If you provide a code example, it must be short, concise, and only for %s.
+		Write a comment for %s in TSDoc format. Do not include any external links, source code, or (code) examples.
 
 		Write the comment in natural language. For example, if %s adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "%s adds two integers.".
 		
@@ -41,12 +40,13 @@ func propOrMethodPrompt(input generate.PromptInput) string {
 
 		Output only the unquoted comment, do not include comment markers (// or /* */).
 
+		Keep the comment as short as possible while still being descriptive.
+
 		Here is the source code for reference:
 		---
 		# %s
 		%s
 	`,
-		target,
 		target,
 		simple,
 		simple,
@@ -61,8 +61,7 @@ func funcPrompt(input generate.PromptInput) string {
 	simple := simpleIdentifier(input.Identifier)
 
 	return heredoc.Docf(`
-		Write a comment for %s in TSDoc format. Do not include any external links or source code.
-		If you provide a code example, it must be short, concise, and only for %s.
+		Write a comment for %s in TSDoc format. Do not include any external links, source code, or (code) examples.
 
 		Write the comment in natural language. For example, if %s adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "%s adds two integers.".
 		
@@ -72,12 +71,13 @@ func funcPrompt(input generate.PromptInput) string {
 
 		Output only the unquoted comment, do not include comment markers (// or /* */).
 
+		Keep the comment as short as possible while still being descriptive.
+
 		Here is the source code for reference:
 		---
 		# %s
 		%s
 	`,
-		target,
 		target,
 		simple,
 		simple,
@@ -92,8 +92,7 @@ func defaultPrompt(input generate.PromptInput) string {
 	simple := simpleIdentifier(input.Identifier)
 
 	return heredoc.Docf(`
-		Write a comment for %s in TSDoc format. Do not include any external links or source code.
-		If you provide a code example, it must be short, concise, and only for %s.
+		Write a comment for %s in TSDoc format. Do not include any external links, source code, or (code) examples.
 
 		Write the comment in natural language. For example, if %s is a function that adds two integers, you must not describe it as a "function that adds two integers." Instead, you must describe it as "%s adds two integers.".
 		
@@ -103,12 +102,13 @@ func defaultPrompt(input generate.PromptInput) string {
 
 		Output only the unquoted comment, do not include comment markers (// or /* */).
 
+		Keep the comment as short as possible while still being descriptive.
+
 		Here is the source code for reference:
 		---
 		# %s
 		%s
 	`,
-		target,
 		target,
 		simple,
 		simple,
