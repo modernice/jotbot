@@ -99,9 +99,11 @@ func (cfg *Config) Run(kctx *kong.Context) error {
 		return fmt.Errorf("create Go language service: %w", err)
 	}
 
+	tsSymbols := parseTSSymbols(cfg.Generate.Symbols)
+
 	tsFinder := ts.NewFinder(
-		ts.Symbols(cfg.Generate.Symbols...),
-		// TODO(modernice): Make this work for TS code
+		ts.Symbols(tsSymbols...),
+		// TODO(bounoable): Make this work for TS code
 		// ts.IncludeDocumented(cfg.Generate.Override),
 	)
 	tssvc := ts.New(ts.Model(cfg.Generate.Model), ts.WithFinder(tsFinder))
@@ -219,4 +221,19 @@ func parseMatchers(raw []string) ([]*regexp.Regexp, error) {
 		}
 	}
 	return out, nil
+}
+
+var defaultTSSymbols = []ts.Symbol{
+	ts.Class,
+	ts.Func,
+	ts.Interface,
+	ts.Method,
+	ts.Var,
+}
+
+func parseTSSymbols(cfg []ts.Symbol) []ts.Symbol {
+	if len(cfg) == 0 {
+		return defaultTSSymbols
+	}
+	return cfg
 }
