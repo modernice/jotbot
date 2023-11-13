@@ -18,46 +18,38 @@ import { configureSymbols } from './symbols'
 import { createSourceFile } from './parse'
 
 /**
- * WithSymbolsOption allows specifying an array of {@link SymbolType} to filter
- * the supported nodes while traversing TypeScript code. This is used in
- * conjunction with other options to customize the behavior of the finder
- * function.
+ * The `WithSymbolsOption` interface provides an optional `symbols` property
+ * that can be set with an array of specific symbol types, derived from the
+ * {@link SymbolType}. This allows for fine-tuning the behavior of certain
+ * functions by specifying which symbol types should be considered in their
+ * processing.
  */
 export interface WithSymbolsOption<Symbols extends SymbolType = SymbolType> {
-  /**
-   * Optional property that specifies an array of {@link SymbolType} to be
-   * considered when searching for supported nodes within the context of {@link
-   * WithSymbolsOption}. If not provided, all available symbol types will be
-   * used.
-   */
   symbols?: readonly Symbols[]
 }
 
-/**
- * GlobOption represents a string or an array of strings that define the
- * patterns for matching files and directories.
- */
 export type GlobOption = string | readonly string[]
 
 /**
- * FinderOptions is an interface that extends {@link WithSymbolsOption} and
- * allows to customize the behavior of the symbol finder. It includes an
- * optional `includeDocumented` property, which when set to true, will include
- * documented symbols in the search results.
+ * `FinderOptions` is an interface that specifies the settings for a finder
+ * operation. It extends {@link WithSymbolsOption} by including an optional
+ * `includeDocumented` flag that determines whether documented nodes should be
+ * included in the search results. The type parameter `Symbols` extends {@link
+ * SymbolType} and allows for customization of the symbols considered during the
+ * finding process.
  */
 export interface FinderOptions<Symbols extends SymbolType = SymbolType>
   extends WithSymbolsOption<Symbols> {
-  /**
-   * Determines whether to include documented nodes in the final result. If set
-   * to `true`, both documented and undocumented nodes will be included. If not
-   * specified or set to `false`, only undocumented nodes will be included.
-   */
   includeDocumented?: boolean
 }
 
 /**
- * Creates a finder object with a `find` method, which searches for TypeScript
- * nodes in the given code based on the provided options.
+ * Creates a `find` function encapsulated within a returned object that can be
+ * used to identify and filter nodes in a given piece of TypeScript code based
+ * on the provided {@link FinderOptions}. The `find` function parses the code
+ * into an abstract syntax tree, examines each node to determine if it matches
+ * the specified criteria, including symbol types and documentation status, and
+ * returns an array of {@link RawIdentifier}s representing the identified nodes.
  */
 export function createFinder<Symbols extends SymbolType = SymbolType>(
   options?: FinderOptions<Symbols>,
@@ -109,8 +101,8 @@ function findNodes<Symbols extends SymbolType = SymbolType>(
 }
 
 /**
- * Converts an array of {@link RawIdentifier} findings into a formatted JSON
- * string.
+ * printFindings serializes an array of {@link RawIdentifier} objects into a
+ * pretty-printed JSON string.
  */
 export function printFindings(findings: RawIdentifier[]) {
   return JSON.stringify(findings, null, 2)

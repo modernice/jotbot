@@ -7,10 +7,11 @@ const printer = ts.createPrinter({
 })
 
 /**
- * The `printNode()` function takes a TypeScript {@link ts.Node} as input and
- * returns a string representation of the node, preserving its original
- * formatting. If the node does not have an associated source file, an error is
- * thrown.
+ * Prints a given TypeScript {@link ts.Node} to a string using the TypeScript
+ * compiler's printer utility. The function will throw an error if the node does
+ * not have an associated source file. It returns the printed string
+ * representation of the node without trailing semicolons and with comments
+ * preserved.
  */
 export function printNode(node: ts.Node) {
   const file = node.getSourceFile()
@@ -21,10 +22,12 @@ export function printNode(node: ts.Node) {
 }
 
 /**
- * The `printComment()` function retrieves the leading comments associated with
- * a given TypeScript AST node and returns them as a formatted string. If the
- * node has synthetic leading comments, the function will print those comments;
- * otherwise, it will print the comments from the node's source file.
+ * printComment retrieves and formats the leading comments associated with a
+ * given TypeScript {@link ts.Node}. If the node has synthetic leading comments,
+ * it processes them using printSyntheticComments; otherwise, it defaults to
+ * processing source file comments through printSourceFileComments. It returns a
+ * formatted string representing the extracted comments. If the node lacks an
+ * associated source file, an error is thrown.
  */
 export function printComment(node: ts.Node) {
   const synthetic = ts.getSyntheticLeadingComments(node)
@@ -35,12 +38,15 @@ export function printComment(node: ts.Node) {
 }
 
 /**
- * The `printSyntheticComments()` function takes a TypeScript node or an array
- * of synthesized comments as its input and returns a formatted string
- * containing the comments. If the input is a node, it retrieves the synthetic
- * leading comments associated with the node. The function then concatenates the
- * text of each comment with line breaks and wraps the resulting string in
- * comment delimiters (i.e., `/*` and `*\/`).
+ * Prints the text of synthetic leading comments associated with a given
+ * TypeScript node or an array of synthesized comments. If provided a node, it
+ * retrieves its synthetic leading comments; if provided an array, it uses the
+ * comments directly. The resulting text is formatted as a block comment. This
+ * function is particularly useful for emitting comments that were not
+ * originally present in the source code but were added programmatically during
+ * transformation processes. Returns a string representing the formatted comment
+ * block. If no comments are found or provided, it returns an empty string
+ * enclosed in comment delimiters.
  */
 export function printSyntheticComments(
   nodeOrComments: ts.Node | ts.SynthesizedComment[],
@@ -54,12 +60,12 @@ export function printSyntheticComments(
 }
 
 /**
- * The `printSourceFileComments()` function is used to extract and return the
- * leading comments associated with a given TypeScript node. It retrieves the
- * source file containing the node and its leading comment ranges, then returns
- * a concatenated string of all the leading comments. If the node does not have
- * any source file or leading comments, an error will be thrown or an empty
- * string will be returned, respectively.
+ * Prints the leading comments associated with a given {@link ts.Node} from its
+ * source file. If the node has no associated source file or there are no
+ * leading comments, the function will either throw an error or return an empty
+ * string, respectively. The comments are retrieved directly from the source
+ * text and concatenated into a single string, preserving their original format
+ * and spacing.
  */
 export function printSourceFileComments(node: ts.Node) {
   const file = node.getSourceFile()

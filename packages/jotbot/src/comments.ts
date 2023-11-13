@@ -4,40 +4,40 @@ import { parseIdentifier } from './identifier'
 import { findNode } from './nodes'
 import { printComment } from './print'
 
-/**
- * The `Comments` type represents a collection of comments indexed by their
- * associated identifiers. It provides various utility functions for handling
- * comments in TypeScript source files, such as parsing identifiers, formatting
- * comments, and updating comments associated with specific nodes. The
- * `Comments` type allows for easy manipulation and management of comments
- * within a TypeScript project.
- */
 export type Comments = Record<RawIdentifier, string>
 
 /**
- * The `getIdentifiers()` function takes a `Comments` object as input and
- * returns an array of parsed identifiers. It first retrieves the raw
- * identifiers from the input object, then maps each raw identifier to its
- * parsed form using the `parseIdentifier()` function.
+ * Retrieves a collection of parsed identifiers from the provided comments
+ * mapping. Each identifier in the returned array represents a parsed version of
+ * the raw identifiers used as keys in the comments object. The parsing process
+ * is handled by the {@link parseIdentifier} function, ensuring that each
+ * identifier adheres to a standardized format suitable for further processing
+ * or analysis. This function is typically used to extract and manipulate
+ * identifiers from source code comments for tasks such as documentation
+ * generation or code analysis.
  */
 export function getIdentifiers(comments: Comments) {
   return getRawIdentifiers(comments).map(parseIdentifier)
 }
 
 /**
- * The `getRawIdentifiers()` function takes a `Comments` object as input and
- * returns an array of raw identifiers, which are the keys of the input object.
+ * Retrieves an array of keys from the provided {@link Comments} object, each
+ * key representing a raw identifier within the comments. This array is
+ * specifically typed to match the keys of the {@link Comments} type.
  */
 export function getRawIdentifiers(comments: Comments) {
   return Object.keys(comments) as Array<keyof Comments>
 }
 
 /**
- * The `patchComments()` function takes a TypeScript source file and a record of
- * comments, where the keys are identifiers and the values are the associated
- * comments. It updates the source file by inserting or modifying comments for
- * each identifier found in the record. If an identifier in the record is not
- * found in the source file, an error is thrown.
+ * Updates the comments for identifiers within a TypeScript source file based on
+ * the provided comments map. It iterates over each identifier from the map and
+ * attempts to find and update the corresponding comment in the source file's
+ * syntax tree. If an identifier cannot be found, it throws an error indicating
+ * the missing identifier and file name. The function uses {@link formatComment}
+ * to ensure comments are correctly formatted before being attached to their
+ * respective nodes. Returns nothing but can throw an error for unresolved
+ * identifiers.
  */
 export function patchComments(
   file: ts.SourceFile,
@@ -70,26 +70,20 @@ function updateComment(
 }
 
 /**
- * The `formatComment()` function takes a comment string and optional options
- * object as input, and returns a formatted comment string. The options object
- * can include two properties: `maxLen`, which sets the maximum line length
- * (default is 80), and `enclose`, which determines if the comment should be
- * enclosed in `/* *\/` (default is false). The function splits the input
- * comment into lines based on the maximum line length, and formats each line
- * with a leading ` *`. If `enclose` is true, the formatted comment will be
- * enclosed in `/* *\/`.
+ * Transforms a given string into a formatted comment block, adhering to
+ * specified maximum line length and optional enclosure within comment syntax.
+ * If no maximum line length is provided, it defaults to 80 characters. The
+ * resulting string is structured with asterisk-prefixed lines and, if the
+ * `enclose` option is set to true, the entire block is wrapped within comment
+ * delimiters. This function assumes that the input string uses newlines to
+ * separate paragraphs and maintains paragraph separation in the output. Returns
+ * the formatted comment as a {@link string}.
  */
 export function formatComment(
   comment: string,
   options?: {
-    /**
-     * @default 80
-     */
     maxLen?: number
 
-    /**
-     * @default false
-     */
     enclose?: boolean
   },
 ): string {
@@ -104,9 +98,11 @@ export function formatComment(
 }
 
 /**
- * The `getNodeComments()` function retrieves the leading comments of a given
- * TypeScript node. It returns an object containing an array of comments and the
- * printed text of the node.
+ * Retrieves the comments associated with a given TypeScript {@link ts.Node},
+ * combining both synthetic leading comments and the text representation of the
+ * node's comments. It returns an object containing two properties: `comments`,
+ * an array of synthetic comment objects, and `text`, a string that represents
+ * the formatted comment text for the node.
  */
 export function getNodeComments(node: ts.Node) {
   const comments = ts.getSyntheticLeadingComments(node) ?? []
@@ -119,19 +115,23 @@ export function getNodeComments(node: ts.Node) {
 }
 
 /**
- * The `getInsertPosition()` function returns the line and character position of
- * a given {@link ts.Node} in its source file. This is useful for determining
- * where to insert or update comments within the code.
+ * Determines the line and character position within the source file where a new
+ * comment should be inserted for the specified {@link ts.Node}. Returns an
+ * object containing line and character information.
  */
 export function getInsertPosition(node: ts.Node) {
   return ts.getLineAndCharacterOfPosition(node.getSourceFile(), node.getStart())
 }
 
 /**
- * The `updateNodeComments()` function updates the leading comments of a given
- * TypeScript node with the specified array of comments. It combines the
- * existing synthetic leading comments with the new comments, preserving their
- * order and formatting.
+ * Attaches an array of formatted comment strings to a specified {@link ts.Node}
+ * as synthetic leading comments. Each comment is treated as a multi-line
+ * comment trivia and appended to any existing leading comments of the node. If
+ * the node already has synthetic leading comments, the new comments are added
+ * after the existing ones. This function ensures that each comment has a
+ * trailing newline for proper formatting in the syntax tree. If multiple
+ * comments are provided, they are processed in order and each is appended in
+ * sequence.
  */
 export function updateNodeComments(node: ts.Node, comments: string[]) {
   ts.setSyntheticLeadingComments(node, [

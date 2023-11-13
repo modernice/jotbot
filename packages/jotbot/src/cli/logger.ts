@@ -2,10 +2,11 @@ import type { ConsolaInstance } from 'consola'
 import { createConsola } from 'consola'
 
 /**
- * Creates a new logger instance using {@link createConsola}. The logger writes
- * to the provided output stream, defaults to `process.stderr`, and can be
- * enabled or disabled using the `enabled` option. Returns a {@link
- * ConsolaInstance} object.
+ * Creates a new {@link ConsolaInstance} for logging purposes, using the
+ * provided output stream and options. It defaults to using `process.stderr` for
+ * output if no stream is specified. The verbosity of the logger can be
+ * controlled through the `enabled` option in the settings; when enabled, it
+ * sets a default logging level, otherwise it silences the logger.
  */
 export function createLogger(
   out: NodeJS.WriteStream = process.stderr,

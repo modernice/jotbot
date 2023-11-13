@@ -7,10 +7,16 @@ import { readPackageJSON } from 'pkg-types'
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 
 /**
- * Updates the current version of the package to the specified `version`,
- * builds, and publishes it.
- * Throws an error if the new version is not greater than the current version.
- * @param version - The new version string to update the package to.
+ * Performs the release process for a package by updating its version,
+ * installing dependencies, building the project, committing changes, and
+ * publishing to a package registry. It accepts a version string and checks that
+ * it is greater than the current package version. If successful, it proceeds
+ * with the release steps, otherwise, it throws an error. This operation assumes
+ * that the working directory is a valid package repository and that all
+ * necessary tools are available in the execution environment.
+ * 
+ * Note: The function assumes certain behaviors from external commands like
+ * `pnpm` and `git`, and is intended to be used in a specific project setup.
  */
 export async function release(version: string) {
   const pkg = await readPackageJSON(packageRoot)

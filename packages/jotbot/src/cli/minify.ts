@@ -24,34 +24,14 @@ interface Options
 }
 
 /**
- * The `withMinifyCmd()` function adds a "minify" command to a given
- * Commander.js program. The minify command is used for minifying TypeScript or
- * JavaScript source code. It takes the source code as input, either directly or
- * from a specified file path, and applies a series of minification steps to
- * reduce the number of tokens in the output. The minification process can be
- * customized by specifying the maximum number of output tokens, the
- * minification steps to use, and other options.
- *
- * The function accepts a single parameter:
- *
- * - `program`: A Commander.js program instance to which the "minify" command
- * will be added.
- *
- * The "minify" command supports various options:
- *
- * - `code`: Optional TS/JS source code to minify.
- * - `--path`: Optional path to a TS/JS file to minify (instead of using
- * `code`).
- * - `--model`: OpenAI model used to determine the maximum output tokens
- * (default: 'text-davinci-003').
- * - `--tokens`: Maximum output tokens (overrides `--model`).
- * - `--steps`: Minification steps to use (comma-separated).
- * - `--print-tokens`: Return input and output tokens (requires
- * `--format="json"`).
- * - `--verbose`: Enable verbose logging.
- * - `--format`: Output format, either 'text' or 'json'.
- *
- * The function returns the modified Commander.js program instance.
+ * Integrates a minification command into a given {@link Command} object from
+ * the Commander.js library, enabling the minification of TypeScript or
+ * JavaScript source code. The command 'minify' accepts optional arguments and
+ * flags to specify the source code, path to a file, specific OpenAI model to
+ * use for minification, maximum output tokens, desired minification steps, and
+ * whether to print the input and output tokens. The function returns the
+ * original {@link Command} object with the new 'minify' command appended,
+ * allowing for further chaining or execution within a CLI application.
  */
 export function withMinifyCmd(program: Command) {
   const cmd = program

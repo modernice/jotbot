@@ -2,8 +2,10 @@ import type { TiktokenModel } from 'tiktoken'
 import { encoding_for_model } from 'tiktoken'
 
 /**
- * Defines an array of {@link MinifyFlags} objects representing the default
- * minification steps to be performed when minifying code.
+ * Specifies a sequence of minification configurations to be applied
+ * successively during the code minification process. Each configuration is a
+ * partial set of {@link MinifyFlags}, indicating which aspects of the code are
+ * subject to minification at that particular step.
  */
 export const defaultMinificationSteps = [
   {
@@ -34,103 +36,49 @@ const methodCommentsRE = /(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*(?=(?:\w+\s*\())/g
 const emptyLineRE = /^\s*[\r\n]+/gm
 
 /**
- * MinifyOptions is an interface that provides optional configuration settings
- * for the minification process. It allows setting specific flags for removing
- * comments and empty lines from various code elements, as well as enabling the
- * computation of token counts for input and minified code using a specified
- * {@link TiktokenModel}.
+ * Defines configuration options for the minification process. `MinifyOptions`
+ * is an extension of {@link MinifyFlags} and includes optional properties that
+ * determine the behavior during minification. If `computeTokens` is set, it
+ * indicates whether token counts should be computed, requiring a specified
+ * `model` when `true`. The `model` property is only relevant when
+ * `computeTokens` is `true`, in which case it must be a valid {@link
+ * TiktokenModel}.
  */
 export interface MinifyOptions<ComputeTokens extends boolean = never>
   extends Partial<MinifyFlags> {
-  /**
-   * Determines whether the minification process should compute and return token
-   * counts for the input and minified code. If `true`, {@link MinifyResult}
-   * will include `inputTokens` and `tokens` properties with their respective
-   * token counts. Set this option when you need to know the token counts after
-   * minifying the code.
-   */
   computeTokens?: ComputeTokens
 
-  /**
-   * Specifies the {@link TiktokenModel} to use when the `computeTokens` option
-   * is set to `true`. This model is utilized to calculate the number of tokens
-   * in the input and minified code. If `computeTokens` is not `true`, this
-   * property should not be provided.
-   */
   model?: [ComputeTokens] extends [true] ? TiktokenModel : never
 }
 
 /**
- * MinifyFlags represents an interface for specifying which code elements should
- * be minified, such as variables, functions, classes, interfaces, properties,
- * methods, and empty lines. This is used in the minification process to
- * configure the removal of comments and empty lines for a more compact output.
+ * Represents a set of boolean flags used to configure the minification process.
+ * Each flag indicates whether a specific type of code element—variables,
+ * functions, classes, interfaces, properties, methods, or empty lines—should
+ * be included in the minification process. When a flag is set to `true`, the
+ * corresponding code element will be considered for minification.
  */
 export interface MinifyFlags {
-  /**
-   * Determines whether variable comments should be removed during the
-   * minification process in {@link MinifyFlags}. Set to `true` to remove
-   * variable comments, `false` otherwise.
-   */
   variables: boolean
-  /**
-   * Indicates whether to remove comments associated with functions during
-   * minification. When set to `true`, comments preceding function declarations
-   * will be removed. This is used within the context of {@link MinifyFlags} to
-   * determine which code elements should be minified.
-   */
   functions: boolean
-  /**
-   * Indicates whether class-related comments should be removed during the
-   * minification process. When set to `true`, it enables removing comments
-   * associated with classes in the {@link MinifyFlags} configuration, resulting
-   * in a more compact output.
-   */
   classes: boolean
-  /**
-   * Indicates whether to remove comments associated with interface declarations
-   * during the minification process. Set this property to `true` within a
-   * {@link MinifyFlags} object to enable the removal of comments for
-   * interfaces, improving the minification result by reducing the overall code
-   * size.
-   */
   interfaces: boolean
-  /**
-   * Specifies whether to remove comments associated with property declarations
-   * in the code when minifying. Set to `true` by default in {@link
-   * defaultMinificationSteps}. When used within {@link MinifyFlags}, it
-   * controls the removal of such comments during the minification process.
-   */
   properties: boolean
-  /**
-   * Specifies whether method comments should be removed during minification in
-   * the {@link MinifyFlags}. When set to `true`, method comments will be
-   * stripped from the code, reducing its size for more efficient processing.
-   */
   methods: boolean
-  /**
-   * Determines whether empty lines should be removed from the code when
-   * minifying. If set to `true`, all empty lines will be removed, resulting in
-   * a more compact output. This is used within the context of {@link
-   * MinifyFlags} to configure the minification process.
-   */
   emptyLines: boolean
 }
 
 const _defaultFlags = minifyFlags()
 /**
- * Determines whether the given string is a valid key of the {@link MinifyFlags}
- * interface.
+ * Determines whether the provided string argument is a valid key of the {@link
+ * MinifyFlags} interface. Returns `true` if the argument corresponds to a
+ * property name within {@link MinifyFlags}, otherwise `false`. This check is
+ * case-sensitive and does not account for optional properties.
  */
 export function isMinifyFlag(s: string): s is keyof MinifyFlags {
   return s in _defaultFlags
 }
 
-/**
- * MinifyResult represents the result of a minification process, containing the
- * minified code and optionally the input tokens and output tokens if {@link
- * ComputeTokens} is set to true.
- */
 export type MinifyResult<
   ComputeTokens extends boolean = never,
   WithTokens = true extends ComputeTokens ? true : false,
@@ -142,45 +90,38 @@ export type MinifyResult<
 >
 
 /**
- * MinificationStep represents a single step in the minification process,
- * containing the input code, minified code, input tokens, output tokens, and
- * the specific {@link MinifyFlags} applied during that step.
+ * Represents an individual step in the minification process, containing the
+ * state of the code and associated tokens before and after the step is applied.
+ * Each `MinificationStep` includes the source code prior to minification
+ * (`input`), the resulting code after applying minification (`minified`), and a
+ * set of flags (`flags`) indicating which minification options were used.
+ * Additionally, it provides the original and final tokens as `Uint32Array`
+ * instances when token computation is enabled, offering insight into how the
+ * code's token representation changes through this step. This type is integral
+ * to understanding and debugging each stage of the minification pipeline,
+ * ensuring that developers can track transformations and optimize their code
+ * effectively.
  */
 export interface MinificationStep extends MinifyResult<true> {
-  /**
-   * Represents the input source code for a {@link MinificationStep}. The
-   * `input` property serves as the starting point for minification in the
-   * current step, and is updated as the minification process progresses through
-   * each step.
-   */
   input: string
-  /**
-   * Represents the set of minification options applied to the input code during
-   * the current {@link MinificationStep}. It defines which aspects of the code
-   * have been minified, such as variables, functions, classes, interfaces,
-   * properties, methods, and empty lines.
-   */
   flags: MinifyFlags
 }
 
 type Merge<A, B> = Omit<A, keyof B> & B
 
-/**
- * MinifyToResult is the return type of the {@link minifyTo} function, which
- * takes a maximum token count, source code, and optional settings (including a
- * TiktokenModel and array of Partial<MinifyFlags>) as input. It iteratively
- * minifies the input code based on the provided steps, stopping when the token
- * count is below the maximum threshold. The returned object includes the input
- * code, minified code, input token count, final token count, and an array of
- * executed minification steps.
- */
 export type MinifyToResult = ReturnType<typeof minifyTo>
 
 /**
- * Minifies the input code to fit within the specified maximum number of tokens,
- * using the provided options and minification steps. Returns an object
- * containing the original input code, the minified code, their respective token
- * counts, and details of the executed minification steps.
+ * Performs a sequence of code minification steps on the given source code until
+ * the token count is less than or equal to the specified maximum number of
+ * tokens. The minification process includes optional transformations such as
+ * removal of comments, whitespace, and unused code based on the provided
+ * configuration flags. If a {@link TiktokenModel} is passed in the options, it
+ * is used to encode the source and minified code into tokens for comparison.
+ * The function returns a {@link MinifyToResult}, which includes the original
+ * and minified code strings, their respective token arrays if token computation
+ * was requested, and an array of executed {@link MinificationStep}s detailing
+ * each transformation applied during the minification process.
  */
 export function minifyTo(
   maxTokens: number,
@@ -190,7 +131,11 @@ export function minifyTo(
     steps?: Partial<MinifyFlags>[]
   },
 ) {
-  const model = options?.model ?? 'gpt-3.5-turbo'
+  let model = options?.model ?? 'gpt-3.5-turbo'
+  if ((model as any) === 'gpt-4-1106-preview') {
+    model = 'gpt-4'
+  }
+
   const steps = options?.steps ?? defaultMinificationSteps
   const enc = encoding_for_model(model)
   const executedSteps = [] as MinificationStep[]
@@ -232,9 +177,13 @@ export function minifyTo(
 }
 
 /**
- * Minifies the given code according to the provided options by removing
- * comments and empty lines. Returns the minified code and optionally the number
- * of input and output tokens when `computeTokens` option is enabled.
+ * Transforms a string of code into a more compact version by removing or
+ * altering elements based on specified {@link MinifyFlags}. If the
+ * `computeTokens` option is set, the function also computes and returns the
+ * tokenized representation of both the input and the minified code using the
+ * provided {@link TiktokenModel}. The result is returned as a {@link
+ * MinifyResult}, which includes the minified string and, optionally, the token
+ * arrays.
  */
 export function minify<ComputeTokens extends boolean = never>(
   code: string,
@@ -288,8 +237,8 @@ function minifyCode(code: string, options?: Partial<MinifyFlags>) {
 }
 
 /**
- * Removes empty lines from the given code string and trims any leading or
- * trailing whitespace.
+ * Removes all empty lines from the provided code string, returning the cleaned
+ * text with no leading or trailing whitespace.
  */
 export function removeEmptyLines(code: string) {
   return code.replace(emptyLineRE, '').trim()

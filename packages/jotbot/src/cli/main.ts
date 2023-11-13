@@ -2,12 +2,9 @@ import { fileURLToPath } from 'node:url'
 import { createCLI } from './cli'
 
 /**
- * The main function initializes and runs the command line interface (CLI) by
- * parsing the provided arguments.
- * If no arguments are provided, it uses the default process arguments.
- * 
- * @param args - An optional array of strings representing command line
- * arguments.
+ * Initializes the command-line interface with the given arguments and starts
+ * the parsing process, utilizing the {@link createCLI} utility. If invoked
+ * directly, it will automatically use arguments from the current process.
  */
 export function main(args: readonly string[] = process.argv.slice(2)) {
   const cli = createCLI()

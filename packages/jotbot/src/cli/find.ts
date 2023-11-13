@@ -21,15 +21,13 @@ interface Options
 }
 
 /**
- * The `withFindCmd()` function is used to configure a command-line interface
- * (CLI) command for finding uncommented symbols in TypeScript or JavaScript
- * source code. It takes a `Command` object as input and returns the updated
- * `Command` object with the 'find' command added. The 'find' command allows
- * users to specify various options such as file path, symbols to search for,
- * and output format. Users can also choose to include documented symbols in the
- * search results. The function internally handles reading the source code,
- * creating a finder with the specified options, and printing the findings in
- * the desired format.
+ * Enhances a {@link Command} by adding a `find` sub-command which searches for
+ * uncommented symbols in TypeScript or JavaScript source code. It accepts
+ * source code as an argument or a path to a file using an option. The command
+ * also allows for filtering specific symbol types and can include documented
+ * symbols based on the provided options. Additionally, the output format can be
+ * specified as either 'json' or 'list'. Returns the enhanced {@link Command}
+ * with the new sub-command integrated.
  */
 export function withFindCmd(program: Command) {
   const cmd = program

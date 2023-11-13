@@ -1,5 +1,9 @@
 /**
- * The symbol types to look for in the source code.
+ * Represents the collection of specific symbol type identifiers used within the
+ * system, encompassing items such as functions, variables, classes, methods,
+ * interfaces, properties, and custom types. Each member of this array is a
+ * literal type representing a distinct kind of symbol that can be analyzed or
+ * manipulated by the system's features.
  */
 export const symbolTypes = [
   'func',
@@ -12,44 +16,40 @@ export const symbolTypes = [
 ] as const
 
 /**
- * An array of symbol types to look for in the source code, including functions,
- * variables, classes, interfaces, and types. The "globalSymbols" variable is a
- * subset of these symbol types that are considered to be global symbols and
- * includes functions, variables, classes, interfaces, and types.
+ * Maintains a collection of symbol types that are considered global across the
+ * environment. These symbol types include fundamental constructs such as
+ * functions, variables, classes, interfaces, and types. Each member of
+ * `globalSymbols` is a string literal corresponding to these constructs and can
+ * be used in conjunction with type operations to reference global symbol types
+ * as defined by {@link GlobalSymbol}.
  */
 export const globalSymbols = ['func', 'var', 'class', 'iface', 'type'] as const
 
-/**
- * Represents the possible types of symbols that can be found in source code.
- * Includes constants for function, variable, class, method, interface,
- * property, and type symbols. The type can be checked using the `isSymbol`
- * function and configured using the `configureSymbols` function with a readonly
- * array of desired symbol types.
- */
 export type SymbolType = (typeof symbolTypes)[number]
 
-/**
- * GlobalSymbol is a type alias that represents a specific set of symbol types
- * to look for in source code. It is defined as a subset of the symbolTypes
- * constant, and includes only 'func', 'var', 'class', 'iface', and 'type'. The
- * purpose of GlobalSymbol is to provide a focused set of symbols for use in
- * configuring symbol search behavior via the configureSymbols function.
- */
 export type GlobalSymbol = (typeof globalSymbols)[number]
 
 /**
- * Checks if the provided input is a valid symbol type by comparing it against a
- * list of recognized {@link SymbolType}s. Returns a boolean indicating whether
- * the input is a valid symbol type or not.
+ * Determines whether a given value is a recognized symbol type. This check is
+ * performed against an array of predefined symbol types. If the value matches
+ * one of the symbol types, the function returns `true`, indicating that the
+ * value is a valid {@link SymbolType}. Otherwise, it returns `false`. The
+ * function employs a type predicate to inform TypeScript's type checker of the
+ * result.
  */
 export function isSymbol(s: unknown): s is SymbolType {
   return symbolTypes.includes(s as any)
 }
 
 /**
- * Configures the symbol types to look for in the source code. The function
- * takes an array of symbol types and returns either the provided array or, if
- * empty, a default array of symbol types.
+ * Configures a provided array of symbol types, returning either the default set
+ * of symbol types if the input is empty or the provided array otherwise. It
+ * ensures that the returned value is of a type consistent with either the full
+ * list of symbol types or a subset specified by the caller. If an empty array
+ * is provided, `configureSymbols` returns the full list of default symbol
+ * types; otherwise, it returns the input array as is. This function is generic
+ * and can be tailored to accept a specific subset of symbol types, enforcing
+ * compile-time checks on the input symbols.
  */
 export function configureSymbols<const Symbols extends readonly SymbolType[]>(
   symbols: Symbols,

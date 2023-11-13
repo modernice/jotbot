@@ -1,12 +1,8 @@
 /**
- * Converts the given value to an array. If the value is already an array, it
- * returns the value unchanged. If the value is undefined or null, it returns an
- * empty array. Otherwise, it returns a new array containing the value as its
- * single element.
- * 
- * @param value - The value to be converted to an array.
- * @returns An array containing the given value or an empty array if the value
- * is undefined or null.
+ * Converts a single item or an array of items into an array of elements. If no
+ * value is provided, it returns an empty array. When a single item is given, it
+ * wraps the item in an array. If an array is passed, it simply returns the same
+ * array.
  */
 export function toArray<T>(value?: T | readonly T[]): T[] {
   if (!value) {
@@ -16,12 +12,15 @@ export function toArray<T>(value?: T | readonly T[]): T[] {
 }
 
 /**
- * The `heredoc()` function takes a template string with newline and indentation
- * characters, and returns a formatted string with consistent indentation. It
- * accepts a `TemplateStringsArray` and an optional array of values to be
- * interpolated within the template string. The function trims leading
- * whitespace characters and adjusts the indentation of each line based on the
- * minimum indentation found in the input string.
+ * Processes a template string with embedded expressions into a single formatted
+ * string. The function formats multi-line string literals, known as heredoc, by
+ * removing excessive indentation and ensuring consistent whitespace handling.
+ * It interpolates given values into the template strings and aligns the
+ * resulting text to the left-most non-whitespace character, trimming any
+ * leading and trailing whitespace from the final output. Additionally, it
+ * provides a `withNewline` variant that appends a newline character to the end
+ * of the processed string. Returns a {@link String} representing the formatted
+ * heredoc output.
  */
 export function heredoc(
   strings: TemplateStringsArray,

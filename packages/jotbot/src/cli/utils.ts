@@ -1,10 +1,10 @@
 /**
- * A function that takes an optional object with a validation function and a
- * parsing function. It splits a string value by commas and validates each value
- * if a validation function is provided. If a parsing function is provided, it
- * will parse each value accordingly. The function returns an array of parsed
- * values concatenated with the previous array of values passed as a second
- * argument.
+ * Transforms a comma-separated string into an array of type T, optionally
+ * performing validation and custom parsing on each separated value. If
+ * validation is provided and fails for any value, an error is thrown. The
+ * function returns an array that combines the previously accumulated values
+ * with the newly parsed ones, resulting in an aggregated array of type {@link
+ * T}.
  */
 export function commaSeparated<T = string>(
   options?: { validate?: (value: string) => boolean } & (T extends string
