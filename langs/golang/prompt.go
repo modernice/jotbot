@@ -8,12 +8,13 @@ import (
 	"github.com/modernice/jotbot/generate"
 )
 
-// Prompt takes an input of type [generate.Input] and generates a string that
-// forms a GoDoc-style comment for the input. It first creates a target
-// description of the identifier contained in the input using the Target
-// function, and obtains a simplified identifier with the simpleIdentifier
-// function. The resulting string is formatted to provide instructions on how to
-// write a GoDoc comment for the targeted identifier.
+// Prompt generates a templated GoDoc comment block based on the provided input,
+// which includes the identifier and associated code. It ensures that the
+// generated comment adheres to idiomatic GoDoc conventions and instructs users
+// on how to write descriptive comments without including technical details such
+// as external links or source code examples. The output is designed to guide
+// the user in documenting their code effectively while maintaining consistency
+// with Go library documentation standards.
 func Prompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
@@ -26,7 +27,7 @@ func Prompt(input generate.PromptInput) string {
 
 		You must begin the comment exactly with "%s ", and maintain the writing style consistent with Go library documentation.
 
-		Output only the unquoted comment, do not include comment markers (// or /* */).
+		Output only the unquoted comment, do not include comment markers (
 
 		Keep the comment as short as possible while still being descriptive.
 
@@ -45,9 +46,11 @@ func Prompt(input generate.PromptInput) string {
 	)
 }
 
-// Target returns a human-readable description of the given identifier, which
-// can be a function, type, or variable. It formats the identifier based on its
-// kind (func, type, or var) and name.
+// Target constructs a string representation of a given identifier within Go
+// source code, indicating whether it is a function, type, or variable by
+// prefixing the identifier with an appropriate label. If the identifier does
+// not match any of the expected formats, it returns the identifier as-is
+// enclosed in quotes.
 func Target(identifier string) string {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {

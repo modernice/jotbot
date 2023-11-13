@@ -10,10 +10,11 @@ import (
 	"github.com/modernice/jotbot/internal/slice"
 )
 
-// IsExportedIdentifier checks if the given identifier string represents an
-// exported identifier (i.e., starts with an uppercase letter) and returns true
-// if it does, otherwise false. It also handles identifiers with a package
-// prefix or type/method separator.
+// IsExportedIdentifier determines whether the given identifier is exported in
+// Go. An identifier is considered exported if it begins with an uppercase
+// letter and is not the blank identifier "_". This function can be used to
+// check if an identifier would be accessible from other packages based on Go's
+// visibility rules.
 func IsExportedIdentifier(identifier string) bool {
 	if parts := strings.Split(identifier, ":"); len(parts) > 1 {
 		identifier = parts[1]
@@ -25,8 +26,9 @@ func IsExportedIdentifier(identifier string) bool {
 		strings.ToUpper(identifier[:1]) == identifier[:1]
 }
 
-// StripIdentifierPrefix removes the prefix (the part before the colon) from an
-// identifier string, if present, and returns the remaining identifier.
+// StripIdentifierPrefix removes any prefix before a colon in the given
+// identifier and returns the resulting string without the prefix. If no colon
+// is present, it returns the original identifier unchanged.
 func StripIdentifierPrefix(identifier string) string {
 	if parts := strings.Split(identifier, ":"); len(parts) > 1 {
 		return parts[1]
@@ -34,14 +36,15 @@ func StripIdentifierPrefix(identifier string) string {
 	return identifier
 }
 
-// HasDoc checks if the provided decorations contain any documentation comments.
+// HasDoc reports whether the provided decorations contain any documentation
+// comments.
 func HasDoc(decs dst.Decorations) bool {
 	return len(decs.All()) > 0
 }
 
-// Doc returns the documentation string associated with the given [dst.Node]. If
-// removeSlash is true, leading slashes and spaces are removed from the
-// documentation lines.
+// Doc extracts the leading comment from the specified node, concatenating all
+// lines of the comment into a single string. If removeSlash is true, the "//"
+// prefix is removed from each line of the comment before concatenation.
 func Doc(n dst.Node, removeSlash bool) string {
 	lines := n.Decorations().Start.All()
 	if removeSlash {
@@ -54,16 +57,22 @@ func trimSlash(s string) string {
 	return strings.TrimLeft(strings.TrimPrefix(s, "//"), " ")
 }
 
-// Parse takes a code input and returns a parsed *dst.File along with any error
-// encountered. The input code can be either a string or a byte slice. The
-// function uses decorator.ParseFile to parse the code with ParseComments and
-// SkipObjectResolution flags.
+// Parse reads the given source code and constructs an abstract syntax tree for
+// that code. It accepts a string or a byte slice as input and returns a pointer
+// to a [*dst.File] representing the parsed code, along with any error
+// encountered during parsing. The function also considers comments in the
+// source code as part of the parsing process.
 func Parse[Code ~string | ~[]byte](code Code) (*dst.File, error) {
 	return decorator.ParseFile(token.NewFileSet(), "", code, parser.ParseComments|parser.SkipObjectResolution)
 }
 
-// MustParse parses the provided code into a dst.Node, panicking if an error
-// occurs during parsing.
+// MustParse parses the given code and returns the corresponding DST node. It
+// panics if an error occurs during parsing. This convenience function is
+// intended for use when the code is guaranteed to be valid and any parse error
+// would be considered exceptional. The function accepts a type parameter that
+// can be a string or a byte slice, representing the source code to parse. The
+// returned DST node can then be used for further manipulation or analysis of
+// the parsed code structure.
 func MustParse[Code ~string | ~[]byte](code Code) dst.Node {
 	node, err := Parse(code)
 	if err != nil {
@@ -72,9 +81,10 @@ func MustParse[Code ~string | ~[]byte](code Code) dst.Node {
 	return node
 }
 
-// Identifier returns the identifier string and a boolean indicating whether the
-// identifier is exported or not for the given node. The returned identifier is
-// in the format "kind:name", where kind can be "func", "type", or "var".
+// Identifier extracts the name and determines the export status of the given
+// node. It returns an identifier string with a prefix indicating the kind of
+// node, such as "func:", "type:", or "var:", along with a boolean indicating
+// whether the identifier is exported.
 func Identifier(node dst.Node) (identifier string, exported bool) {
 	switch node := node.(type) {
 	case *dst.FuncDecl:
@@ -107,9 +117,13 @@ func Identifier(node dst.Node) (identifier string, exported bool) {
 	return identifier, IsExportedIdentifier(identifier)
 }
 
-// Find searches for a specified identifier within a given root node, returning
-// the associated Spec, Node, and a boolean indicating if the identifier was
-// found. It supports finding functions, types, and variables.
+// Find locates a declaration within the abstract syntax tree of Go code given
+// an identifier and the root node. It returns the associated specification, the
+// parent node if applicable, and a boolean indicating whether the declaration
+// was found. The identifier is expected to be prefixed with a domain specifying
+// the type of declaration to search for, such as "func", "type", or "var". This
+// function does not traverse nested scopes and is limited to top-level
+// declarations or methods on top-level types.
 func Find(identifier string, root dst.Node) (dst.Spec, dst.Node, bool) {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {
@@ -134,9 +148,10 @@ func Find(identifier string, root dst.Node) (dst.Spec, dst.Node, bool) {
 	}
 }
 
-// FindFunc searches for a function with the specified identifier within the
-// provided root node and returns the found *dst.FuncDecl and a boolean
-// indicating whether the function was found or not.
+// FindFunc locates a function declaration within the given root node of the
+// abstract syntax tree that matches the specified identifier. It returns the
+// function declaration if found and a boolean indicating whether the search was
+// successful.
 func FindFunc(identifier string, root dst.Node) (fn *dst.FuncDecl, found bool) {
 	dst.Inspect(root, func(node dst.Node) bool {
 		switch node := node.(type) {
@@ -152,9 +167,12 @@ func FindFunc(identifier string, root dst.Node) (fn *dst.FuncDecl, found bool) {
 	return
 }
 
-// FindInterfaceMethod searches for a method with the specified identifier in
-// interface types within a given root node. It returns the found method as a
-// *dst.Field and a boolean indicating whether the method was found or not.
+// FindInterfaceMethod locates a method of a specified interface within the
+// given abstract syntax tree node. It returns the method declaration as a
+// [*dst.Field] and a boolean indicating whether the method was found. The
+// identifier used to specify the method should be in the format
+// "interfaceName.methodName". If the method is not found, the returned
+// [*dst.Field] will be nil and the boolean will be false.
 func FindInterfaceMethod(identifier string, root dst.Node) (method *dst.Field, found bool) {
 	parts := strings.Split(identifier, ":")
 	if len(parts) == 2 {
@@ -195,9 +213,10 @@ func FindInterfaceMethod(identifier string, root dst.Node) (method *dst.Field, f
 	return
 }
 
-// FindValue searches for a value with the given identifier in the provided root
-// node, returning the matching ValueSpec, its parent GenDecl, and a boolean
-// indicating whether the value was found.
+// FindValue locates a variable declaration within the abstract syntax tree
+// rooted at the specified node, matching the provided identifier. It returns
+// the corresponding value specification, the enclosing general declaration if
+// present, and a boolean indicating whether the variable was found.
 func FindValue(identifier string, root dst.Node) (spec *dst.ValueSpec, decl *dst.GenDecl, found bool) {
 	dst.Inspect(root, func(node dst.Node) bool {
 		switch node := node.(type) {
@@ -223,9 +242,10 @@ func FindValue(identifier string, root dst.Node) (spec *dst.ValueSpec, decl *dst
 	return
 }
 
-// FindType searches for a type declaration with the given identifier in the
-// provided root node. It returns the found TypeSpec, the containing GenDecl,
-// and a boolean indicating whether the type was found.
+// FindType locates a type declaration within the abstract syntax tree of a Go
+// source file, given its identifier and the root node of the tree. It returns
+// the corresponding type specification, the enclosing general declaration if
+// applicable, and a boolean indicating whether the type was found.
 func FindType(identifier string, root dst.Node) (spec *dst.TypeSpec, decl *dst.GenDecl, found bool) {
 	dst.Inspect(root, func(node dst.Node) bool {
 		switch node := node.(type) {
@@ -247,10 +267,12 @@ func FindType(identifier string, root dst.Node) (spec *dst.TypeSpec, decl *dst.G
 	return
 }
 
-// CommentTarget determines the appropriate node to attach a comment to, given a
-// specification and an outer node. If the spec is nil or if the spec is a
-// single TypeSpec or ValueSpec within a GenDecl, the outer node is returned.
-// Otherwise, the spec is returned.
+// CommentTarget determines the appropriate node for attaching a comment within
+// a Go abstract syntax tree. It resolves between a specification and its outer
+// declaration node to find where a comment should be associated, typically
+// returning the node that represents the closest syntactic construct to which
+// the comment applies. If no specific association is found, it defaults to
+// using the provided outer node.
 func CommentTarget(spec dst.Spec, outer dst.Node) dst.Node {
 	if spec == nil {
 		return outer

@@ -1,8 +1,9 @@
 package internal
 
-// Stream creates a new channel of type T, sends the provided values to the
-// channel concurrently, and returns the channel. The channel is closed after
-// all values have been sent.
+// Stream initiates a streaming of the provided values through a channel of the
+// same type, allowing for concurrent processing of the values in a non-blocking
+// manner. It returns a receive-only channel from which the streamed values can
+// be read.
 func Stream[T any](values ...T) <-chan T {
 	ch := make(chan T, len(values))
 	go func() {
@@ -14,11 +15,12 @@ func Stream[T any](values ...T) <-chan T {
 	return ch
 }
 
-// Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) function reads
-// from the channel vals until it is closed and stores the read values into a
-// slice of type T. If errs channel is closed, the function returns the stored
-// values and nil error. If an error is received from errs channel, the function
-// returns the stored values and that error.
+// Drain collects values from a channel of a specified type until the channel is
+// closed, while also listening for an error on a separate error channel. It
+// returns a slice containing all the collected values and an error if
+// encountered. If the error channel is closed without any errors sent, it
+// returns the collected values and a nil error. If an error is received, it
+// returns the values collected up to that point along with the received error.
 func Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) {
 	out := make([]T, 0, len(vals))
 	for {
@@ -37,10 +39,9 @@ func Drain[T any](vals <-chan T, errs <-chan error) ([]T, error) {
 	}
 }
 
-// Walk iterates over values received from a channel [vals] and applies a
-// function [fn] to each value. If the function returns an error, Walk returns
-// that error. If values are received on the error channel [errs], Walk stops
-// iterating and returns the first error encountered.
+// Walk applies a provided function to each element received from a channel,
+// halting on and returning the first error encountered. It consumes two
+// channels: one for values of type T and another for errors.
 func Walk[T any](vals <-chan T, errs <-chan error, fn func(T) error) error {
 	for {
 		select {
@@ -60,10 +61,8 @@ func Walk[T any](vals <-chan T, errs <-chan error, fn func(T) error) error {
 	}
 }
 
-// Map applies a given function [fn] to each value received from an input
-// channel [in] of type In and sends the transformed values of type Out to an
-// output channel. The output channel is closed when all values have been
-// processed.
+// Map applies a provided function to each element received from a channel and
+// returns a new channel that emits the results.
 func Map[In, Out any](in <-chan In, fn func(In) Out) <-chan Out {
 	out := make(chan Out)
 	go func() {

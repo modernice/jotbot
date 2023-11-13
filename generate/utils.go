@@ -1,7 +1,8 @@
 package generate
 
-// Flatten takes a slice of [File] and returns a single slice of [Documentation]
-// by concatenating the Documentation slices from each File.
+// Flatten takes a slice of [File] and consolidates all the contained
+// [Documentation] into a single slice. It iterates over the files, appending
+// each file's documentation to a cumulative slice, which is then returned.
 func Flatten(files []File) []Documentation {
 	var all []Documentation
 	for _, file := range files {

@@ -8,11 +8,15 @@ import (
 	"github.com/modernice/jotbot/generate"
 )
 
-// Prompt generates a concise TSDoc comment prompt based on the provided Input,
-// taking into account the type of identifier (e.g. function, property, method)
-// and its context. The generated prompt instructs the user to focus on the
-// purpose and usage of the identifier, without including links, source code, or
-// code examples.
+// Prompt constructs a TSDoc comment template based on the provided input which
+// includes the identifier and source code context. It determines the type of
+// the identifier, such as a property, method, or function, and formats a prompt
+// accordingly. The generated prompt instructs the user to write a natural
+// language description of the identified code element without using technical
+// jargon or including extraneous information such as external links or code
+// examples. References to other types within the comment should be enclosed
+// using {@link} syntax, and the style should align with typical TypeScript
+// library documentation conventions.
 func Prompt(input generate.PromptInput) string {
 	switch extractType(input.Identifier) {
 	case "prop", "method":
@@ -27,7 +31,6 @@ func Prompt(input generate.PromptInput) string {
 func propOrMethodPrompt(input generate.PromptInput) string {
 	target := Target(input.Identifier)
 	simple := simpleIdentifier(input.Identifier)
-	// owner := extractOwner(input.Identifier)
 
 	return heredoc.Docf(`
 		Write a comment for %s in TSDoc format. Do not include any external links, source code, or (code) examples.
@@ -38,7 +41,7 @@ func propOrMethodPrompt(input generate.PromptInput) string {
 
 		You should maintain the writing style consistent with TS library documentation.
 
-		Output only the unquoted comment, do not include comment markers (// or /* */).
+		Output only the unquoted comment, do not include comment markers (
 
 		Keep the comment as short as possible while still being descriptive.
 
@@ -69,7 +72,7 @@ func funcPrompt(input generate.PromptInput) string {
 
 		You should maintain the writing style consistent with TS library documentation.
 
-		Output only the unquoted comment, do not include comment markers (// or /* */).
+		Output only the unquoted comment, do not include comment markers (
 
 		Keep the comment as short as possible while still being descriptive.
 
@@ -100,7 +103,7 @@ func defaultPrompt(input generate.PromptInput) string {
 
 		You should maintain the writing style consistent with TS library documentation.
 
-		Output only the unquoted comment, do not include comment markers (// or /* */).
+		Output only the unquoted comment, do not include comment markers (
 
 		Keep the comment as short as possible while still being descriptive.
 
@@ -118,8 +121,13 @@ func defaultPrompt(input generate.PromptInput) string {
 	)
 }
 
-// Target returns a human-readable representation of the given identifier,
-// describing its type and name.
+// Target constructs a descriptive string for an identifier by categorizing it
+// and appending relevant information based on its type, such as the name of a
+// class, the signature of a function, or the association of a method or
+// property with its owner. It handles various identifier types including
+// variables, classes, interfaces, functions, methods, properties, and custom
+// types. If the identifier does not conform to expected patterns or types, it
+// is returned as-is.
 func Target(identifier string) string {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {

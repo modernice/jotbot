@@ -10,21 +10,26 @@ import (
 	igit "github.com/modernice/jotbot/internal/git"
 )
 
-// Git is a type that represents an instance of the Git version control system.
-// It provides methods for executing Git commands and asserting the state of the
-// repository.
+// Git provides utilities for verifying the state of a Git repository in test
+// cases. It can check the current branch, ensure a branch name has a specific
+// prefix, and assert that the latest commit message matches an expected value.
+// These assertions are intended to be used within testing functions, where they
+// provide helpful error messages upon failure to aid in diagnosing issues with
+// repository state during test execution.
 type Git igit.Git
 
-// Cmd returns a *exec.Cmd that can be used to execute Git commands and captures
-// the command's output. It takes a variadic list of strings, which are passed
-// as arguments to the Git command. This method is a part of type Git [igit.Git]
-// in the gittest package [gittest].
+// Cmd runs a git command with the provided arguments and returns the command
+// along with its output and any encountered error. It wraps the execution of a
+// git command in a way that can be easily used for testing purposes, capturing
+// both the standard output and potential errors for assertions.
 func (g Git) Cmd(args ...string) (*exec.Cmd, []byte, error) {
 	return igit.Git(g).Cmd(args...)
 }
 
-// AssertBranch asserts that the current branch of a Git repository matches the
-// given branch name [testing.T].
+// AssertBranch confirms that the current git branch matches the specified
+// branch name using the provided [*testing.T]. If the current branch does not
+// match, it calls [*testing.T]'s Fatal method to immediately fail the test with
+// an appropriate error message.
 func (g Git) AssertBranch(t *testing.T, branch string) {
 	t.Helper()
 
@@ -39,10 +44,11 @@ func (g Git) AssertBranch(t *testing.T, branch string) {
 	}
 }
 
-// AssertBranchPrefix asserts that the current Git branch has the specified
-// prefix. It takes a testing.T instance and a string as arguments. If the
-// prefix is not found in the current branch name, AssertBranchPrefix will fail
-// the test with a descriptive error message.
+// AssertBranchPrefix verifies that the current branch name starts with the
+// specified prefix, failing the test if it does not. It logs a fatal error with
+// the testing.T if the current branch's name does not match the expected
+// prefix. This function is intended to be used in test cases to ensure that
+// branch naming conventions are followed.
 func (g Git) AssertBranchPrefix(t *testing.T, prefix string) {
 	t.Helper()
 
@@ -57,9 +63,11 @@ func (g Git) AssertBranchPrefix(t *testing.T, prefix string) {
 	}
 }
 
-// AssertCommit asserts that the last commit message matches the provided
-// `git.Commit`. It takes a `*testing.T` and a `git.Commit` as arguments. If the
-// assertion fails, it will fail the test.
+// AssertCommit verifies that the most recent commit in the repository has the
+// expected message. It compares the actual commit message with the provided
+// commit object and reports an error to the testing context if they do not
+// match. This method is intended to be used in test cases to ensure that
+// operations affecting the repository's commit history behave as expected.
 func (g Git) AssertCommit(t *testing.T, c git.Commit) {
 	t.Helper()
 

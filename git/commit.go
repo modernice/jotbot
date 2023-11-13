@@ -2,21 +2,20 @@ package git
 
 import "strings"
 
-// Commit represents a Git commit message. It consists of a message, an optional 
-// description, and an optional footer. The Commit type provides methods to 
-// create new commits, check for equality with other commits, and format the 
-// commit as a string. [NewCommit], [DefaultCommit], [Equal], [Paragraphs], and 
-// [String] are the relevant functions for working with Commit objects.
+// Commit represents a set of changes or updates in a version control system
+// with an associated message, optional extended description, and an optional
+// footer. It provides the ability to compare itself with another commit for
+// equality, generate a string representation consisting of its message,
+// description paragraphs, and footer, and create default or custom commits with
+// the provided message and description.
 type Commit struct {
 	Msg    string
 	Desc   []string
 	Footer string
 }
 
-// NewCommit [func] creates a new Commit object with the specified message and 
-// description. The function takes a string msg and a variadic slice of strings 
-// desc, and returns a Commit object. If no description is given, an empty slice 
-// is used instead.
+// NewCommit creates a new Commit with a message and an optional description. It
+// returns the created Commit.
 func NewCommit(msg string, desc ...string) Commit {
 	return Commit{
 		Msg:  msg,
@@ -24,18 +23,16 @@ func NewCommit(msg string, desc ...string) Commit {
 	}
 }
 
-// DefaultCommit returns a new [Commit](#Commit) with a default commit message 
-// and footer. The message will be "docs: add missing documentation" and the 
-// footer will be "This commit was created by jotbot."
+// DefaultCommit creates a new Commit with a predefined message and footer
+// indicating that the commit was created automatically.
 func DefaultCommit() Commit {
 	c := NewCommit("docs: add missing documentation")
 	c.Footer = "This commit was created by jotbot."
 	return c
 }
 
-// Equal determines whether two Commits are equal. Two Commits are considered 
-// equal if they have the same message, footer, and description(s) [Commit, 
-// strings].
+// Equal reports whether two [Commit] instances are considered equivalent,
+// comparing the message, footer, and description slices.
 func (c Commit) Equal(c2 Commit) bool {
 	return c.Msg == c2.Msg && c.Footer == c2.Footer && allEqual(c.Desc, c2.Desc)
 }
@@ -52,9 +49,15 @@ func allEqual[T comparable](a, b []T) bool {
 	return true
 }
 
-// Paragraphs returns a slice of strings representing the paragraphs of the 
-// commit message. The first string is the commit message itself, followed by 
-// any description lines, and ending with the footer line.
+// Paragraphs constructs a slice of strings representing the structured content
+// of a commit, including its message, optional description paragraphs, and
+// footer if present. Each element in the slice corresponds to a distinct
+// section of the commit content. The message is always included as the first
+// element, followed by the joined description lines as a single element if they
+// exist, and finally the footer as the last element if it is not empty. The
+// function ensures that even if the commit message is initially empty, a
+// default message is provided. It returns a slice of strings where each string
+// represents a separate paragraph or section of the commit.
 func (c Commit) Paragraphs() []string {
 	out := make([]string, 0, len(c.Desc)+2)
 	if c.Msg == "" {
@@ -70,9 +73,8 @@ func (c Commit) Paragraphs() []string {
 	return out
 }
 
-// String returns the commit message, description, and footer as a single string 
-// with double line breaks between each paragraph. It is a method of the Commit 
-// type [Commit].
+// String returns a string representation of the commit, combining the message,
+// description, and footer with appropriate spacing.
 func (c Commit) String() string {
 	return strings.Join(c.Paragraphs(), "\n\n")
 }

@@ -6,10 +6,13 @@ import (
 	"unicode"
 )
 
-// InsertComment inserts a given comment into the provided code at the specified
-// position. It returns the modified code as a byte slice or an error if the
-// position is out of range. The comment will be indented to match the
-// surrounding code.
+// InsertComment inserts a given comment into a slice of bytes representing code
+// at the specified position. It returns the modified code with the comment
+// inserted and an error if the position is out of range. The comment is
+// inserted in a way that aligns with the indentation of the line at the given
+// position. If successful, it returns the updated code as a []byte and nil
+// error; otherwise, it returns nil and an error describing the invalid
+// position.
 func InsertComment(comment string, code []byte, pos Position) ([]byte, error) {
 	lines := strings.Split(string(code), "\n")
 	commentLines := strings.Split(comment, "\n")

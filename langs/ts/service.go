@@ -13,44 +13,57 @@ import (
 	"github.com/modernice/jotbot/services/openai"
 )
 
-// FileExtensions is a slice of supported file extensions for TypeScript and
-// JavaScript files, including ".ts", ".tsx", ".js", ".jsx", ".mjs", and ".cjs".
+// FileExtensions holds a list of recognized file extensions for TypeScript and
+// JavaScript source files. It includes extensions for both standard and
+// module-specific file types.
 var (
 	FileExtensions = []string{".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}
 )
 
-// Service is a type that provides utility functions for TypeScript and
-// JavaScript files, such as finding identifiers, minifying code, generating
-// prompts, and patching comments into the code. It can be configured with
-// different file finders and OpenAI models using the provided options.
+// Service provides a set of operations for working with TypeScript code. It
+// allows for the retrieval of supported file extensions, finding specific
+// elements within code, minifying TypeScript source code, generating prompts
+// for code suggestions, and patching existing code with documentation comments.
+// Customization of the service can be achieved using provided options such as
+// specifying a custom finder or model. The service encapsulates functionality
+// that leverages external tools and libraries to process and enhance TypeScript
+// code in various ways.
 type Service struct {
 	finder *Finder
 	model  string
 }
 
-// Option is a functional option type for configuring a [Service] instance. Use
-// available options like WithFinder and Model to customize the behavior of the
-// [Service].
+// Option represents a configuration function used to customize the behavior of
+// a [Service]. Each Option takes a pointer to a [Service] and applies settings
+// or parameters to it, allowing for flexible and composable service
+// configuration. Options are typically passed to the New function to construct
+// a new [Service] instance with the desired customizations.
 type Option func(*Service)
 
-// WithFinder sets the Finder for a Service. It is an Option for configuring a
-// Service instance.
+// WithFinder specifies a finder to be used by the service for operations such
+// as searching and position finding within code. It accepts a [*Finder] and
+// returns an [Option] to configure a [Service].
 func WithFinder(f *Finder) Option {
 	return func(s *Service) {
 		s.finder = f
 	}
 }
 
-// Model sets the model to be used by the Service in the given Option.
+// Model configures a Service with the provided model identifier. It returns an
+// Option that, when applied to a Service, sets its internal model field to the
+// given string. This model identifier is typically used by the Service for
+// operations that require knowledge of a specific model, such as data
+// processing or interaction with external APIs that use different models.
 func Model(model string) Option {
 	return func(s *Service) {
 		s.model = model
 	}
 }
 
-// New creates a new Service instance with the provided options. If no model or
-// finder is specified, it uses the default openai model and a new Finder
-// instance.
+// New initializes a new Service with the provided options. If no model is
+// specified through the options, it uses the default model. If no Finder is
+// provided, it initializes a new default Finder. It returns an initialized
+// [*Service].
 func New(opts ...Option) *Service {
 	var svc Service
 	for _, opt := range opts {
@@ -65,22 +78,25 @@ func New(opts ...Option) *Service {
 	return &svc
 }
 
-// Extensions returns a slice of supported file extensions for the Service, such
-// as ".ts", ".tsx", ".js", ".jsx", ".mjs", and ".cjs".
+// Extensions retrieves the list of file extensions that the Service recognizes
+// and is capable of processing. It returns a slice of strings, each
+// representing a supported file extension.
 func (svc *Service) Extensions() []string {
 	return FileExtensions
 }
 
-// Find searches the given code for TypeScript and JavaScript identifiers and
-// returns a slice of found identifiers. It may return an error if the search
-// fails.
+// Find retrieves a list of strings based on the provided code slice. It
+// utilizes the service's internal finder to perform the search within a default
+// context. If the search is successful, it returns the results along with a nil
+// error. If it fails, it returns an empty slice and an error detailing what
+// went wrong.
 func (svc *Service) Find(code []byte) ([]string, error) {
 	return svc.finder.Find(context.Background(), code)
 }
 
-// Minify takes a byte slice of code and returns a minified version of the code
-// as a byte slice, using the associated model. It returns an error if the
-// minification process fails.
+// Minify reduces the size of TypeScript code by removing unnecessary characters
+// without changing its functionality and returns the minified code or an error
+// if the minification fails.
 func (svc *Service) Minify(code []byte) ([]byte, error) {
 	args := []string{"minify", "-m", svc.model, string(code)}
 
@@ -94,16 +110,20 @@ func (svc *Service) Minify(code []byte) ([]byte, error) {
 	return out, nil
 }
 
-// Prompt generates a prompt string from the provided generate.Input, which can
-// be used in a code generation service request.
+// Prompt invokes the generation of a prompt based on the provided input and
+// returns the generated content as a string. It utilizes the underlying prompt
+// generation logic to transform the input into a textual representation
+// suitable for various applications.
 func (svc *Service) Prompt(input generate.PromptInput) string {
 	return Prompt(input)
 }
 
-// Patch inserts a formatted documentation comment for the given identifier in
-// the provided code and returns the modified code. The generated comment is
-// based on the provided doc string and inserted at the position determined by
-// the finder service.
+// Patch applies a documentation patch to the source code at the location of a
+// specified identifier. It creates or updates existing documentation based on
+// the provided doc string. If the identifier cannot be located or if any errors
+// occur during the process, an error is returned along with a nil byte slice.
+// Otherwise, it returns the patched source code as a byte slice. The operation
+// is context-aware and can be cancelled through the provided context.Context.
 func (svc *Service) Patch(ctx context.Context, identifier, doc string, code []byte) ([]byte, error) {
 	pos, err := svc.finder.Position(ctx, identifier, code)
 	if err != nil {
@@ -135,10 +155,12 @@ func formatDoc(doc string, indent int) string {
 
 var commentLinePrefixRE = regexp.MustCompile(`^\s\*\s?`)
 
-// NormalizeGeneratedComment removes leading and trailing whitespaces, removes
-// comment prefixes, and collapses consecutive whitespaces in the given
-// documentation string. It also ensures that comment tokens are not
-// accidentally closed within the comment text.
+// NormalizeGeneratedComment ensures the consistency and readability of a
+// generated comment by trimming excess whitespace, removing leading asterisks
+// commonly used in block comments, and stripping any trailing comment
+// terminators. It also filters out lines beginning with an "@" symbol, which
+// are often used for annotations in documentation comments. The result is a
+// clean, normalized string ready for further processing or insertion into code.
 func NormalizeGeneratedComment(doc string) string {
 	doc = strings.TrimSpace(doc)
 	doc = strings.TrimPrefix(doc, "/**")

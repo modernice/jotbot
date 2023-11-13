@@ -12,42 +12,47 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// Finder is a utility that searches for exported identifiers in Go code, with
-// options to include or exclude test functions and documented identifiers. It
-// can be configured using FinderOption functions like FindTests and
-// IncludeDocumented. The Find method takes a byte slice of Go code and returns
-// a sorted slice of strings representing the found exported identifiers.
+// Finder locates identifiers in Go source code, taking into account options for
+// including test functions and documented entities. It analyzes the provided
+// code to produce a sorted list of exported names. The search can be customized
+// through options to either include or exclude test functions and documented
+// identifiers. When examining interface types, it also identifies and includes
+// their exported methods. Finder returns a slice of strings representing the
+// found identifiers and any errors encountered during the analysis process.
 type Finder struct {
 	findTests         bool
 	includeDocumented bool
 }
 
-// FinderOption is a function type that modifies the behavior of a Finder, which
-// searches for exported identifiers in Go code. Common options include
-// FindTests and IncludeDocumented.
+// FinderOption configures the behavior of a [*Finder] by setting its internal
+// options. It is applied when constructing a new [*Finder] instance, allowing
+// customization such as whether to include tests or documented entities in the
+// search results.
 type FinderOption func(*Finder)
 
-// FindTests is a function that returns a FinderOption which sets the findTests
-// field of a Finder. The findTests field determines whether or not test
-// functions should be included in the search results.
+// FindTests configures a Finder instance to determine whether it should
+// identify test functions during code analysis. If the provided argument is
+// true, the Finder will include test functions in its findings; otherwise, it
+// will exclude them. This option can be passed to NewFinder to customize the
+// Finder's behavior.
 func FindTests(find bool) FinderOption {
 	return func(f *Finder) {
 		f.findTests = find
 	}
 }
 
-// IncludeDocumented modifies a Finder to include documented declarations if the
-// passed boolean is true. If false, only undocumented declarations will be
-// considered by the Finder.
+// IncludeDocumented configures a Finder to consider documented entities during
+// the search. When set to true, entities with associated documentation will be
+// included in the findings; otherwise, they will be excluded. This option is
+// used when creating a new Finder instance.
 func IncludeDocumented(include bool) FinderOption {
 	return func(f *Finder) {
 		f.includeDocumented = include
 	}
 }
 
-// NewFinder creates a new Finder with the provided options. The Finder can be
-// used to find exported identifiers in Go code, optionally including test
-// functions and documented identifiers.
+// NewFinder constructs a new Finder with optional configurations provided by
+// FinderOptions. It returns a pointer to the initialized Finder.
 func NewFinder(opts ...FinderOption) *Finder {
 	var f Finder
 	for _, opt := range opts {
@@ -56,10 +61,13 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-// Find searches the provided code for exported identifiers, such as functions,
-// types, and variables. It returns a sorted slice of strings containing the
-// found identifiers. The search can be configured to include or exclude test
-// functions and documented identifiers with FinderOptions.
+// Find searches through the provided code for identifiers that are eligible
+// based on the Finder's configuration. It returns a sorted slice of strings
+// containing these identifiers and an error if the code cannot be parsed or
+// another issue occurs. Identifiers from function declarations, type
+// specifications, and value specifications are included unless they are
+// filtered out by the Finder's settings, such as excluding test functions or
+// documented identifiers.
 func (f *Finder) Find(code []byte) ([]string, error) {
 	var findings []string
 
@@ -70,10 +78,6 @@ func (f *Finder) Find(code []byte) ([]string, error) {
 	}
 
 	for _, node := range node.Decls {
-		// var (
-		// 	identifier string
-		// 	exported   bool
-		// )
 
 		switch node := node.(type) {
 		case *dst.FuncDecl:

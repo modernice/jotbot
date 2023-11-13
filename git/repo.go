@@ -11,47 +11,61 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Patch represents an interface for applying changes to a repository in the
-// form of patches. It provides a method to apply the patch to a given root
-// directory within a context.
+// Patch represents an operation that can be applied to a repository to modify
+// its contents. It encapsulates the changes that should be made within the
+// context of a given directory, and it is responsible for executing those
+// changes when prompted. The Apply method is used to trigger the application of
+// the patch to the repository, effectively altering the state of the
+// repository's files and directories as intended by the patch.
 type Patch interface {
-	// Apply applies the given patch to the repository at the specified root
-	// directory within the provided context. Returns an error if the patch
-	// application fails.
+	// Apply applies the patch to the repository at the given root path, using the
+	// provided context for any necessary operations. It returns an error if the
+	// patch cannot be applied successfully.
 	Apply(ctx context.Context, root string) error
 }
 
-// Committer is an interface that provides a method to generate a Commit object,
-// which represents a git commit with a message and optional metadata. It is
-// used when applying patches to repositories.
+// Committer represents an entity capable of producing a commit, which
+// encapsulates changes to be recorded in a version control system. It provides
+// a way to generate a [Commit] that describes the modifications made.
 type Committer interface {
+	// Commit creates a new commit in the repository to which the committer belongs,
+	// incorporating changes from a provided patch. It applies the patch, stages the
+	// changes, and then generates a commit with a message derived from the patch's
+	// content. The function allows for specifying additional commit options, such
+	// as the target branch. If any step of the process fails, an error detailing
+	// the issue is returned.
 	Commit() Commit
 }
 
-// Repository represents a Git repository, providing methods for applying
-// patches and committing changes. It uses the [git.Git] interface for executing
-// Git commands and supports custom logging with an optional [slog.Logger].
+// Repository represents a version-controlled workspace where changes to files
+// are tracked. It provides an interface to commit changesets, represented by
+// the [Patch] interface, to the underlying version control system. It supports
+// custom logging and branch naming through various options that can be passed
+// during the creation or committing process. Additionally, it allows clients to
+// retrieve the root directory of the repository.
 type Repository struct {
 	root string
 	git  git.Git
 	log  *slog.Logger
 }
 
-// Option is a function that configures a [Repository] by applying specific
-// settings or customizations. It allows for optional and flexible configuration
-// of a [Repository] instance without modifying its core implementation.
+// Option configures a [*Repository] by setting its properties or initializing
+// resources needed by the repository. It is typically passed to the Repo
+// function to customize the returned [*Repository] instance.
 type Option func(*Repository)
 
-// WithLogger returns an Option that sets the logger of a Repository to the
-// provided slog.Handler.
+// WithLogger returns an Option that sets the logger of a Repository to a new
+// logger using the provided slog.Handler.
 func WithLogger(h slog.Handler) Option {
 	return func(repo *Repository) {
 		repo.log = slog.New(h)
 	}
 }
 
-// Repo creates a new Repository instance with the given root directory and
-// applies the provided options. It returns a pointer to the created Repository.
+// Repo initializes a new instance of a [*Repository] with the provided root
+// directory and applies any provided options. If no logger is provided in the
+// options, a no-op logger is used by default. It returns the newly created
+// [*Repository].
 func Repo(root string, opts ...Option) *Repository {
 	repo := &Repository{
 		root: root,
@@ -66,20 +80,22 @@ func Repo(root string, opts ...Option) *Repository {
 	return repo
 }
 
-// Root returns the root directory of the Repository.
+// Root retrieves the root directory path associated with the repository. It
+// returns a string representing the filesystem path to the repository's root
+// directory.
 func (repo *Repository) Root() string {
 	return repo.root
 }
 
-// CommitOption is a function that modifies the configuration of a commit
-// operation in a Repository. It is used as an optional argument for the Commit
-// method to customize the commit behavior, such as specifying a branch to
-// commit the changes to.
+// CommitOption represents a configuration modifier that customizes the behavior
+// of a commit operation within a repository. It allows for setting various
+// commit-related properties or parameters before finalizing the commit. This
+// modifier is generally used when performing a commit to specify options such
+// as the target branch, author information, or commit message, ensuring that
+// the commit reflects the desired state and metadata.
 type CommitOption func(*commit)
 
-// Branch creates a CommitOption that sets the branch name for a commit
-// operation in a Repository. If the specified branch already exists, a unique
-// branch name is generated by appending the current Unix time in milliseconds.
+// Branch configures the branch on which a commit should be made.
 func Branch(branch string) CommitOption {
 	return func(c *commit) {
 		c.branch = branch
@@ -90,9 +106,11 @@ type commit struct {
 	branch string
 }
 
-// Commit applies the provided Patch to the Repository, creates a new branch,
-// and commits the changes with the specified CommitOptions. It returns an error
-// if any step in the process fails.
+// Commit applies the provided [Patch] to the repository, creating a new commit
+// on a branch specified by the CommitOptions. If no branch is specified, a
+// default one is created. The function records changes in the repository and
+// logs the commit process. In case of failure during any step of the commit
+// process, an error is returned detailing the issue encountered.
 func (r *Repository) Commit(ctx context.Context, p Patch, opts ...CommitOption) error {
 	var cfg commit
 	for _, opt := range opts {

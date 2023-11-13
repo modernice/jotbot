@@ -1,8 +1,7 @@
 package slice
 
-// Map applies a given function to each element of a slice[[]], returning a new 
-// slice[] with the results. The function takes an element of the input slice as 
-// its argument and returns the corresponding element of the output slice[].
+// Map applies a provided function to each element of the given slice, returning
+// a new slice with the results.
 func Map[In, Out any](s []In, fn func(In) Out) []Out {
 	if s == nil {
 		return nil
@@ -15,10 +14,7 @@ func Map[In, Out any](s []In, fn func(In) Out) []Out {
 	return out
 }
 
-// Filter [Filter[T]] is a function that takes a slice of type T and a function 
-// that takes a value of type T and returns a boolean. It returns a new slice 
-// containing only the elements of the input slice for which the function 
-// returns true.
+// Filter returns a new slice holding only the elements of s that satisfy fn.
 func Filter[S ~[]T, T any](s S, fn func(T) bool) S {
 	if s == nil {
 		return nil
@@ -33,10 +29,9 @@ func Filter[S ~[]T, T any](s S, fn func(T) bool) S {
 	return out
 }
 
-// Unique returns a new slice with only the unique elements of the input slice. 
-// The function accepts a slice of type [S ~[]T, T comparable](S), where T is a 
-// comparable type. The resulting slice has the same underlying type as the 
-// input slice.
+// Unique removes duplicate elements from the provided slice, preserving the
+// order of the first occurrence of each element. It returns a slice containing
+// only the unique elements.
 func Unique[S ~[]T, T comparable](s S) S {
 	if s == nil {
 		return nil
@@ -53,8 +48,9 @@ func Unique[S ~[]T, T comparable](s S) S {
 	return out
 }
 
-// NoZero removes all zero values from a given slice [S] of comparable type [T]. 
-// It returns a new slice with only the non-zero values.
+// NoZero removes zero values from the provided slice and returns a new slice
+// containing only non-zero values of the same type. It maintains the order of
+// the original elements.
 func NoZero[S ~[]T, T comparable](s S) S {
 	if s == nil {
 		return nil

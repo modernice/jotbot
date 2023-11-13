@@ -14,82 +14,102 @@ import (
 )
 
 const (
-	// Var is a [Symbol] representing a variable in the code.
+	// Var represents the symbolic constant for identifying variable declarations in
+	// TypeScript code within the context of the Finder's operations.
 	Var = Symbol("var")
 
-	// Class is a [Symbol] representing a class construct in the code. It is used by
-	// the [Finder] to search for and filter class symbols within code.
+	// Class represents a TypeScript class symbol for use in code analysis and
+	// manipulation tasks within the package. It identifies class declarations when
+	// performing operations such as finding symbols or determining their positions
+	// in source code.
 	Class = Symbol("class")
 
-	// Interface is a [Symbol] representing an interface code construct, used by the
-	// Finder to search for and filter interface symbols within code.
+	// Interface represents the TypeScript interface symbol that can be used to
+	// filter TypeScript entities during code analysis.
 	Interface = Symbol("iface")
 
-	// Func represents a function symbol in the code. It is used by the Finder to
-	// search for and filter function symbols within code.
+	// Func represents the identifier for a TypeScript function symbol.
 	Func = Symbol("func")
 
-	// Method represents a method symbol within a code construct, used by the Finder
-	// to search for and filter methods within the code.
+	// Method represents a TypeScript method symbol.
 	Method = Symbol("method")
 
-	// Property represents a property symbol used by the Finder to search for and
-	// filter properties within code.
+	// Property represents a TypeScript object property symbol used for identifying
+	// such properties within source code during static analysis.
 	Property = Symbol("prop")
 )
 
-// Symbol represents a type of code construct, such as variables, classes,
-// interfaces, functions, methods, or properties. It is used by the Finder to
-// search for and filter specific types of symbols within code.
+// Symbol represents a distinct element or token in the TypeScript language that
+// can be targeted for identification within the source code. It encapsulates a
+// classification of TypeScript entities such as variables, classes, interfaces,
+// functions, methods, and properties. Each instance of Symbol corresponds to a
+// specific kind of these language constructs, allowing for operations like
+// searching and analysis to be performed on the corresponding code segments
+// that define or reference these entities.
 type Symbol string
 
-// Position represents a specific location within a text document, identified by
-// its line number and character position on that line.
+// Position represents the location within a text document, such as source code.
+// It holds information about a specific point in the document, typically
+// identified by a line number and a character offset on that line. This can be
+// used to pinpoint exact locations, such as where a syntax error occurs or
+// where a particular identifier is defined.
 type Position struct {
 	Line      int
 	Character int
 }
 
-// Finder is a utility that searches for specified [Symbol]s within provided
-// code and optionally includes documented symbols. It can also find the
-// position of a given identifier within the code.
+// Finder provides functionality for locating specific symbols within TypeScript
+// code. It supports customization through options that can specify which
+// symbols to look for, whether to include documented symbols in the search, and
+// an optional logger for logging purposes. Finder offers methods to execute
+// searches that return either a list of found symbol names or the position of a
+// particular symbol. It handles the execution context and potential errors,
+// returning structured results based on the TypeScript code provided.
 type Finder struct {
 	symbols           []Symbol
 	includeDocumented bool
 	log               *slog.Logger
 }
 
-// FinderOption is a function that configures a [Finder] by modifying its
-// fields. Common options include Symbols, IncludeDocumented, and WithLogger.
+// FinderOption configures a [Finder] instance, allowing customization of its
+// behavior during the symbol searching process. It's used to specify which
+// symbols to include, whether to include documented symbols, and to set a
+// logger for outputting information during the search operations.
 type FinderOption func(*Finder)
 
-// Symbols returns a FinderOption that appends the provided symbols to the list
-// of symbols the Finder should search for in the code.
+// Symbols specifies a set of TypeScript symbols to be included in the search by
+// a Finder. It configures a Finder to consider only the provided symbols when
+// performing code analysis operations.
 func Symbols(symbols ...Symbol) FinderOption {
 	return func(f *Finder) {
 		f.symbols = append(f.symbols, symbols...)
 	}
 }
 
-// IncludeDocumented is a FinderOption that configures a Finder to include or
-// exclude documented symbols in its search results based on the provided
-// boolean value.
+// IncludeDocumented configures a Finder to consider documented symbols in its
+// search. If set to true, the Finder will include symbols with associated
+// documentation in its results; otherwise, it will exclude them. This option
+// can be passed to NewFinder when creating a new instance of Finder.
 func IncludeDocumented(include bool) FinderOption {
 	return func(f *Finder) {
 		f.includeDocumented = include
 	}
 }
 
-// WithLogger sets the logger for a Finder. It accepts an *slog.Logger and
-// returns a FinderOption that configures the Finder to use the provided logger.
+// WithLogger configures a Finder with a specified logger. It allows for logging
+// within the Finder's operations, utilizing the provided [*slog.Logger]. This
+// option can be passed to NewFinder to influence its logging behavior.
 func WithLogger(log *slog.Logger) FinderOption {
 	return func(f *Finder) {
 		f.log = log
 	}
 }
 
-// NewFinder creates a new Finder with the provided options. A Finder searches
-// for symbols in TypeScript code and returns their positions.
+// NewFinder constructs a new Finder instance with the provided options. It
+// returns a pointer to the created Finder. If no logger is provided via
+// options, it assigns a no-operation logger by default. Options can be used to
+// specify which symbols to look for and whether to include documented symbols
+// in the search results.
 func NewFinder(opts ...FinderOption) *Finder {
 	var f Finder
 	for _, opt := range opts {
@@ -101,10 +121,11 @@ func NewFinder(opts ...FinderOption) *Finder {
 	return &f
 }
 
-// Find searches the provided code for symbols specified in the Finder
-// configuration, and returns a slice of strings containing the found symbols.
-// It respects the includeDocumented flag in the Finder configuration. The
-// search is performed within the provided context.
+// Find searches for specified symbols in the provided TypeScript code and
+// returns a list of findings. It respects the configured symbols and
+// documentation inclusion settings of the Finder instance. If an error occurs
+// during the search, it is returned along with an empty list. The context
+// parameter allows the search to be canceled or have a deadline.
 func (f *Finder) Find(ctx context.Context, code []byte) ([]string, error) {
 	raw, err := f.executeFind(ctx, code)
 	if err != nil {
@@ -143,9 +164,10 @@ func (f *Finder) executeFind(ctx context.Context, code []byte) ([]byte, error) {
 	return out, nil
 }
 
-// Position determines the line and character position of the specified
-// identifier within the provided code. It returns a Position struct containing
-// the line and character information or an error if the operation fails.
+// Position locates the position of a specified identifier within a given body
+// of code and returns its location as a [Position]. If the identifier cannot be
+// found or another error occurs, an error is returned instead. The search is
+// conducted within the provided context for cancellation and timeout handling.
 func (f *Finder) Position(ctx context.Context, identifier string, code []byte) (Position, error) {
 	raw, err := f.executePosition(ctx, identifier, code)
 	if err != nil {

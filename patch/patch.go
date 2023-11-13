@@ -12,55 +12,64 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Language is an interface that defines the Patch method for applying patches
-// to code documentation. It takes a context, an identifier, a documentation
-// string, and a byte slice of code, and returns a patched byte slice of code
-// along with any errors encountered during the process.
+// Language represents the ability to update source code with documentation. It
+// takes a context for cancellation, an identifier denoting something of
+// interest within the code, a documentation string that should be associated
+// with the identifier, and the original source code as a byte slice. It returns
+// the updated source code as a byte slice along with any error encountered
+// during the patching process. This interface is intended to be implemented by
+// various programming language-specific services that know how to integrate
+// documentation into their respective code formats.
 type Language interface {
-	// Patch applies a documentation patch to the given code using the provided
-	// Language implementation. It takes a context, an identifier, a doc string, and
-	// a slice of bytes representing the code. It returns a slice of bytes with the
-	// patched code or an error if something went wrong.
+	// Patch updates the source code in the given language by inserting or altering
+	// documentation strings identified by an identifier. It takes a context, an
+	// identifier for the documentation to patch, the documentation text, and the
+	// original source code as input. It returns the updated source code or an error
+	// if the patching fails.
 	Patch(ctx context.Context, identifier, doc string, code []byte) ([]byte, error)
 }
 
-// Patch applies generated documentation to source code files by processing
-// those files and applying the appropriate language-specific patches. It can be
-// configured with a custom error channel and logger, and provides methods for
-// dry run and actual application of patches. The patching process is based on
-// the provided Language interface implementation for each file extension.
+// Patch represents a process for modifying files with documentation updates. It
+// listens for file generation events and applies text patches to the content of
+// these files based on language-specific rules provided by a Language service.
+// Patch supports both dry-run operations, which do not alter the filesystem but
+// return a map of the intended changes, and actual application of changes to
+// the filesystem. It can be configured with various options such as error
+// channels and logging handlers to tailor its behavior during the patching
+// process.
 type Patch struct {
 	files <-chan generate.File
 	errs  <-chan error
 	log   *slog.Logger
 }
 
-// Option is a function that modifies a Patch configuration. It is used as an
-// argument for the New function to customize the behavior of the Patch
-// instance. Common options include WithErrors to provide an error channel and
-// WithLogger to provide a custom logger.
+// Option configures a [*Patch] by setting optional parameters.
 type Option func(*Patch)
 
-// WithErrors configures a Patch to receive errors from the provided error
-// channel. These errors are logged as warnings and don't cause the patching
-// process to fail.
+// WithErrors specifies an error channel to be used by Patch for error
+// reporting. It modifies the provided Patch instance to receive and handle
+// errors during its operations. This option allows the caller to monitor and
+// respond to errors that occur while Patch is processing files.
 func WithErrors(errs <-chan error) Option {
 	return func(p *Patch) {
 		p.errs = errs
 	}
 }
 
-// WithLogger sets the logger for a Patch instance using the provided
-// slog.Handler.
+// WithLogger configures a Patch instance with a specific slog.Logger to handle
+// logging output. It accepts a slog.Handler which is used to create the new
+// logger. This function is intended to be passed as an option when creating a
+// new Patch instance.
 func WithLogger(h slog.Handler) Option {
 	return func(p *Patch) {
 		p.log = slog.New(h)
 	}
 }
 
-// New creates a new Patch instance with the provided generate.File channel and
-// optional configuration options. The returned Patch can be used to apply
-// generated documentation patches to code files.
+// New initializes a new Patch with provided file channel and optional
+// configurations. It ensures the presence of a logger, either provided through
+// options or a no-operation logger by default. It returns the initialized
+// Patch.
 func New(files <-chan generate.File, opts ...Option) *Patch {
 	p := &Patch{files: files}
 	for _, opt := range opts {
@@ -72,10 +81,13 @@ func New(files <-chan generate.File, opts ...Option) *Patch {
 	return p
 }
 
-// DryRun performs a dry run of applying patches to the given repository,
-// returning a map of file paths to their resulting patched content without
-// writing any changes. It uses the provided function to get a language-specific
-// patching service for each file based on its extension.
+// DryRun simulates the patching process by applying modifications to files in
+// memory and returns the resulting content without writing changes to the file
+// system. It accepts a context, a file system abstraction, and a function to
+// retrieve language-specific patching services based on file extensions. On
+// success, it returns a map associating file paths with their modified content.
+// If an error occurs during the simulation, it returns the partial results
+// along with the encountered error.
 func (p *Patch) DryRun(ctx context.Context, repo afero.Fs, getLanguage func(string) (Language, error)) (map[string][]byte, error) {
 	files, err := internal.Drain(p.files, p.errs)
 	if err != nil {
@@ -100,11 +112,16 @@ func (p *Patch) DryRun(ctx context.Context, repo afero.Fs, getLanguage func(stri
 	return out, nil
 }
 
-// Apply applies patches to the generated files provided by the generate.File
-// channel. It reads each file, applies patches using the provided Language
-// service, and writes the patched content back to the file. Errors encountered
-// during patching are logged and do not stop the process. The function returns
-// when all files have been processed or the context is done.
+// Apply processes a series of files intended for patching, applying the changes
+// defined within them to the corresponding files in the provided filesystem
+// repository. It takes a context for cancellation and timeout control, a
+// filesystem interface to access file data, and a function to retrieve
+// language-specific patching services based on file extensions. This method
+// logs informational messages about its progress and warnings if any issues
+// arise during the patching process. If an error occurs that prevents a file
+// from being patched, Apply continues with the next file without terminating
+// the entire operation. It returns an error only if the context is canceled or
+// closed.
 func (p *Patch) Apply(ctx context.Context, repo afero.Fs, getLanguage func(string) (Language, error)) error {
 	for {
 		select {

@@ -9,84 +9,96 @@ import (
 )
 
 var (
-	// DefaultExtensions is a predefined slice of strings containing common file
-	// extensions (such as ".go" and ".ts") used as default values when searching
-	// for files using the Options struct.
+	// DefaultExtensions represents the set of file extensions that are searched for
+	// by default.
 	DefaultExtensions = []string{
 		".go",
 		".ts",
 	}
 
-	// DefaultExclude is a predefined slice of strings containing common file
-	// exclusion patterns, such as hidden directories, build directories, and test
-	// directories. It is used as a default value when searching for files using the
-	// Options struct.
+	// DefaultExclude represents a list of glob patterns used to identify file paths
+	// that should be omitted from search or processing operations. These patterns
+	// are designed to match common directories and files that are typically not of
+	// interest, such as hidden directories, distribution folders, dependency
+	// directories, vendor folders, test-related files, and generated protocol
+	// buffer code files.
 	DefaultExclude = []string{
-		"**/.*/**",           // hidden directories
-		"**/dist/**",         // node builds
-		"**/node_modules/**", // node dependencies
-		"**/vendor/**",       // vendored dependencies
-		"**/testdata/**",     // tests
-		"**/test/**",         // tests
-		"**/tests/**",        // tests
-		"**/*.pb.go",         // generated protobufs
+		"**/.*/**",
+		"**/dist/**",
+		"**/node_modules/**",
+		"**/vendor/**",
+		"**/testdata/**",
+		"**/test/**",
+		"**/tests/**",
+		"**/*.pb.go",
 	}
 
-	// Default is a predefined instance of the Options struct with commonly used
-	// file extensions and exclusion patterns. It serves as a starting point for
-	// file searching configurations.
+	// Default represents the standard configuration for file searching,
+	// encompassing common file extensions to include and patterns to exclude.
 	Default = Options{
 		Extensions: DefaultExtensions,
 		Exclude:    DefaultExclude,
 	}
 )
 
-// Options is a configuration struct that defines the filtering rules for file
-// searching, such as file extensions to include, patterns to include or
-// exclude. It provides methods for determining if a given file path is included
-// or excluded based on these rules.
+// Options represents a set of configurable parameters used to modify the
+// behavior of file searching operations within a file system. It allows
+// specifying file extensions to include, patterns to specifically include, and
+// patterns to exclude during the search. The Options can be adjusted using
+// provided functional options that set the appropriate fields for extensions,
+// inclusion, and exclusion patterns. These settings are then applied when
+// performing a file search to determine which files are considered matches
+// based on the criteria defined by the Options instance.
 type Options struct {
 	Extensions []string
 	Include    []string
 	Exclude    []string
 }
 
-// Option is a functional option type that allows customization of the behavior
-// of the [Options] struct, which is used in the file search process. It can be
-// used to modify extensions, include or exclude specific patterns, and other
-// search-related configurations.
+// Option represents a configuration modifier which applies custom settings to
+// an Options object. It is used to specify inclusion and exclusion patterns, as
+// well as file extensions that should be considered during the file search
+// process. Option functions are intended to be passed to other functions in the
+// package that require configurable search criteria, allowing users to tailor
+// the behavior of file discovery according to their needs.
 type Option func(*Options)
 
-// Extensions returns an Option that sets the allowed file extensions for the
-// Options struct. The given exts parameter is a list of strings representing
-// the desired file extensions.
+// Extensions sets the file extensions that should be used to filter files
+// during the search process. It overrides any previously set extensions with
+// the provided list of extensions. This is one of several options that can be
+// applied to configure the behavior of a file search.
 func Extensions(exts ...string) Option {
 	return func(o *Options) {
 		o.Extensions = exts
 	}
 }
 
-// Include adds the given patterns to the list of include patterns for file
-// search, allowing the inclusion of matching files in the search results.
+// Include appends the provided file patterns to the list of patterns that will
+// be included during the file search process, modifying the search criteria
+// encapsulated within an [Options] instance.
 func Include(patterns ...string) Option {
 	return func(o *Options) {
 		o.Include = append(o.Include, patterns...)
 	}
 }
 
-// Exclude appends the given patterns to the Options.Exclude field, marking them
-// to be excluded from the file search. The function returns an Option for use
-// with the Files function.
+// Exclude appends the given patterns to the list of patterns used to exclude
+// files or directories in file search configurations. It returns an Option
+// that, when applied to an Options object, modifies its Exclude field to
+// include these additional patterns.
 func Exclude(patterns ...string) Option {
 	return func(o *Options) {
 		o.Exclude = append(o.Exclude, patterns...)
 	}
 }
 
-// Files returns a list of file paths from the provided fs.FS, filtered based on
-// the given options. The options can include or exclude files based on file
-// extensions, and include or exclude patterns. The function also supports
-// context cancellation.
+// Files searches for files within a given file system that match specified
+// patterns, taking into account inclusion and exclusion criteria. It applies
+// options to configure the search behavior, such as filtering by file
+// extensions or specific file paths. The function returns a slice of file paths
+// that meet the criteria along with any error encountered during the search
+// process. The context parameter allows the search to be canceled or have a
+// deadline.
 func Files(ctx context.Context, files fs.FS, opts ...Option) ([]string, error) {
 	cfg := Default
 	for _, opt := range opts {
@@ -95,10 +107,13 @@ func Files(ctx context.Context, files fs.FS, opts ...Option) ([]string, error) {
 	return cfg.Find(ctx, files)
 }
 
-// Find searches the provided file system (fs.FS) using the options specified,
-// such as extensions, include and exclude patterns, and returns a slice of file
-// paths matching the criteria. It also respects the context (context.Context)
-// for cancellation or timeouts.
+// Find traverses the file system starting from the root directory, applying
+// inclusion and exclusion patterns, and returns a slice of file paths that
+// match the specified criteria within the given context. It respects the
+// configured file extensions, inclusion, and exclusion patterns to determine
+// which files are included in the results. If an error occurs during traversal,
+// it returns the successfully found files up to that point along with the
+// encountered error.
 func (f Options) Find(ctx context.Context, files fs.FS) ([]string, error) {
 	if len(f.Extensions) == 0 {
 		f.Extensions = DefaultExtensions

@@ -7,23 +7,21 @@ import (
 )
 
 var (
-	// MinifyNone is a variable of MinifyOptions type that represents the default,
-	// no-op configuration where no minification actions are performed on the input
-	// node.
+	// MinifyNone represents the default state where no minification options are
+	// applied.
 	MinifyNone MinifyOptions
 
-	// MinifyUnexported is a preconfigured set of MinifyOptions that minifies
-	// function comments, function bodies, and struct comments for unexported
-	// elements only.
+	// MinifyUnexported specifies options to minify unexported function bodies and
+	// comments as well as structure comments.
 	MinifyUnexported = MinifyOptions{
 		FuncComment:   true,
 		FuncBody:      true,
 		StructComment: true,
 	}
 
-	// MinifyExported is a variable of MinifyOptions type that configures
-	// minification to remove function comments, function bodies, and struct
-	// comments for exported elements in the Go source code.
+	// MinifyExported applies minification settings to exported Go code elements,
+	// including comments and function bodies, while preserving the visibility of
+	// these elements.
 	MinifyExported = MinifyOptions{
 		FuncComment:   true,
 		FuncBody:      true,
@@ -31,9 +29,9 @@ var (
 		Exported:      true,
 	}
 
-	// MinifyComments is a predefined configuration of MinifyOptions that minifies
-	// package, function, and struct comments for both exported and unexported
-	// elements.
+	// MinifyComments specifies options to remove comments from package
+	// declarations, function declarations, and struct declarations for exported
+	// identifiers.
 	MinifyComments = MinifyOptions{
 		PackageComment: true,
 		FuncComment:    true,
@@ -41,10 +39,9 @@ var (
 		Exported:       true,
 	}
 
-	// MinifyAll is a variable of MinifyOptions type representing the most
-	// aggressive minification configuration, which removes package comments,
-	// function comments and bodies, and struct comments for both exported and
-	// unexported elements in the input node.
+	// MinifyAll represents the most aggressive reduction of a DST, stripping all
+	// comments and function bodies, and applying these changes to both unexported
+	// and exported entities.
 	MinifyAll = MinifyOptions{
 		PackageComment: true,
 		FuncComment:    true,
@@ -54,10 +51,12 @@ var (
 	}
 )
 
-// MinifyOptions is a configuration struct that sets options for minifying the
-// different parts of a Go source code file, such as package comments, function
-// comments and bodies, and struct comments. It can also be configured to only
-// minify exported or unexported elements.
+// MinifyOptions represents a set of configurable behaviors to control the
+// minification process of Go source code represented by the [dst.Node]
+// structure. It allows specification of which parts of the code to minify, such
+// as comments and function bodies, and whether to restrict minification to
+// exported identifiers only. The zero value for MinifyOptions disables all
+// minification features.
 type MinifyOptions struct {
 	PackageComment bool
 	FuncComment    bool
@@ -66,10 +65,13 @@ type MinifyOptions struct {
 	Exported       bool
 }
 
-// Minify applies the specified MinifyOptions to the given dst.Node, removing
-// comments, function bodies, and/or struct comments based on the options set.
-// If Exported is true, only exported nodes are affected; otherwise, all nodes
-// are affected. The modified node is returned.
+// Minify applies the specified minification options to the given syntax tree
+// node and returns a modified version of that node. The minification process
+// may remove comments, function bodies, or alter the visibility of declarations
+// based on the settings in the provided MinifyOptions. The function operates
+// recursively on all applicable child nodes of the input node. It returns a new
+// node with the modifications applied, while leaving the original node
+// unchanged.
 func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
 	out := dst.Clone(node)
 
@@ -109,9 +111,9 @@ func (opts MinifyOptions) Minify(node dst.Node) dst.Node {
 	return out
 }
 
-// Minify applies the specified MinifyOptions to the given dst.Node, removing
-// elements such as comments and function bodies to reduce its size. The
-// resulting node is a clone of the original with the specified changes applied.
+// Minify applies transformations to a given DST node based on the provided
+// MinifyOptions, stripping parts like function bodies, comments, and optionally
+// affecting exported identifiers only. It returns the transformed DST node.
 func Minify[Node dst.Node](node Node, opts MinifyOptions) Node {
 	return opts.Minify(node).(Node)
 }

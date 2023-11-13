@@ -2,10 +2,10 @@ package internal
 
 import "strings"
 
-// Join concatenates the elements of its first argument to create a single string. The separator
-// string sep is placed between elements in the resulting string.
-//
-// Copied and adapted from https://go.dev/src/strings/strings.go
+// JoinStrings concatenates the elements of a slice of strings, using the
+// provided separator between adjacent elements, and returns the resulting
+// string. If the slice is empty, it returns an empty string. If the slice has
+// only one element, it returns that element without the separator.
 func JoinStrings[E ~string](elems []E, sep string) E {
 	switch len(elems) {
 	case 0:

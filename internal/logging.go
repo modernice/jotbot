@@ -9,55 +9,61 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// LogLevelNaked is a constant representing a log level that omits the log level
-// icon when using the prettyLogger, resulting in a cleaner output.
+// LogLevelNaked represents a logging level that is not associated with any
+// predefined severity, allowing for custom handling in logging operations. It
+// is used to indicate a log entry that should not be adorned with a standard
+// level icon or prefix when processed by a custom log handler such as
+// PrettyLogger.
 const LogLevelNaked = slog.Level(-1)
 
 var nop (slog.Handler) = nopLogger{}
 
-// NopLogger [func] returns a new logger that discards all log messages. It
-// implements the slog.Handler interface and is intended to be used in tests or
-// when logging is not desired.
+// NopLogger returns a new logger instance that will ignore all log events,
+// effectively performing no operations when handling logs. It provides a
+// [*slog.Logger] that can be used where logging is necessary but not desired to
+// have any output or effect.
 func NopLogger() *slog.Logger {
 	return slog.New(nop)
 }
 
 type nopLogger struct{}
 
-// Enabled returns whether logging is enabled for the specified level. It is a
-// method of the nopLogger type, which implements the slog.Handler interface.
+// Enabled reports whether the logger is enabled for messages at the specified
+// level within the given context. It always returns false for nopLogger,
+// indicating that no logging will occur regardless of the level or context
+// provided.
 func (nopLogger) Enabled(context.Context, slog.Level) bool { return false }
 
-// Handle is a function implemented by the nopLogger type. It satisfies the
-// slog.Handler interface by discarding any log records passed to it and
-// returning nil.
+// Handle silently ignores the incoming log records without performing any
+// operations or emitting logs. It always returns nil, indicating no error
+// occurred during its invocation.
 func (nopLogger) Handle(context.Context, slog.Record) error { return nil }
 
-// WithAttrs returns a new logger handler with the given attributes [slog.Attr]
-// added to its context. The returned handler is a no-op logger and does not
-// perform any logging.
+// WithAttrs appends a given set of attributes to the logger and returns a new
+// logger instance with those attributes.
 func (nopLogger) WithAttrs([]slog.Attr) slog.Handler { return nop }
 
-// WithGroup returns a new slog.Handler that is a copy of the receiver, but with
-// the group field set to the provided value. The group field is used to
-// categorize log handlers into logical groups.
+// WithGroup associates a named group with the logger, returning a new logger
+// instance that is functionally identical to the original as this method is
+// implemented by a no-operation logger.
 func (nopLogger) WithGroup(string) slog.Handler { return nop }
 
 type prettyLogger struct {
 	slog.Handler
 }
 
-// PrettyLogger wraps an existing slog.Handler with a new handler that formats
-// log messages with icons and attributes before passing them to the underlying
-// handler. The icons are based on the log level (e.g., debug, info, warn,
-// error).
+// PrettyLogger wraps a given slog.Handler to enhance logging output with
+// visually distinct icons based on the log level and formats attributes for
+// improved readability. It returns a slog.Handler that can be used to handle
+// log records in a more user-friendly manner.
 func PrettyLogger(h slog.Handler) slog.Handler {
 	return &prettyLogger{h}
 }
 
-// Handle processes a log record by printing it to the standard output with a
-// level-specific icon, followed by its message and attributes. It is a method
-// of the prettyLogger type, which wraps an existing slog.Handler.
+// Handle processes a log record by outputting a formatted message to standard
+// output. It includes an icon representing the log level, the log message
+// itself, and any associated attributes. It does not filter any log levels and
+// does not return errors under normal operation.
 func (l *prettyLogger) Handle(ctx context.Context, r slog.Record) error {
 	var icon rune
 
