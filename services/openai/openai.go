@@ -279,16 +279,16 @@ func MaxTokensForModel(model string) int {
 }
 
 var modelMaxTokens = map[string]int{
-	"default":                 2049,
-	openai.GPT432K0314:        32768,
-	openai.GPT432K:            32768,
-	openai.GPT40314:           8192,
-	openai.GPT4:               8192,
-	openai.GPT3Dot5Turbo16K:   16384,
-	openai.GPT3Dot5Turbo0301:  4096,
-	openai.GPT3Dot5Turbo:      4096,
-	openai.GPT3TextDavinci003: 4097,
-	openai.GPT3TextDavinci002: 4097,
+	"default":                2049,
+	openai.GPT4TurboPreview:  128000,
+	openai.GPT4VisionPreview: 128000,
+	openai.GPT432K0314:       32768,
+	openai.GPT432K:           32768,
+	openai.GPT40314:          8192,
+	openai.GPT4:              8192,
+	openai.GPT3Dot5Turbo16K:  16384,
+	openai.GPT3Dot5Turbo0301: 4096,
+	openai.GPT3Dot5Turbo:     4096,
 }
 
 type result struct {

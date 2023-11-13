@@ -201,8 +201,11 @@ func (bot *JotBot) Find(ctx context.Context, opts ...find.Option) ([]Finding, er
 		})...)
 	}
 
-	slices.SortFunc(out, func(a, b Finding) bool {
-		return a.File < b.File || (a.File == b.File && a.Identifier < b.Identifier)
+	slices.SortFunc(out, func(a, b Finding) int {
+		if a.File < b.File || (a.File == b.File && a.Identifier < b.Identifier) {
+			return -1
+		}
+		return 1
 	})
 
 	if len(out) == 0 {

@@ -41,7 +41,12 @@ func ExpectIdentifiers[Finding ~string](t *testing.T, want, got []Finding) {
 func ExpectFound[Finding interface{ String() string }](t *testing.T, want, got []Finding) {
 	t.Helper()
 
-	less := func(a, b Finding) bool { return a.String() <= b.String() }
+	less := func(a, b Finding) int {
+		if a.String() <= b.String() {
+			return -1
+		}
+		return 1
+	}
 
 	slices.SortFunc(want, less)
 	slices.SortFunc(got, less)
@@ -60,8 +65,11 @@ func ExpectFindings[Findings ~map[string][]Finding, Finding interface{ GetIdenti
 	got = maps.Clone(got)
 
 	sort := func(findings []Finding) {
-		slices.SortFunc(findings, func(a, b Finding) bool {
-			return a.GetIdentifier() <= b.GetIdentifier()
+		slices.SortFunc(findings, func(a, b Finding) int {
+			if a.GetIdentifier() <= b.GetIdentifier() {
+				return -1
+			}
+			return 1
 		})
 	}
 
@@ -86,7 +94,12 @@ func ExpectGeneratedFiles(t *testing.T, want, got []generate.File) {
 		t.Fatalf("unexpected number of generated files:\n%s", cmp.Diff(want, got))
 	}
 
-	less := func(a, b generate.File) bool { return a.Path <= b.Path }
+	less := func(a, b generate.File) int {
+		if a.Path <= b.Path {
+			return -1
+		}
+		return 1
+	}
 	slices.SortFunc(want, less)
 
 	for i, file := range got {
@@ -103,7 +116,12 @@ func ExpectGeneratedFiles(t *testing.T, want, got []generate.File) {
 func ExpectGenerations(t *testing.T, want, got []generate.Documentation) {
 	t.Helper()
 
-	less := func(a, b generate.Documentation) bool { return a.Identifier <= b.Identifier }
+	less := func(a, b generate.Documentation) int {
+		if a.Identifier <= b.Identifier {
+			return -1
+		}
+		return 1
+	}
 
 	slices.SortFunc(want, less)
 	slices.SortFunc(got, less)
