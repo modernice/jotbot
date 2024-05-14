@@ -309,6 +309,7 @@ func MaxTokensForModel(model string) int {
 
 var modelMaxTokens = map[string]int{
 	"default":                2049,
+	openai.GPT4o:             128000,
 	openai.GPT4TurboPreview:  128000,
 	openai.GPT4VisionPreview: 128000,
 	openai.GPT432K0314:       32768,
