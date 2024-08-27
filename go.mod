@@ -1,6 +1,8 @@
 module github.com/modernice/jotbot
 
-go 1.20
+go 1.21
+
+toolchain go1.21.4
 
 require (
 	github.com/dave/jennifer v1.6.1 // indirect
@@ -15,6 +17,7 @@ require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/bmatcuk/doublestar/v4 v4.6.1
 	github.com/dave/dst v0.27.3
+	github.com/liushuangls/go-anthropic/v2 v2.6.0
 	github.com/sashabaranov/go-openai v1.24.0
 	github.com/spf13/afero v1.11.0
 	github.com/tiktoken-go/tokenizer v0.1.1
